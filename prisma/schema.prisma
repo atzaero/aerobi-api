@@ -22,7 +22,7 @@ model RabSyncState {
   contentLength  BigInt?        @map("content_length")
   contentHash    String?        @map("content_hash")
   parsedRowCount Int?           @map("parsed_row_count")
-  syncedAt       DateTime?      @map("synced_at")
+  syncedAt       DateTime?      @map("synced_at") @db.Timestamptz(3)
   status         RabSyncStatus  @default(PENDING)
   errorMessage   String?        @map("error_message")
 

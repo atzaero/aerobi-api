@@ -1,15 +1,30 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { parse } from 'csv-parse/sync';
 
 import type { RabCsvRow } from '../types/rab-csv-row.type';
+import { resolveRabCsvTextDecoderLabel } from '../utils/rab-csv-encoding';
+
+export type ParseRabCsvBufferOptions = {
+  /** Valor bruto do header HTTP `Content-Type` (ex.: `text/csv; charset=utf-8`). */
+  contentType?: string;
+};
 
 @Injectable()
 export class RabCsvParserService {
+  private readonly logger = new Logger(RabCsvParserService.name);
+
   /**
-   * CSV ANAC: ISO-8859-1, `;`, primeira linha "Atualizado em:", header com "MARCAS".
+   * CSV ANAC: `;`, primeira linha "Atualizado em:", header com "MARCAS".
+   * Encoding: `Content-Type` + BOM / UTF-8 válido / fallback windows-1252.
    */
-  parseBuffer(buffer: Buffer, period: string): RabCsvRow[] {
-    const text = new TextDecoder('iso-8859-1').decode(buffer);
+  parseBuffer(
+    buffer: Buffer,
+    period: string,
+    options?: ParseRabCsvBufferOptions,
+  ): RabCsvRow[] {
+    const label = resolveRabCsvTextDecoderLabel(buffer, options?.contentType);
+    this.logger.debug(`CSV RAB decode: TextDecoder("${label}")`);
+    const text = new TextDecoder(label).decode(buffer);
     const start = text.indexOf('"MARCAS"');
     if (start < 0) {
       throw new Error('CSV RAB: header MARCAS não encontrado');
