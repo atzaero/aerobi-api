@@ -1,0 +1,117 @@
+import { Injectable } from '@nestjs/common';
+import { Prisma } from '@/generated/prisma/client';
+import { createId } from '@paralleldrive/cuid2';
+
+import { PrismaService } from '@/prisma/prisma.service';
+
+import type { IRabRowRepository } from '../contracts/rab-row-repository.interface';
+import type { RabCsvRow } from '../types/rab-csv-row.type';
+
+const CHUNK_SIZE = 500;
+
+const CONFLICT_UPDATE = Prisma.sql`
+  ON CONFLICT ("period", "marcas") DO UPDATE SET
+    "proprietarios" = EXCLUDED."proprietarios",
+    "operadores" = EXCLUDED."operadores",
+    "nr_cert_matricula" = EXCLUDED."nr_cert_matricula",
+    "nr_serie" = EXCLUDED."nr_serie",
+    "cd_tipo" = EXCLUDED."cd_tipo",
+    "ds_modelo" = EXCLUDED."ds_modelo",
+    "nm_fabricante" = EXCLUDED."nm_fabricante",
+    "cd_cls" = EXCLUDED."cd_cls",
+    "nr_pmd" = EXCLUDED."nr_pmd",
+    "cd_tipo_icao" = EXCLUDED."cd_tipo_icao",
+    "nr_tripulacao_min" = EXCLUDED."nr_tripulacao_min",
+    "nr_passageiros_max" = EXCLUDED."nr_passageiros_max",
+    "nr_assentos" = EXCLUDED."nr_assentos",
+    "nr_ano_fabricacao" = EXCLUDED."nr_ano_fabricacao",
+    "dt_validade_cva" = EXCLUDED."dt_validade_cva",
+    "dt_validade_ca" = EXCLUDED."dt_validade_ca",
+    "dt_canc" = EXCLUDED."dt_canc",
+    "ds_motivo_canc" = EXCLUDED."ds_motivo_canc",
+    "cd_interdicao" = EXCLUDED."cd_interdicao",
+    "ds_gravame" = EXCLUDED."ds_gravame",
+    "dt_matricula" = EXCLUDED."dt_matricula",
+    "tp_motor" = EXCLUDED."tp_motor",
+    "qt_motor" = EXCLUDED."qt_motor",
+    "tp_pouso" = EXCLUDED."tp_pouso",
+    "tp_ca" = EXCLUDED."tp_ca",
+    "cd_proposito_cave" = EXCLUDED."cd_proposito_cave",
+    "cf_operacional" = EXCLUDED."cf_operacional",
+    "ds_categoria_homologacao" = EXCLUDED."ds_categoria_homologacao",
+    "tp_operacao" = EXCLUDED."tp_operacao"
+`;
+
+@Injectable()
+export class RabRowRepository implements IRabRowRepository {
+  constructor(private readonly prisma: PrismaService) {}
+
+  private rowToSqlTuple(r: RabCsvRow): Prisma.Sql {
+    return Prisma.sql`(
+      ${createId()},
+      ${r.period},
+      ${r.marcas},
+      ${r.proprietarios},
+      ${r.operadores},
+      ${r.nrCertMatricula},
+      ${r.nrSerie},
+      ${r.cdTipo},
+      ${r.dsModelo},
+      ${r.nmFabricante},
+      ${r.cdCls},
+      ${r.nrPmd},
+      ${r.cdTipoIcao},
+      ${r.nrTripulacaoMin},
+      ${r.nrPassageirosMax},
+      ${r.nrAssentos},
+      ${r.nrAnoFabricacao},
+      ${r.dtValidadeCva},
+      ${r.dtValidadeCa},
+      ${r.dtCanc},
+      ${r.dsMotivoCanc},
+      ${r.cdInterdicao},
+      ${r.dsGravame},
+      ${r.dtMatricula},
+      ${r.tpMotor},
+      ${r.qtMotor},
+      ${r.tpPouso},
+      ${r.tpCa},
+      ${r.cdPropositoCave},
+      ${r.cfOperacional},
+      ${r.dsCategoriaHomologacao},
+      ${r.tpOperacao}
+    )`;
+  }
+
+  async upsertBatch(rows: RabCsvRow[]): Promise<void> {
+    for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
+      const chunk = rows.slice(i, i + CHUNK_SIZE);
+      const tuples = chunk.map((r) => this.rowToSqlTuple(r));
+      await this.prisma.$executeRaw`
+        INSERT INTO "rab_row" (
+          "id", "period", "marcas", "proprietarios", "operadores",
+          "nr_cert_matricula", "nr_serie", "cd_tipo", "ds_modelo", "nm_fabricante",
+          "cd_cls", "nr_pmd", "cd_tipo_icao", "nr_tripulacao_min", "nr_passageiros_max",
+          "nr_assentos", "nr_ano_fabricacao", "dt_validade_cva", "dt_validade_ca", "dt_canc",
+          "ds_motivo_canc", "cd_interdicao", "ds_gravame", "dt_matricula", "tp_motor",
+          "qt_motor", "tp_pouso", "tp_ca", "cd_proposito_cave", "cf_operacional",
+          "ds_categoria_homologacao", "tp_operacao"
+        ) VALUES ${Prisma.join(tuples, ', ')}
+        ${CONFLICT_UPDATE}
+      `;
+    }
+  }
+
+  findManyByPeriod(period: string, skip: number, take: number) {
+    return this.prisma.rabRow.findMany({
+      where: { period },
+      skip,
+      take,
+      orderBy: { marcas: 'asc' },
+    });
+  }
+
+  countByPeriod(period: string) {
+    return this.prisma.rabRow.count({ where: { period } });
+  }
+}

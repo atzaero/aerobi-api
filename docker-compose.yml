@@ -1,0 +1,44 @@
+services:
+  postgres:
+    image: postgres:18
+    container_name: aerobi-api-postgres
+    ports:
+      - "${POSTGRES_EXTERNAL_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-aerobi}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aerobi}
+      POSTGRES_DB: ${POSTGRES_DB:-aerobi}
+    volumes:
+      - aerobi_api_pg_data:/var/lib/postgresql
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${POSTGRES_USER:-aerobi} -d ${POSTGRES_DB:-aerobi}',
+        ]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: aerobi-api
+    ports:
+      - "${PORT:-3333}:3333"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aerobi}:${POSTGRES_PASSWORD:-aerobi}@postgres:5432/${POSTGRES_DB:-aerobi}?schema=public
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  aerobi_api_pg_data:
+    driver: local

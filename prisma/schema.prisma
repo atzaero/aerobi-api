@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum RabSyncStatus {
+  PENDING
+  RUNNING
+  SUCCESS
+  FAILED
+}
+
+model RabSyncState {
+  id             String         @id @default(cuid())
+  period         String         @unique
+  sourceUrl      String         @map("source_url")
+  lastModified   String?        @map("last_modified")
+  contentLength  BigInt?        @map("content_length")
+  contentHash    String?        @map("content_hash")
+  parsedRowCount Int?           @map("parsed_row_count")
+  syncedAt       DateTime?      @map("synced_at")
+  status         RabSyncStatus  @default(PENDING)
+  errorMessage   String?        @map("error_message")
+
+  @@map("rab_sync_state")
+}
+
+/// Linhas do CSV RAB ANAC; chave natural (period, marcas). Colunas espelham o header oficial.
+model RabRow {
+  id                     String  @id @default(cuid())
+  period                 String
+  marcas                 String
+  proprietarios          String?
+  operadores             String?
+  nrCertMatricula        String? @map("nr_cert_matricula")
+  nrSerie                String? @map("nr_serie")
+  cdTipo                 String? @map("cd_tipo")
+  dsModelo               String? @map("ds_modelo")
+  nmFabricante           String? @map("nm_fabricante")
+  cdCls                  String? @map("cd_cls")
+  nrPmd                  String? @map("nr_pmd")
+  cdTipoIcao             String? @map("cd_tipo_icao")
+  nrTripulacaoMin        String? @map("nr_tripulacao_min")
+  nrPassageirosMax       String? @map("nr_passageiros_max")
+  nrAssentos             String? @map("nr_assentos")
+  nrAnoFabricacao        String? @map("nr_ano_fabricacao")
+  dtValidadeCva          String? @map("dt_validade_cva")
+  dtValidadeCa           String? @map("dt_validade_ca")
+  dtCanc                 String? @map("dt_canc")
+  dsMotivoCanc           String? @map("ds_motivo_canc")
+  cdInterdicao           String? @map("cd_interdicao")
+  dsGravame              String? @map("ds_gravame")
+  dtMatricula            String? @map("dt_matricula")
+  tpMotor                String? @map("tp_motor")
+  qtMotor                String? @map("qt_motor")
+  tpPouso                String? @map("tp_pouso")
+  tpCa                   String? @map("tp_ca")
+  cdPropositoCave        String? @map("cd_proposito_cave")
+  cfOperacional          String? @map("cf_operacional")
+  dsCategoriaHomologacao String? @map("ds_categoria_homologacao")
+  tpOperacao             String? @map("tp_operacao")
+
+  @@unique([period, marcas])
+  @@index([period])
+  @@map("rab_row")
+}
