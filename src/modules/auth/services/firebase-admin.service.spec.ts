@@ -48,14 +48,20 @@ describe('FirebaseAdminService', () => {
   }
 
   it('onModuleInit: sem FIREBASE_PROJECT_ID não inicializa e isEnabled é false', async () => {
+    // Arrange
     configGet.mockReturnValue(undefined);
     await createService();
+
+    // Act
     service.onModuleInit();
+
+    // Assert
     expect(admin.initializeApp).not.toHaveBeenCalled();
     expect(service.isEnabled()).toBe(false);
   });
 
   it('onModuleInit: com projectId e FIREBASE_SERVICE_ACCOUNT_JSON usa cert', async () => {
+    // Arrange
     const sa = { type: 'service_account', project_id: 'p1' };
     configGet.mockImplementation((key: string) => {
       if (key === 'FIREBASE_PROJECT_ID') return 'p1';
@@ -63,7 +69,11 @@ describe('FirebaseAdminService', () => {
       return undefined;
     });
     await createService();
+
+    // Act
     service.onModuleInit();
+
+    // Assert
     expect(admin.credential.cert).toHaveBeenCalledWith(sa);
     expect(admin.initializeApp).toHaveBeenCalledWith({
       credential: { type: 'cert' },
@@ -73,13 +83,18 @@ describe('FirebaseAdminService', () => {
   });
 
   it('onModuleInit: com projectId sem JSON usa applicationDefault', async () => {
+    // Arrange
     configGet.mockImplementation((key: string) => {
       if (key === 'FIREBASE_PROJECT_ID') return 'p2';
       if (key === 'FIREBASE_SERVICE_ACCOUNT_JSON') return undefined;
       return undefined;
     });
     await createService();
+
+    // Act
     service.onModuleInit();
+
+    // Assert
     expect(admin.credential.applicationDefault).toHaveBeenCalled();
     expect(admin.initializeApp).toHaveBeenCalledWith({
       credential: { type: 'adc' },
@@ -89,17 +104,23 @@ describe('FirebaseAdminService', () => {
   });
 
   it('onModuleInit: se admin.apps já tiver entrada, não chama initializeApp', async () => {
+    // Arrange
     (admin.apps as unknown[]).push({ name: '[DEFAULT]' });
     configGet.mockImplementation((key: string) => {
       if (key === 'FIREBASE_PROJECT_ID') return 'p3';
       return undefined;
     });
     await createService();
+
+    // Act
     service.onModuleInit();
+
+    // Assert
     expect(admin.initializeApp).not.toHaveBeenCalled();
   });
 
   it('onModuleInit: JSON inválido chama logger.error', async () => {
+    // Arrange
     const errorSpy = jest.spyOn(Logger.prototype, 'error').mockImplementation();
     configGet.mockImplementation((key: string) => {
       if (key === 'FIREBASE_PROJECT_ID') return 'p4';
@@ -107,12 +128,17 @@ describe('FirebaseAdminService', () => {
       return undefined;
     });
     await createService();
+
+    // Act
     service.onModuleInit();
+
+    // Assert
     expect(errorSpy).toHaveBeenCalled();
     errorSpy.mockRestore();
   });
 
   it('onModuleInit: initializeApp a lançar chama logger.error', async () => {
+    // Arrange
     const errorSpy = jest.spyOn(Logger.prototype, 'error').mockImplementation();
     configGet.mockImplementation((key: string) => {
       if (key === 'FIREBASE_PROJECT_ID') return 'p5';
@@ -122,12 +148,17 @@ describe('FirebaseAdminService', () => {
       throw new Error('init fail');
     });
     await createService();
+
+    // Act
     service.onModuleInit();
+
+    // Assert
     expect(errorSpy).toHaveBeenCalled();
     errorSpy.mockRestore();
   });
 
   it('verifyIdToken delega para admin.auth().verifyIdToken', async () => {
+    // Arrange
     configGet.mockImplementation((key: string) => {
       if (key === 'FIREBASE_PROJECT_ID') return 'p';
       return undefined;
@@ -136,7 +167,12 @@ describe('FirebaseAdminService', () => {
     service.onModuleInit();
     const vt = getVerifyIdTokenMock();
     vt.mockResolvedValue({ uid: 'u1' });
-    await expect(service.verifyIdToken('t1')).resolves.toEqual({ uid: 'u1' });
+
+    // Act
+    const result = await service.verifyIdToken('t1');
+
+    // Assert
+    expect(result).toEqual({ uid: 'u1' });
     expect(vt).toHaveBeenCalledWith('t1');
   });
 });

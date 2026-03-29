@@ -44,13 +44,20 @@ describe('FirebaseOrApiKeyGuard', () => {
   }
 
   it('bypass: NODE_ENV=development e sem RAB_SYNC_REQUIRE_AUTH → true', async () => {
+    // Arrange
     mockConfig({ NODE_ENV: 'development' });
     const ctx = createContext({});
-    await expect(guard.canActivate(ctx)).resolves.toBe(true);
+
+    // Act
+    const allowed = await guard.canActivate(ctx);
+
+    // Assert
+    expect(allowed).toBe(true);
     expect(firebase.verifyIdToken).not.toHaveBeenCalled();
   });
 
   it('bypass: NODE_ENV omitido usa default development → true', async () => {
+    // Arrange
     mockConfig({});
     configGet.mockImplementation((key: string, defaultVal?: string) => {
       if (key === 'NODE_ENV') return defaultVal;
@@ -58,63 +65,101 @@ describe('FirebaseOrApiKeyGuard', () => {
       return defaultVal;
     });
     const ctx = createContext({});
-    await expect(guard.canActivate(ctx)).resolves.toBe(true);
+
+    // Act
+    const allowed = await guard.canActivate(ctx);
+
+    // Assert
+    expect(allowed).toBe(true);
   });
 
   it('RAB_SYNC_REQUIRE_AUTH=true em development não faz bypass → falta auth', async () => {
+    // Arrange
     mockConfig({
       NODE_ENV: 'development',
       RAB_SYNC_REQUIRE_AUTH: 'true',
       RAB_SYNC_API_KEY: '',
     });
     const ctx = createContext({});
-    await expect(guard.canActivate(ctx)).rejects.toMatchObject({
+
+    // Act
+    const act = () => guard.canActivate(ctx);
+
+    // Assert
+    await expect(act()).rejects.toMatchObject({
       response: { message: 'Missing or invalid Authorization' },
     });
   });
 
-  it('RAB_SYNC_REQUIRE_AUTH=1 e yes tratados como enforced', async () => {
+  it('RAB_SYNC_REQUIRE_AUTH=1 em development não faz bypass → falta auth', async () => {
+    // Arrange
     mockConfig({
       NODE_ENV: 'development',
       RAB_SYNC_REQUIRE_AUTH: '1',
       RAB_SYNC_API_KEY: '',
     });
-    await expect(guard.canActivate(createContext({}))).rejects.toMatchObject({
+
+    // Act
+    const act = () => guard.canActivate(createContext({}));
+
+    // Assert
+    await expect(act()).rejects.toMatchObject({
       response: { message: 'Missing or invalid Authorization' },
     });
+  });
 
+  it('RAB_SYNC_REQUIRE_AUTH=yes em development não faz bypass → falta auth', async () => {
+    // Arrange
     mockConfig({
       NODE_ENV: 'development',
       RAB_SYNC_REQUIRE_AUTH: 'yes',
       RAB_SYNC_API_KEY: '',
     });
-    await expect(guard.canActivate(createContext({}))).rejects.toMatchObject({
+
+    // Act
+    const act = () => guard.canActivate(createContext({}));
+
+    // Assert
+    await expect(act()).rejects.toMatchObject({
       response: { message: 'Missing or invalid Authorization' },
     });
   });
 
   it('produção: RAB_SYNC_API_KEY coincide com x-api-key → true', async () => {
+    // Arrange
     mockConfig({
       NODE_ENV: 'production',
       RAB_SYNC_API_KEY: 'secret-key',
     });
     const ctx = createContext({ 'x-api-key': 'secret-key' });
-    await expect(guard.canActivate(ctx)).resolves.toBe(true);
+
+    // Act
+    const allowed = await guard.canActivate(ctx);
+
+    // Assert
+    expect(allowed).toBe(true);
     expect(firebase.verifyIdToken).not.toHaveBeenCalled();
   });
 
   it('produção: API key errada e sem Bearer → 401', async () => {
+    // Arrange
     mockConfig({
       NODE_ENV: 'production',
       RAB_SYNC_API_KEY: 'expected',
     });
     const ctx = createContext({ 'x-api-key': 'wrong' });
-    await expect(guard.canActivate(ctx)).rejects.toMatchObject({
+
+    // Act
+    const act = () => guard.canActivate(ctx);
+
+    // Assert
+    await expect(act()).rejects.toMatchObject({
       response: { message: 'Missing or invalid Authorization' },
     });
   });
 
   it('produção: Bearer válido e Firebase ativo → true e req.user', async () => {
+    // Arrange
     mockConfig({
       NODE_ENV: 'production',
       RAB_SYNC_API_KEY: '',
@@ -126,16 +171,27 @@ describe('FirebaseOrApiKeyGuard', () => {
       authorization: 'Bearer good.token',
     });
     const req = ctx.switchToHttp().getRequest<Request & { user?: unknown }>();
-    await expect(guard.canActivate(ctx)).resolves.toBe(true);
+
+    // Act
+    const allowed = await guard.canActivate(ctx);
+
+    // Assert
+    expect(allowed).toBe(true);
     expect(firebase.verifyIdToken).toHaveBeenCalledWith('good.token');
     expect(req.user).toBe(decoded);
   });
 
   it('Bearer presente mas Firebase desativado → 401', async () => {
+    // Arrange
     mockConfig({ NODE_ENV: 'production', RAB_SYNC_API_KEY: '' });
     firebase.isEnabled.mockReturnValue(false);
     const ctx = createContext({ authorization: 'Bearer x' });
-    await expect(guard.canActivate(ctx)).rejects.toMatchObject({
+
+    // Act
+    const act = () => guard.canActivate(ctx);
+
+    // Assert
+    await expect(act()).rejects.toMatchObject({
       response: {
         message:
           'Firebase Admin not configured; set FIREBASE_PROJECT_ID or use X-API-Key when RAB_SYNC_API_KEY is set',
@@ -144,11 +200,17 @@ describe('FirebaseOrApiKeyGuard', () => {
   });
 
   it('verifyIdToken falha → Invalid Firebase ID token', async () => {
+    // Arrange
     mockConfig({ NODE_ENV: 'production', RAB_SYNC_API_KEY: '' });
     firebase.isEnabled.mockReturnValue(true);
     firebase.verifyIdToken.mockRejectedValue(new Error('bad token'));
     const ctx = createContext({ authorization: 'Bearer bad' });
-    await expect(guard.canActivate(ctx)).rejects.toMatchObject({
+
+    // Act
+    const act = () => guard.canActivate(ctx);
+
+    // Assert
+    await expect(act()).rejects.toMatchObject({
       response: { message: 'Invalid Firebase ID token' },
     });
   });
