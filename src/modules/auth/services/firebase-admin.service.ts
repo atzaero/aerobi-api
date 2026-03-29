@@ -6,18 +6,9 @@ import * as admin from 'firebase-admin';
  * Inicializa o Firebase Admin SDK no **servidor** para validar **Firebase ID tokens**
  * (JWT emitidos pelo Firebase Auth após login no cliente — ex.: `getIdToken()` no browser).
  *
- * ## Fluxo relacionado (quando a rota usa `FirebaseOrApiKeyGuard`)
+ * As rotas HTTP **`/rab/*`** autenticam com **`RabApiKeyGuard`** (`X-API-Key`); não usam este serviço.
+ * `verifyIdToken` fica disponível para extensões futuras ou outros módulos.
  *
- * ```
- * Frontend (Firebase Auth) → ID token → Header Authorization: Bearer <token>
- *     → FirebaseOrApiKeyGuard → FirebaseAdminService.verifyIdToken() → rota (ex. POST /rab/sync)
- * ```
- *
- * Alternativa ao Bearer: header `X-API-Key` igual a `RAB_SYNC_API_KEY` (não passa por este serviço).
- *
- * Em `NODE_ENV=development` o guard pode fazer **bypass** sem chamar este serviço — ver JSDoc do guard.
- *
- * @see FirebaseOrApiKeyGuard em `src/common/guards/firebase-or-api-key.guard.ts`
  * @see AuthModule em `src/modules/auth/auth.module.ts`
  */
 @Injectable()

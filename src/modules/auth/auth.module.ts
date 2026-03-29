@@ -3,11 +3,10 @@ import { Global, Module } from '@nestjs/common';
 import { FirebaseAdminService } from './services/firebase-admin.service';
 
 /**
- * Módulo global de autenticação auxiliar: expõe {@link FirebaseAdminService} para validação
- * de Firebase ID tokens no servidor.
+ * Módulo global auxiliar: expõe {@link FirebaseAdminService} para validação de Firebase ID tokens
+ * no servidor (uso futuro ou integrações fora do módulo RAB).
  *
- * O fluxo HTTP (Bearer, X-API-Key, bypass em `development`) está em
- * {@link FirebaseOrApiKeyGuard} (`src/common/guards/firebase-or-api-key.guard.ts`).
+ * Rotas **`/rab/*`** usam **`RabApiKeyGuard`** (`X-API-Key` / `RAB_SYNC_API_KEY`), não este serviço.
  */
 @Global()
 @Module({
