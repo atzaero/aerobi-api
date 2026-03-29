@@ -28,6 +28,9 @@ services:
       dockerfile: Dockerfile.dev
     container_name: aerobi-api-dev
     command: ./scripts/start-dev.sh
+    # PID 1 com tini: SIGTERM chega ao Node no restart/stop (melhor que npm como PID 1).
+    init: true
+    stop_grace_period: 20s
     ports:
       - "${PORT:-3333}:3333"
     volumes:
@@ -38,6 +41,9 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-aerobi}:${POSTGRES_PASSWORD:-aerobi}@postgres:5432/${POSTGRES_DB:-aerobi}?schema=public
       NODE_ENV: development
+      # Reduz reinícios duplicados do `nest --watch` com bind mount (causa comum de EADDRINUSE na 3333).
+      CHOKIDAR_USEPOLLING: "true"
+      CHOKIDAR_INTERVAL: "800"
     depends_on:
       postgres:
         condition: service_healthy

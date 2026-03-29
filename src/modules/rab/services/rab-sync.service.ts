@@ -103,6 +103,8 @@ export class RabSyncService {
     const getResp = await firstValueFrom(
       this.http.get<ArrayBuffer>(csvUrl, { responseType: 'arraybuffer' }),
     );
+    const gh = getResp.headers as Record<string, string | string[] | undefined>;
+    const contentType = pickHeader(gh, 'content-type');
     const buffer = Buffer.from(getResp.data);
     const hash = createHash('sha256').update(buffer).digest('hex');
 
@@ -128,7 +130,7 @@ export class RabSyncService {
     });
 
     try {
-      const rows = this.parser.parseBuffer(buffer, period);
+      const rows = this.parser.parseBuffer(buffer, period, { contentType });
       await this.rowRepo.upsertBatch(rows);
 
       await this.syncStateRepo.updateSuccess(period, {

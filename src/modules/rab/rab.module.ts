@@ -2,6 +2,8 @@ import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
+import { FirebaseOrApiKeyGuard } from '@/common/guards/firebase-or-api-key.guard';
+
 import { LatestPeriodController } from './controllers/latest-period.controller';
 import { RowsController } from './controllers/rows.controller';
 import { SyncController } from './controllers/sync.controller';
@@ -39,6 +41,7 @@ import { RabSyncStateService } from './services/rab-sync-state.service';
     SyncController,
   ],
   providers: [
+    FirebaseOrApiKeyGuard,
     AnacIndexService,
     RabCsvParserService,
     RabRowRepository,

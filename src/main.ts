@@ -42,7 +42,10 @@ async function bootstrap() {
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Aerobi API')
     .setDescription(
-      'API Nest para sincronização do RAB (ANAC). POST /rab/sync: Firebase Bearer ou X-API-Key (RAB_SYNC_API_KEY).',
+      'API Nest para sincronização do RAB (ANAC). ' +
+        'POST /rab/sync: em **`NODE_ENV=development`** o guard aceita pedidos **sem** auth (bypass). ' +
+        'Noutros ambientes (ou com `RAB_SYNC_REQUIRE_AUTH=true`): **Firebase ID token** em `Authorization: Bearer` (`getIdToken()` no cliente) **ou** `X-API-Key` quando `RAB_SYNC_API_KEY` estiver definida. ' +
+        'Ver JSDoc: `FirebaseOrApiKeyGuard`, `FirebaseAdminService`.',
     )
     .setVersion('1.0')
     .addBearerAuth()
