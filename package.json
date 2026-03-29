@@ -1,6 +1,6 @@
 {
   "name": "aerobi-api",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "NestJS API for ANAC RAB sync (Aerobi)",
   "author": "",
   "private": true,
