@@ -1,3 +1,6 @@
+# Stack local: Postgres + API (build a partir do Dockerfile de produção).
+# Não usar no servidor de produção — aí use docker-compose.prod.yml + rede Docker `warpgate` + Postgres partilhado.
+
 services:
   postgres:
     image: postgres:18

@@ -35,13 +35,31 @@ docker compose -f docker-compose.dev.yml up --build
 
 Na primeira vez o script roda `prisma migrate deploy` e sobe o Nest em `--watch`. API: `http://localhost:3333`, Swagger: `http://localhost:3333/api/docs`.
 
+### Postgres + API local (imagem de produção, sem watch)
+
+```bash
+docker compose -f docker-compose.local.yml up --build
+```
+
 ### Migrações e Postgres local (sem Docker na API)
 
 ```bash
-docker compose up -d postgres   # ou só o serviço postgres do compose.dev
+docker compose -f docker-compose.local.yml up -d postgres
 export DATABASE_URL=postgresql://aerobi:aerobi@localhost:5432/aerobi?schema=public
 npx prisma migrate deploy
 npm run start:dev
+```
+
+### Produção (servidor)
+
+- Imagem publicada no GHCR (`release.yml` em `main`).
+- No servidor: rede Docker partilhada **`warpgate`** (criada pela infra / Ansible) e Postgres noutro stack na mesma rede; `DATABASE_URL` usa o hostname do container Postgres (ex. `postgres`).
+- Ficheiro: **`docker-compose.prod.yml`** — só sobe a API, liga-se à rede `warpgate`, porta publicada em `127.0.0.1` para o Nginx no host.
+
+```bash
+# no servidor (após copiar .env com REGISTRY, IMAGE_NAME, TAG, DATABASE_URL, etc.)
+docker compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml up -d
 ```
 
 ### Sincronização manual (RAB)
@@ -84,18 +102,15 @@ $ npm run test:e2e
 $ npm run test:cov
 ```
 
-## Deployment
+## CI, release e deploy
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+- **CI** (`.github/workflows/ci.yml`): push em `develop` e PRs para `main` / `develop`.
+- **Release** (`.github/workflows/release.yml`): push em `main` → `semantic-release` (precisa do secret `GH_TOKEN` com scope `repo`) → tag e imagem `ghcr.io/<owner>/<repo>:<versão>` e `:latest`.
+- **Deploy** (`.github/workflows/deploy.yml`): ao publicar uma release → SSH para o servidor, `.env` a partir de secrets, `docker compose -f docker-compose.prod.yml pull && up -d`.
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+Secrets típicos do deploy: `SSH_PRIVATE_KEY`, `REMOTE_HOST`, `REMOTE_PORT`, `REMOTE_USER`, `REMOTE_TARGET`, `GH_TOKEN`, `DATABASE_URL`, `CORS_ORIGINS`; opcionais em `.env.example` / workflow.
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Versões e changelog: [Conventional Commits](https://www.conventionalcommits.org/) em `main`; commit de release usa `[skip ci]` para não duplicar CI.
 
 ## Resources
 

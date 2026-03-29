@@ -15,8 +15,10 @@ RUN npx prisma generate && npm run build
 FROM node:22-bookworm-slim AS runner
 
 RUN apt-get update -y \
-  && apt-get install -y --no-install-recommends openssl ca-certificates \
-  && rm -rf /var/lib/apt/lists/*
+  && apt-get install -y --no-install-recommends openssl ca-certificates tini \
+  && rm -rf /var/lib/apt/lists/* \
+  && groupadd --gid 1001 nodejs \
+  && useradd --uid 1001 --gid nodejs --shell /usr/sbin/nologin --create-home nestjs
 
 WORKDIR /usr/src/app
 ENV NODE_ENV=production
@@ -25,5 +27,9 @@ COPY prisma ./prisma/
 COPY prisma.config.ts ./
 RUN npm ci --omit=dev && npx prisma generate
 COPY --from=builder /usr/src/app/dist ./dist
+COPY scripts/start-prod.sh ./scripts/start-prod.sh
+RUN chown -R nestjs:nodejs /usr/src/app && chmod +x scripts/start-prod.sh
 EXPOSE 3333
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
+USER nestjs
+ENTRYPOINT ["/usr/bin/tini", "--"]
+CMD ["./scripts/start-prod.sh"]

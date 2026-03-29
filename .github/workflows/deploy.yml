@@ -1,0 +1,118 @@
+name: Deploy to Production
+run-name: Deploy ${{ github.event.release.tag_name }} by @${{ github.actor }}
+
+# Disparado quando semantic-release publica uma release.
+# Transfere docker-compose.prod.yml + .env; pull GHCR; sobe stack na rede Docker warpgate.
+
+on:
+  release:
+    types: [published]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Extract version from release tag
+        id: version
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          VERSION="${TAG#v}"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Deploying version: $VERSION (tag: $TAG)"
+
+      - name: Create SSH key
+        run: |
+          mkdir -p ~/.ssh/
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.REMOTE_HOST }} >> ~/.ssh/known_hosts || true
+
+      - name: Check and Create Target Directory
+        run: |
+          ssh -i ~/.ssh/deploy_key -p ${{ secrets.REMOTE_PORT }} ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} "
+            if [ ! -d \"${{ secrets.REMOTE_TARGET }}\" ]; then
+              mkdir -p ${{ secrets.REMOTE_TARGET }} && echo 'Directory created.';
+            else
+              echo 'Target directory exists.';
+            fi
+          "
+
+      - name: Create .env and transfer files
+        run: |
+          set -e
+          : > .env
+          echo "REGISTRY=${{ env.REGISTRY }}" >> .env
+          echo "IMAGE_NAME=${{ env.IMAGE_NAME }}" >> .env
+          echo "TAG=${{ steps.version.outputs.version }}" >> .env
+          echo "NODE_ENV=production" >> .env
+          if [ -n "${{ secrets.APP_PORT }}" ]; then echo "PORT=${{ secrets.APP_PORT }}" >> .env; else echo "PORT=3333" >> .env; fi
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
+          echo "CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}" >> .env
+          if [ -n "${{ secrets.ANAC_RAB_INDEX_URL }}" ]; then echo "ANAC_RAB_INDEX_URL=${{ secrets.ANAC_RAB_INDEX_URL }}" >> .env; fi
+          if [ -n "${{ secrets.HTTP_USER_AGENT }}" ]; then echo "HTTP_USER_AGENT=${{ secrets.HTTP_USER_AGENT }}" >> .env; fi
+          if [ -n "${{ secrets.RAB_SYNC_API_KEY }}" ]; then echo "RAB_SYNC_API_KEY=${{ secrets.RAB_SYNC_API_KEY }}" >> .env; fi
+          if [ -n "${{ secrets.FIREBASE_PROJECT_ID }}" ]; then echo "FIREBASE_PROJECT_ID=${{ secrets.FIREBASE_PROJECT_ID }}" >> .env; fi
+          if [ -n "${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}" ]; then echo "FIREBASE_SERVICE_ACCOUNT_JSON=${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}" >> .env; fi
+          if [ -n "${{ secrets.RAB_SYNC_REQUIRE_AUTH }}" ]; then echo "RAB_SYNC_REQUIRE_AUTH=${{ secrets.RAB_SYNC_REQUIRE_AUTH }}" >> .env; fi
+          if [ -n "${{ secrets.RAB_SYNC_CRON }}" ]; then echo "RAB_SYNC_CRON=${{ secrets.RAB_SYNC_CRON }}" >> .env; fi
+          if [ -n "${{ secrets.RAB_SYNC_CRON_DISABLED }}" ]; then echo "RAB_SYNC_CRON_DISABLED=${{ secrets.RAB_SYNC_CRON_DISABLED }}" >> .env; fi
+          scp -i ~/.ssh/deploy_key -P ${{ secrets.REMOTE_PORT }} \
+            docker-compose.prod.yml .env \
+            ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}:${{ secrets.REMOTE_TARGET }}
+
+      - name: Login to GitHub Container Registry on Remote Server
+        run: |
+          TOKEN="${{ secrets.GH_TOKEN }}"
+          if [ -z "$TOKEN" ]; then
+            echo "ERRO: GH_TOKEN nao disponivel"
+            exit 1
+          fi
+          echo "$TOKEN" | ssh -i ~/.ssh/deploy_key -p ${{ secrets.REMOTE_PORT }} ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} \
+            "docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin"
+
+      - name: Ensure Docker network warpgate exists
+        run: |
+          NETWORK_NAME="warpgate"
+          ssh -i ~/.ssh/deploy_key -p ${{ secrets.REMOTE_PORT }} ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} "
+            if ! docker network inspect \"$NETWORK_NAME\" >/dev/null 2>&1; then
+              docker network create \"$NETWORK_NAME\"
+            fi
+            docker network inspect \"$NETWORK_NAME\" >/dev/null
+          "
+
+      - name: Deploy to Server via SSH
+        run: |
+          ssh -i ~/.ssh/deploy_key -p ${{ secrets.REMOTE_PORT }} \
+            -o ServerAliveInterval=60 \
+            -o ServerAliveCountMax=3 \
+            -o ConnectTimeout=30 \
+            ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} "
+            cd ${{ secrets.REMOTE_TARGET }} && \
+            docker compose -f docker-compose.prod.yml down --remove-orphans || true && \
+            RETRY=0
+            while [ \$RETRY -lt 3 ]; do
+              if docker compose -f docker-compose.prod.yml pull --quiet; then break; fi
+              RETRY=\$((RETRY + 1))
+              sleep 10
+            done
+            docker compose -f docker-compose.prod.yml up -d --force-recreate && \
+            echo 'aerobi-api v${{ steps.version.outputs.version }} deployed'
+          "
+
+      - name: Cleanup
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
