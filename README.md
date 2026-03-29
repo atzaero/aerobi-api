@@ -64,9 +64,10 @@ docker compose -f docker-compose.prod.yml up -d
 
 ### Sincronização manual (RAB)
 
-- `GET /rab/latest-period` — último `YYYY-MM` no índice ANAC.
-- `POST /rab/sync` — corpo opcional `{ "period": "2026-03", "force": true }`. Autenticação: cabeçalho **`Authorization: Bearer <Firebase ID token>`** (com `FIREBASE_PROJECT_ID` + credencial admin) **ou** **`X-API-Key`** igual a `RAB_SYNC_API_KEY` quando definido.
-- **Evolução:** para auth próprio no backend, o caminho recomendado é `@nestjs/jwt` + `passport-jwt` (como no barber backend), **sem misturar** na mesma rota critérios Firebase e JWT sem documentar qual cliente usa qual.
+- Todas as rotas **`/rab/*`** (GET `latest-period`, `sync-state`, `rows`, POST `sync`) exigem header **`X-API-Key`** = **`RAB_SYNC_API_KEY`**, exceto **`NODE_ENV=development`** sem `RAB_SYNC_REQUIRE_AUTH` (bypass para DX). Com `RAB_SYNC_REQUIRE_AUTH=true`, a chave é exigida também em development.
+- `POST /rab/sync` — corpo opcional `{ "period": "2026-03", "force": true }`.
+- Em produção, `RAB_SYNC_API_KEY` tem de estar definida; caso contrário as rotas RAB respondem 401.
+- No repositório **aerobi** (Next), usa-se o **mesmo nome** `RAB_SYNC_API_KEY` no `.env` / hosting para enviar `X-API-Key` nas chamadas a `/rab/*`.
 
 Cron: variável `RAB_SYNC_CRON` (padrão `0 5 * * *`). Desative jobs com `RAB_SYNC_CRON_DISABLED=true`.
 

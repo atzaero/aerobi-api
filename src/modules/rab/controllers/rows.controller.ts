@@ -4,14 +4,18 @@ import {
   Get,
   ParseIntPipe,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+
+import { RabApiKeyGuard } from '@/common/guards/rab-api-key.guard';
 
 import { RowsDocs } from '../docs/rows.docs';
 import { RabRowsService } from '../services/rab-rows.service';
 
 @ApiTags('RAB')
 @Controller('rab')
+@UseGuards(RabApiKeyGuard)
 export class RowsController {
   constructor(private readonly rabRows: RabRowsService) {}
 

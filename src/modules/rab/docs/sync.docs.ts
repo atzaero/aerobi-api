@@ -1,33 +1,26 @@
 import { applyDecorators } from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiOperation,
-  ApiResponse,
-  ApiSecurity,
-} from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiSecurity } from '@nestjs/swagger';
 
 /**
  * Swagger para `POST /rab/sync`.
  *
- * - **development:** sem headers (guard em bypass; ver `FirebaseOrApiKeyGuard`).
- * - **Outros ambientes / com `RAB_SYNC_REQUIRE_AUTH=true`:** Bearer = Firebase ID token ou `X-API-Key`.
+ * - **development** (sem `RAB_SYNC_REQUIRE_AUTH`): bypass — sem `X-API-Key` (ver `RabApiKeyGuard`).
+ * - **Produção** ou dev com `RAB_SYNC_REQUIRE_AUTH=true`: header **`X-API-Key`** = `RAB_SYNC_API_KEY`.
  */
 export function SyncDocs() {
   return applyDecorators(
-    ApiBearerAuth(),
     ApiSecurity('api_key'),
     ApiOperation({
       summary: 'Disparar sincronização RAB',
       description:
-        '**`NODE_ENV=development`:** pedido permitido sem `Authorization` / `X-API-Key` (bypass documentado no guard). ' +
-        '**Caso contrário (ex. produção)** ou se `RAB_SYNC_REQUIRE_AUTH=true`: enviar `Authorization: Bearer <Firebase ID token>` ' +
-        '(`getIdToken()` no cliente) **ou** `X-API-Key` igual a `RAB_SYNC_API_KEY` quando definida.',
+        '**`NODE_ENV=development`** sem `RAB_SYNC_REQUIRE_AUTH`: pedido permitido sem `X-API-Key` (bypass). ' +
+        '**Caso contrário:** enviar **`X-API-Key`** igual a `RAB_SYNC_API_KEY`.',
     }),
     ApiResponse({ status: 200, description: 'Resultado da sync' }),
     ApiResponse({
       status: 401,
       description:
-        'Fora de bypass: Bearer inválido em falta, Firebase Admin não configurado, ou API key incorreta',
+        'Fora de bypass: `X-API-Key` em falta/incorreto ou `RAB_SYNC_API_KEY` não configurada no servidor',
     }),
   );
 }
