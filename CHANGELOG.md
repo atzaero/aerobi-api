@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/atzaero/aerobi-api/compare/v1.1.0...v1.2.0) (2026-03-31)
+
+
+### Features
+
+* **rab:** lista paginada e resposta data/meta ([78bce11](https://github.com/atzaero/aerobi-api/commit/78bce11665293a2637e43c7e95424e7b3ec70365))
+
 # [1.1.0](https://github.com/atzaero/aerobi-api/compare/v1.0.0...v1.1.0) (2026-03-29)
 
 
