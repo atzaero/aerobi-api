@@ -1,16 +1,11 @@
-import {
-  Controller,
-  DefaultValuePipe,
-  Get,
-  ParseIntPipe,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
 import { RabApiKeyGuard } from '@/common/guards/rab-api-key.guard';
 
 import { RowsDocs } from '../docs/rows.docs';
+import { RabRowsFindAllQueryDTO } from '../dtos/rab-rows-find-all-query.dto';
+import { RabRowsPaginatedResponseDTO } from '../dtos/rab-rows-paginated-response.dto';
 import { RabRowsService } from '../services/rab-rows.service';
 
 @ApiTags('RAB')
@@ -22,10 +17,8 @@ export class RowsController {
   @Get('rows')
   @RowsDocs()
   handle(
-    @Query('period') period: string,
-    @Query('skip', new DefaultValuePipe(0), ParseIntPipe) skip: number,
-    @Query('take', new DefaultValuePipe(50), ParseIntPipe) take: number,
-  ) {
-    return this.rabRows.execute(period, skip, take);
+    @Query() query: RabRowsFindAllQueryDTO,
+  ): Promise<RabRowsPaginatedResponseDTO> {
+    return this.rabRows.execute(query);
   }
 }
