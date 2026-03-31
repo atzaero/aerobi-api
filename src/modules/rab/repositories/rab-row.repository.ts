@@ -102,16 +102,16 @@ export class RabRowRepository implements IRabRowRepository {
     }
   }
 
-  findManyByPeriod(period: string, skip: number, take: number) {
+  findMany(where: Prisma.RabRowWhereInput, skip: number, take: number) {
     return this.prisma.rabRow.findMany({
-      where: { period },
+      where,
       skip,
       take,
       orderBy: { marcas: 'asc' },
     });
   }
 
-  countByPeriod(period: string) {
-    return this.prisma.rabRow.count({ where: { period } });
+  count(where: Prisma.RabRowWhereInput) {
+    return this.prisma.rabRow.count({ where });
   }
 }
