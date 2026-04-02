@@ -14,6 +14,13 @@ enum RabSyncStatus {
   FAILED
 }
 
+enum PrivateAerodromesSyncStatus {
+  PENDING
+  RUNNING
+  SUCCESS
+  FAILED
+}
+
 model RabSyncState {
   id             String         @id @default(cuid())
   period         String         @unique
@@ -67,4 +74,52 @@ model RabRow {
   @@unique([period, marcas])
   @@index([period])
   @@map("rab_row")
+}
+
+model PrivateAerodromesSyncState {
+  id             String                      @id @default(cuid())
+  datasetKey     String                      @unique @map("dataset_key")
+  datasetVersion String?                     @map("dataset_version")
+  sourceUrl      String                      @map("source_url")
+  lastModified   String?                     @map("last_modified")
+  contentLength  BigInt?                     @map("content_length")
+  contentHash    String?                     @map("content_hash")
+  parsedRowCount Int?                        @map("parsed_row_count")
+  syncedAt       DateTime?                   @map("synced_at") @db.Timestamptz(3)
+  status         PrivateAerodromesSyncStatus @default(PENDING)
+  errorMessage   String?                     @map("error_message")
+
+  @@map("private_aerodromes_sync_state")
+}
+
+model PrivateAerodrome {
+  id              String  @id @default(cuid())
+  codigoOaci      String? @map("codigo_oaci")
+  ciad            String  @unique
+  nome            String?
+  municipio       String?
+  uf              String?
+  longitude       String?
+  latitude        String?
+  altitude        String?
+  operacaoDiurna  String? @map("operacao_diurna")
+  operacaoNoturna String? @map("operacao_noturna")
+  designacao1     String? @map("designacao_1")
+  comprimento1    String? @map("comprimento_1")
+  largura1        String? @map("largura_1")
+  resistencia1    String? @map("resistencia_1")
+  superficie1     String? @map("superficie_1")
+  designacao2     String? @map("designacao_2")
+  comprimento2    String? @map("comprimento_2")
+  largura2        String? @map("largura_2")
+  resistencia2    String? @map("resistencia_2")
+  superficie2     String? @map("superficie_2")
+  portariaRegistro String? @map("portaria_registro")
+  linkPortaria    String? @map("link_portaria")
+  latGeoPoint     String? @map("lat_geo_point")
+  lonGeoPoint     String? @map("lon_geo_point")
+
+  @@index([codigoOaci])
+  @@index([uf, municipio])
+  @@map("private_aerodrome")
 }
