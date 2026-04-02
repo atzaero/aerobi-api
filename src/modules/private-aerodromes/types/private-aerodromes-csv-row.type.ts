@@ -1,0 +1,26 @@
+export type PrivateAerodromesCsvRow = {
+  codigoOaci: string | null;
+  ciad: string;
+  nome: string | null;
+  municipio: string | null;
+  uf: string | null;
+  longitude: string | null;
+  latitude: string | null;
+  altitude: string | null;
+  operacaoDiurna: string | null;
+  operacaoNoturna: string | null;
+  designacao1: string | null;
+  comprimento1: string | null;
+  largura1: string | null;
+  resistencia1: string | null;
+  superficie1: string | null;
+  designacao2: string | null;
+  comprimento2: string | null;
+  largura2: string | null;
+  resistencia2: string | null;
+  superficie2: string | null;
+  portariaRegistro: string | null;
+  linkPortaria: string | null;
+  latGeoPoint: string | null;
+  lonGeoPoint: string | null;
+};
