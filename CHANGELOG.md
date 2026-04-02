@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/atzaero/aerobi-api/compare/v1.2.0...v1.3.0) (2026-04-02)
+
+
+### Features
+
+* **private-aerodromes:** add ANAC private aerodromes sync pipeline ([5794689](https://github.com/atzaero/aerobi-api/commit/57946896462508153d4c10b987de1048feb36e73))
+
 # [1.2.0](https://github.com/atzaero/aerobi-api/compare/v1.1.0...v1.2.0) (2026-03-31)
 
 
