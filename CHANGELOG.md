@@ -1,3 +1,10 @@
+## Unreleased
+
+### BREAKING CHANGES
+
+* **auth:** uma única API key para o cliente — `AEROBI_API_KEY` + `AEROBI_REQUIRE_AUTH` substituem `RAB_SYNC_API_KEY`, `PRIVATE_AERODROMES_SYNC_API_KEY`, `PLUGFIELD_SYNC_API_KEY` e os respetivos `*_REQUIRE_AUTH`. Guard unificado: `AerobiApiKeyGuard`.
+* **plugfield:** credenciais vendor só no servidor — `PLUGFIELD_API_KEY` e `PLUGFIELD_TOKEN` substituem `PLUGFIELD_VENDOR_API_KEY` e `PLUGFIELD_VENDOR_AUTHORIZATION`; deixa de se repassar `Authorization` do cliente. Removido `POST /plugfield/login` na Aerobi.
+
 # [1.3.0](https://github.com/atzaero/aerobi-api/compare/v1.2.0...v1.3.0) (2026-04-02)
 
 

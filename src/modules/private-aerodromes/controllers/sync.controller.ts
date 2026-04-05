@@ -1,7 +1,7 @@
 import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
-import { PrivateAerodromesApiKeyGuard } from '@/common/guards/private-aerodromes-api-key.guard';
+import { AerobiApiKeyGuard } from '@/common/guards/aerobi-api-key.guard';
 
 import { SyncDocs } from '../docs/sync.docs';
 import { SyncPrivateAerodromesDto } from '../dtos/sync-private-aerodromes.dto';
@@ -9,7 +9,7 @@ import { PrivateAerodromesSyncService } from '../services/private-aerodromes-syn
 
 @ApiTags('Private Aerodromes')
 @Controller('private-aerodromes')
-@UseGuards(PrivateAerodromesApiKeyGuard)
+@UseGuards(AerobiApiKeyGuard)
 export class SyncController {
   constructor(private readonly sync: PrivateAerodromesSyncService) {}
 

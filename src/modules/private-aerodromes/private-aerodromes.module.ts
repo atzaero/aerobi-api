@@ -2,7 +2,7 @@ import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
-import { PrivateAerodromesApiKeyGuard } from '@/common/guards/private-aerodromes-api-key.guard';
+import { AerobiApiKeyGuard } from '@/common/guards/aerobi-api-key.guard';
 
 import { SyncController } from './controllers/sync.controller';
 import { SyncStateController } from './controllers/sync-state.controller';
@@ -33,7 +33,7 @@ import { PrivateAerodromesSyncStateService } from './services/private-aerodromes
   ],
   controllers: [SyncController, SyncStateController],
   providers: [
-    PrivateAerodromesApiKeyGuard,
+    AerobiApiKeyGuard,
     AnacPrivateAerodromesSourceService,
     PrivateAerodromesCsvParserService,
     PrivateAerodromeRepository,
