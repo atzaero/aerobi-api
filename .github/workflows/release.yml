@@ -1,9 +1,24 @@
 name: Production Release
 run-name: Release from ${{ github.ref_name }} by @${{ github.actor }}
 
-# Push em main → semantic-release (GH_TOKEN) → tag/release → build/push imagem GHCR.
-# Deploy: workflow deploy.yml em release published (secrets .env: AEROBI_API_KEY, PLUGFIELD_API_KEY,
-# PLUGFIELD_TOKEN; ver cabeçalho de deploy.yml — RAB_SYNC_API_KEY não é mais usado).
+# Push em main → semantic-release (GH_TOKEN) → tag/release → build/push imagem GHCR → deploy.
+# Sequência garantida: release → docker → deploy (sem race condition).
+#
+# Secrets GitHub necessários:
+#   GH_TOKEN — semantic-release + login GHCR no servidor
+#   SSH_PRIVATE_KEY, REMOTE_HOST, REMOTE_PORT, REMOTE_USER, REMOTE_TARGET
+#   DATABASE_URL, CORS_ORIGINS
+#
+# Autenticação API Aerobi (cliente → Aerobi, header X-API-Key):
+#   AEROBI_API_KEY — obrigatório em produção para rotas /rab, /private-aerodromes, /plugfield.
+#   AEROBI_REQUIRE_AUTH — opcional.
+#
+# Proxy Plugfield (Aerobi → Plugfield, só no servidor):
+#   PLUGFIELD_API_KEY, PLUGFIELD_TOKEN
+#   PLUGFIELD_API_BASE_URL, PLUGFIELD_HTTP_TIMEOUT_MS — opcionais
+#
+# Agendamento RAB (opcional):
+#   RAB_SYNC_CRON, RAB_SYNC_CRON_DISABLED
 
 on:
   push:
@@ -100,3 +115,99 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [release, docker]
+    if: needs.release.outputs.new_release_published == 'true'
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: v${{ needs.release.outputs.new_release_version }}
+
+      - name: Create SSH key
+        run: |
+          mkdir -p ~/.ssh/
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.REMOTE_HOST }} >> ~/.ssh/known_hosts || true
+
+      - name: Check and Create Target Directory
+        run: |
+          ssh -i ~/.ssh/deploy_key -p ${{ secrets.REMOTE_PORT }} ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} "
+            if [ ! -d \"${{ secrets.REMOTE_TARGET }}\" ]; then
+              mkdir -p ${{ secrets.REMOTE_TARGET }} && echo 'Directory created.';
+            else
+              echo 'Target directory exists.';
+            fi
+          "
+
+      - name: Create .env and transfer files
+        run: |
+          set -e
+          : > .env
+          echo "REGISTRY=${{ env.REGISTRY }}" >> .env
+          echo "IMAGE_NAME=${{ env.IMAGE_NAME }}" >> .env
+          echo "TAG=${{ needs.release.outputs.new_release_version }}" >> .env
+          echo "NODE_ENV=production" >> .env
+          if [ -n "${{ secrets.APP_PORT }}" ]; then echo "PORT=${{ secrets.APP_PORT }}" >> .env; else echo "PORT=3333" >> .env; fi
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
+          echo "CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}" >> .env
+          if [ -n "${{ secrets.ANAC_RAB_INDEX_URL }}" ]; then echo "ANAC_RAB_INDEX_URL=${{ secrets.ANAC_RAB_INDEX_URL }}" >> .env; fi
+          if [ -n "${{ secrets.HTTP_USER_AGENT }}" ]; then echo "HTTP_USER_AGENT=${{ secrets.HTTP_USER_AGENT }}" >> .env; fi
+          if [ -n "${{ secrets.AEROBI_API_KEY }}" ]; then echo "AEROBI_API_KEY=${{ secrets.AEROBI_API_KEY }}" >> .env; fi
+          if [ -n "${{ secrets.AEROBI_REQUIRE_AUTH }}" ]; then echo "AEROBI_REQUIRE_AUTH=${{ secrets.AEROBI_REQUIRE_AUTH }}" >> .env; fi
+          if [ -n "${{ secrets.PLUGFIELD_API_KEY }}" ]; then echo "PLUGFIELD_API_KEY=${{ secrets.PLUGFIELD_API_KEY }}" >> .env; fi
+          if [ -n "${{ secrets.PLUGFIELD_TOKEN }}" ]; then echo "PLUGFIELD_TOKEN=${{ secrets.PLUGFIELD_TOKEN }}" >> .env; fi
+          if [ -n "${{ secrets.PLUGFIELD_API_BASE_URL }}" ]; then echo "PLUGFIELD_API_BASE_URL=${{ secrets.PLUGFIELD_API_BASE_URL }}" >> .env; fi
+          if [ -n "${{ secrets.PLUGFIELD_HTTP_TIMEOUT_MS }}" ]; then echo "PLUGFIELD_HTTP_TIMEOUT_MS=${{ secrets.PLUGFIELD_HTTP_TIMEOUT_MS }}" >> .env; fi
+          if [ -n "${{ secrets.RAB_SYNC_CRON }}" ]; then echo "RAB_SYNC_CRON=${{ secrets.RAB_SYNC_CRON }}" >> .env; fi
+          if [ -n "${{ secrets.RAB_SYNC_CRON_DISABLED }}" ]; then echo "RAB_SYNC_CRON_DISABLED=${{ secrets.RAB_SYNC_CRON_DISABLED }}" >> .env; fi
+          scp -i ~/.ssh/deploy_key -P ${{ secrets.REMOTE_PORT }} \
+            docker-compose.prod.yml .env \
+            ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}:${{ secrets.REMOTE_TARGET }}
+
+      - name: Login to GitHub Container Registry on Remote Server
+        run: |
+          TOKEN="${{ secrets.GH_TOKEN }}"
+          if [ -z "$TOKEN" ]; then
+            echo "ERRO: GH_TOKEN nao disponivel"
+            exit 1
+          fi
+          echo "$TOKEN" | ssh -i ~/.ssh/deploy_key -p ${{ secrets.REMOTE_PORT }} ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} \
+            "docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin"
+
+      - name: Ensure Docker network warpgate exists
+        run: |
+          NETWORK_NAME="warpgate"
+          ssh -i ~/.ssh/deploy_key -p ${{ secrets.REMOTE_PORT }} ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} "
+            if ! docker network inspect \"$NETWORK_NAME\" >/dev/null 2>&1; then
+              docker network create \"$NETWORK_NAME\"
+            fi
+            docker network inspect \"$NETWORK_NAME\" >/dev/null
+          "
+
+      - name: Deploy to Server via SSH
+        run: |
+          ssh -i ~/.ssh/deploy_key -p ${{ secrets.REMOTE_PORT }} \
+            -o ServerAliveInterval=60 \
+            -o ServerAliveCountMax=3 \
+            -o ConnectTimeout=30 \
+            ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} "
+            cd ${{ secrets.REMOTE_TARGET }} && \
+            RETRY=0
+            while [ \$RETRY -lt 3 ]; do
+              if docker compose -f docker-compose.prod.yml --env-file .env pull --quiet; then break; fi
+              RETRY=\$((RETRY + 1))
+              sleep 10
+            done
+            docker compose -f docker-compose.prod.yml down --remove-orphans || true && \
+            docker compose -f docker-compose.prod.yml --env-file .env up -d --force-recreate && \
+            echo 'aerobi-api v${{ needs.release.outputs.new_release_version }} deployed'
+          "
+
+      - name: Cleanup
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
