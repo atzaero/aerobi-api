@@ -1,28 +1,28 @@
 import { BadGatewayException, BadRequestException } from '@nestjs/common';
 
 import { PlugfieldHttpService } from './plugfield-http.service';
-import { PlugfieldDataService } from './plugfield-data.service';
+import { PlugfieldDataDailyService } from './plugfield-data-daily.service';
 
-describe('PlugfieldDataService', () => {
-  let service: PlugfieldDataService;
+describe('PlugfieldDataDailyService', () => {
+  let service: PlugfieldDataDailyService;
   let requestJson: jest.Mock;
 
   beforeEach(() => {
     requestJson = jest.fn();
     const http = { requestJson } as unknown as PlugfieldHttpService;
-    service = new PlugfieldDataService(http);
+    service = new PlugfieldDataDailyService(http);
   });
 
   it('throws BadRequestException when sensorId and deviceId are missing', async () => {
-    await expect(service.getDaily({}, undefined)).rejects.toBeInstanceOf(
+    await expect(service.execute({}, undefined)).rejects.toBeInstanceOf(
       BadRequestException,
     );
   });
 
-  it('calls daily endpoint with trimmed sensorId', async () => {
+  it('calls daily endpoint with trimmed sensorId on execute', async () => {
     requestJson.mockResolvedValue({ a: 1 });
 
-    const actual = await service.getDaily(
+    const actual = await service.execute(
       { sensorId: ' s1 ', startTime: 1, endTime: 2 },
       undefined,
     );
@@ -46,15 +46,7 @@ describe('PlugfieldDataService', () => {
     requestJson.mockResolvedValue('string');
 
     await expect(
-      service.getSensor({ deviceId: 'd' }, undefined),
+      service.execute({ deviceId: 'd' }, undefined),
     ).rejects.toBeInstanceOf(BadGatewayException);
-  });
-
-  it('accepts array response from hourly', async () => {
-    requestJson.mockResolvedValue([1, 2]);
-
-    const actual = await service.getHourly({ deviceId: 'd' }, undefined);
-
-    expect(actual).toEqual([1, 2]);
   });
 });

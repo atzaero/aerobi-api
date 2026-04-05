@@ -4,12 +4,19 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 
 import { PlugfieldApiKeyGuard } from '@/common/guards/plugfield-api-key.guard';
 
-import { PlugfieldDataController } from './controllers/plugfield-data.controller';
+import { PlugfieldDataDailyController } from './controllers/plugfield-data-daily.controller';
+import { PlugfieldDataHourlyController } from './controllers/plugfield-data-hourly.controller';
+import { PlugfieldDataSensorController } from './controllers/plugfield-data-sensor.controller';
+import { PlugfieldDeviceAssociateController } from './controllers/plugfield-device-associate.controller';
 import { PlugfieldDeviceByIdController } from './controllers/plugfield-device-by-id.controller';
-import { PlugfieldDeviceController } from './controllers/plugfield-device.controller';
+import { PlugfieldDeviceListController } from './controllers/plugfield-device-list.controller';
 import { PlugfieldLoginController } from './controllers/plugfield-login.controller';
-import { PlugfieldDataService } from './services/plugfield-data.service';
-import { PlugfieldDeviceService } from './services/plugfield-device.service';
+import { PlugfieldDataDailyService } from './services/plugfield-data-daily.service';
+import { PlugfieldDataHourlyService } from './services/plugfield-data-hourly.service';
+import { PlugfieldDataSensorService } from './services/plugfield-data-sensor.service';
+import { PlugfieldDeviceAssociateService } from './services/plugfield-device-associate.service';
+import { PlugfieldDeviceByIdService } from './services/plugfield-device-by-id.service';
+import { PlugfieldDeviceListService } from './services/plugfield-device-list.service';
 import { PlugfieldHttpService } from './services/plugfield-http.service';
 import { PlugfieldLoginService } from './services/plugfield-login.service';
 
@@ -51,16 +58,23 @@ import { PlugfieldLoginService } from './services/plugfield-login.service';
   ],
   controllers: [
     PlugfieldLoginController,
-    PlugfieldDeviceController,
+    PlugfieldDeviceListController,
+    PlugfieldDeviceAssociateController,
     PlugfieldDeviceByIdController,
-    PlugfieldDataController,
+    PlugfieldDataDailyController,
+    PlugfieldDataHourlyController,
+    PlugfieldDataSensorController,
   ],
   providers: [
     PlugfieldApiKeyGuard,
     PlugfieldHttpService,
     PlugfieldLoginService,
-    PlugfieldDeviceService,
-    PlugfieldDataService,
+    PlugfieldDeviceListService,
+    PlugfieldDeviceAssociateService,
+    PlugfieldDeviceByIdService,
+    PlugfieldDataDailyService,
+    PlugfieldDataHourlyService,
+    PlugfieldDataSensorService,
   ],
 })
 export class PlugfieldModule {}

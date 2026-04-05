@@ -5,14 +5,16 @@ import { Request } from 'express';
 import { PlugfieldApiKeyGuard } from '@/common/guards/plugfield-api-key.guard';
 
 import { PlugfieldDeviceByIdDocs } from '../docs/plugfield-device-by-id.docs';
-import { PlugfieldDeviceService } from '../services/plugfield-device.service';
+import { PlugfieldDeviceByIdService } from '../services/plugfield-device-by-id.service';
 import { readIncomingAuthorization } from '../utils/read-incoming-authorization.util';
 
 @ApiTags('Plugfield')
 @Controller('plugfield')
 @UseGuards(PlugfieldApiKeyGuard)
 export class PlugfieldDeviceByIdController {
-  constructor(private readonly plugfieldDevice: PlugfieldDeviceService) {}
+  constructor(
+    private readonly plugfieldDeviceById: PlugfieldDeviceByIdService,
+  ) {}
 
   @Get('device/:deviceId')
   @PlugfieldDeviceByIdDocs()
@@ -21,6 +23,6 @@ export class PlugfieldDeviceByIdController {
     @Req() req: Request,
   ): Promise<Record<string, unknown>> {
     const auth = readIncomingAuthorization(req);
-    return this.plugfieldDevice.getDeviceById(deviceId, auth);
+    return this.plugfieldDeviceById.execute(deviceId, auth);
   }
 }
