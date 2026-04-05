@@ -124,14 +124,14 @@ jobs:
             -o ConnectTimeout=30 \
             ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} "
             cd ${{ secrets.REMOTE_TARGET }} && \
-            docker compose -f docker-compose.prod.yml down --remove-orphans || true && \
             RETRY=0
             while [ \$RETRY -lt 3 ]; do
-              if docker compose -f docker-compose.prod.yml pull --quiet; then break; fi
+              if docker compose -f docker-compose.prod.yml --env-file .env pull --quiet; then break; fi
               RETRY=\$((RETRY + 1))
               sleep 10
             done
-            docker compose -f docker-compose.prod.yml up -d --force-recreate && \
+            docker compose -f docker-compose.prod.yml down --remove-orphans || true && \
+            docker compose -f docker-compose.prod.yml --env-file .env up -d --force-recreate && \
             echo 'aerobi-api v${{ steps.version.outputs.version }} deployed'
           "
 
