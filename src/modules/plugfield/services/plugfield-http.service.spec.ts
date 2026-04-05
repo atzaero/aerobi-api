@@ -2,6 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import {
   BadGatewayException,
   HttpException,
+  Logger,
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -191,6 +192,9 @@ describe('PlugfieldHttpService', () => {
   });
 
   it('throws BadGatewayException on axios network error', async () => {
+    const errorLogSpy = jest
+      .spyOn(Logger.prototype, 'error')
+      .mockImplementation(() => {});
     httpRequest.mockReturnValue(throwError(() => new AxiosError('network')));
 
     await expect(
@@ -200,5 +204,7 @@ describe('PlugfieldHttpService', () => {
         useVendorAuthorization: true,
       }),
     ).rejects.toBeInstanceOf(BadGatewayException);
+
+    errorLogSpy.mockRestore();
   });
 });
