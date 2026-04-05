@@ -1,3 +1,19 @@
+# [2.0.0](https://github.com/atzaero/aerobi-api/compare/v1.3.0...v2.0.0) (2026-04-05)
+
+
+* feat(auth)!: AerobiApiKeyGuard, Plugfield credenciais no servidor ([c370977](https://github.com/atzaero/aerobi-api/commit/c370977e2b54ef4d5e0924b8f8b9075f12c09407)), closes [#9](https://github.com/atzaero/aerobi-api/issues/9)
+
+
+### Features
+
+* **plugfield:** adiciona módulo proxy para API Plugfield ([625fc86](https://github.com/atzaero/aerobi-api/commit/625fc8656240a853bd63eaa00a306e45af06b7bd)), closes [#9](https://github.com/atzaero/aerobi-api/issues/9)
+
+
+### BREAKING CHANGES
+
+* substitui RAB_SYNC_API_KEY, PRIVATE_AERODROMES_SYNC_API_KEY e PLUGFIELD_SYNC_API_KEY;
+PLUGFIELD_VENDOR_* passa a PLUGFIELD_API_KEY / PLUGFIELD_TOKEN.
+
 ## Unreleased
 
 ### BREAKING CHANGES
