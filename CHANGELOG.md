@@ -1,3 +1,10 @@
+## [2.0.1](https://github.com/atzaero/aerobi-api/compare/v2.0.0...v2.0.1) (2026-04-05)
+
+
+### Bug Fixes
+
+* **ci:** pull antes do down no deploy e checkout da tag no build Docker ([#13](https://github.com/atzaero/aerobi-api/issues/13)) ([2b198fd](https://github.com/atzaero/aerobi-api/commit/2b198fdc6bbdb11368083edda4d67c605232e484)), closes [#12](https://github.com/atzaero/aerobi-api/issues/12)
+
 # [2.0.0](https://github.com/atzaero/aerobi-api/compare/v1.3.0...v2.0.0) (2026-04-05)
 
 
