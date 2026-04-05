@@ -68,7 +68,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: v${{ needs.release.outputs.new_release_version }}
           fetch-depth: 0
 
       - name: Set up Docker Buildx
