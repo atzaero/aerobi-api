@@ -2,7 +2,7 @@ import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
-import { PlugfieldApiKeyGuard } from '@/common/guards/plugfield-api-key.guard';
+import { AerobiApiKeyGuard } from '@/common/guards/aerobi-api-key.guard';
 
 import { PlugfieldDataDailyController } from './controllers/plugfield-data-daily.controller';
 import { PlugfieldDataHourlyController } from './controllers/plugfield-data-hourly.controller';
@@ -10,7 +10,6 @@ import { PlugfieldDataSensorController } from './controllers/plugfield-data-sens
 import { PlugfieldDeviceAssociateController } from './controllers/plugfield-device-associate.controller';
 import { PlugfieldDeviceByIdController } from './controllers/plugfield-device-by-id.controller';
 import { PlugfieldDeviceListController } from './controllers/plugfield-device-list.controller';
-import { PlugfieldLoginController } from './controllers/plugfield-login.controller';
 import { PlugfieldDataDailyService } from './services/plugfield-data-daily.service';
 import { PlugfieldDataHourlyService } from './services/plugfield-data-hourly.service';
 import { PlugfieldDataSensorService } from './services/plugfield-data-sensor.service';
@@ -18,16 +17,15 @@ import { PlugfieldDeviceAssociateService } from './services/plugfield-device-ass
 import { PlugfieldDeviceByIdService } from './services/plugfield-device-by-id.service';
 import { PlugfieldDeviceListService } from './services/plugfield-device-list.service';
 import { PlugfieldHttpService } from './services/plugfield-http.service';
-import { PlugfieldLoginService } from './services/plugfield-login.service';
 
 /**
  * Proxy para a API Plugfield (`PLUGFIELD_API_BASE_URL`, default `https://prod-api.plugfield.com.br`).
  *
- * **Variáveis de ambiente**
- * - `PLUGFIELD_SYNC_API_KEY` — cliente → aerobi-api (`X-API-Key`); ver `PlugfieldApiKeyGuard`.
- * - `PLUGFIELD_SYNC_REQUIRE_AUTH` — força `X-API-Key` mesmo em `development` se truthy.
- * - `PLUGFIELD_VENDOR_API_KEY` — aerobi-api → Plugfield (`x-api-key`).
- * - `PLUGFIELD_VENDOR_AUTHORIZATION` — opcional; usado se o cliente não enviar `Authorization`.
+ * **Cliente → Aerobi:** `X-API-Key` = `AEROBI_API_KEY` (ver `AerobiApiKeyGuard`; bypass em `development` salvo `AEROBI_REQUIRE_AUTH`).
+ *
+ * **Aerobi → Plugfield (servidor):**
+ * - `PLUGFIELD_API_KEY` — header `x-api-key`.
+ * - `PLUGFIELD_TOKEN` — header `Authorization` nas rotas que exigem Bearer (prefixo `Bearer ` acrescentado se faltar).
  * - `PLUGFIELD_HTTP_TIMEOUT_MS` — timeout HTTP (default `8000`).
  * - `PLUGFIELD_API_BASE_URL` — base URL da Plugfield.
  */
@@ -57,7 +55,6 @@ import { PlugfieldLoginService } from './services/plugfield-login.service';
     }),
   ],
   controllers: [
-    PlugfieldLoginController,
     PlugfieldDeviceListController,
     PlugfieldDeviceAssociateController,
     PlugfieldDeviceByIdController,
@@ -66,9 +63,8 @@ import { PlugfieldLoginService } from './services/plugfield-login.service';
     PlugfieldDataSensorController,
   ],
   providers: [
-    PlugfieldApiKeyGuard,
+    AerobiApiKeyGuard,
     PlugfieldHttpService,
-    PlugfieldLoginService,
     PlugfieldDeviceListService,
     PlugfieldDeviceAssociateService,
     PlugfieldDeviceByIdService,

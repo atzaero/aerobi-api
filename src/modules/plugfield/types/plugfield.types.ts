@@ -3,11 +3,6 @@
  * Referência UI: https://wdg.plugfield.com.br/doc-api/index.html
  */
 
-export type PlugfieldLoginExecuteInput = {
-  readonly username: string;
-  readonly password: string;
-};
-
 export type PlugfieldDeviceListQuery = {
   readonly deviceId?: string;
   readonly code?: string;

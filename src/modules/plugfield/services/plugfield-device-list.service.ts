@@ -13,7 +13,6 @@ export class PlugfieldDeviceListService {
 
   async execute(
     query: PlugfieldDeviceListQuery,
-    incomingAuthorization?: string,
   ): Promise<Record<string, unknown>[]> {
     const raw = await this.plugfieldHttp.requestJson({
       method: 'GET',
@@ -23,7 +22,6 @@ export class PlugfieldDeviceListService {
         code: query.code,
       },
       useVendorAuthorization: true,
-      incomingAuthorization,
     });
 
     const items = normalizePlugfieldDeviceList(raw);

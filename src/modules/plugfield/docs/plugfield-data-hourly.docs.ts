@@ -12,6 +12,7 @@ export function PlugfieldDataHourlyDocs() {
     ApiOperation({
       summary: 'Proxy Plugfield: dados horários',
       description:
+        '**Autenticação Aerobi:** `X-API-Key` = `AEROBI_API_KEY`. ' +
         'Encaminha `GET /data/hourly` para a Plugfield. Exige `sensorId` ou `deviceId` na query. ' +
         'Resposta pode ser objeto ou array.',
     }),

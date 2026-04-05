@@ -62,25 +62,28 @@ docker compose -f docker-compose.prod.yml pull
 docker compose -f docker-compose.prod.yml up -d
 ```
 
+### Autenticação HTTP (API key única)
+
+- Rotas **`/rab/*`**, **`/private-aerodromes/*`** e **`/plugfield/*`** exigem header **`X-API-Key`** = **`AEROBI_API_KEY`**, exceto **`NODE_ENV=development`** sem `AEROBI_REQUIRE_AUTH` (bypass para DX). Com `AEROBI_REQUIRE_AUTH=true`, a chave é exigida também em development.
+- Em produção, `AEROBI_API_KEY` tem de estar definida; caso contrário essas rotas respondem 401.
+- No **aerobi-web** (Next), define **`AEROBI_API_KEY`** (ou o valor configurado no hosting) para enviar `X-API-Key` nas chamadas à API.
+
 ### Sincronização manual (RAB)
 
-- Todas as rotas **`/rab/*`** (GET `latest-period`, `sync-state`, `rows`, POST `sync`) exigem header **`X-API-Key`** = **`RAB_SYNC_API_KEY`**, exceto **`NODE_ENV=development`** sem `RAB_SYNC_REQUIRE_AUTH` (bypass para DX). Com `RAB_SYNC_REQUIRE_AUTH=true`, a chave é exigida também em development.
 - `POST /rab/sync` — corpo opcional `{ "period": "2026-03", "force": true }`.
-- Em produção, `RAB_SYNC_API_KEY` tem de estar definida; caso contrário as rotas RAB respondem 401.
-- No repositório **aerobi** (Next), usa-se o **mesmo nome** `RAB_SYNC_API_KEY` no `.env` / hosting para enviar `X-API-Key` nas chamadas a `/rab/*`.
 
 Cron: variável `RAB_SYNC_CRON` (padrão `0 5 * * *`). Desative jobs com `RAB_SYNC_CRON_DISABLED=true`.
 
 ### Proxy Plugfield (`/plugfield/*`)
 
-Rotas que encaminham pedidos à API Plugfield (`https://prod-api.plugfield.com.br` por defeito). Todas exigem header **`X-API-Key`** = **`PLUGFIELD_SYNC_API_KEY`**, exceto **`NODE_ENV=development`** sem `PLUGFIELD_SYNC_REQUIRE_AUTH` (igual ao padrão RAB). Com `PLUGFIELD_SYNC_REQUIRE_AUTH=true`, a chave é exigida também em development.
+Rotas que encaminham pedidos à API Plugfield (`https://prod-api.plugfield.com.br` por defeito). A autenticação do **cliente** para a Aerobi é a mesma **`X-API-Key`** = **`AEROBI_API_KEY`** (ver acima). As credenciais Plugfield ficam **só no servidor**:
 
-- **`PLUGFIELD_VENDOR_API_KEY`** — enviada à Plugfield como `x-api-key` (obrigatória para chamadas outbound).
-- **`PLUGFIELD_VENDOR_AUTHORIZATION`** — opcional; usada se o cliente não enviar `Authorization`.
+- **`PLUGFIELD_API_KEY`** — enviada à Plugfield como `x-api-key` (obrigatória para chamadas outbound).
+- **`PLUGFIELD_TOKEN`** — enviada como `Authorization` nas rotas vendor que exigem Bearer (se o valor não começar por `Bearer `, o prefixo é acrescentado).
 - **`PLUGFIELD_API_BASE_URL`** — opcional (default `https://prod-api.plugfield.com.br`).
 - **`PLUGFIELD_HTTP_TIMEOUT_MS`** — timeout HTTP em ms (default `8000`).
 
-Endpoints: `POST /plugfield/login`, `GET|POST /plugfield/device`, `GET /plugfield/device/:deviceId`, `GET /plugfield/data/daily`, `GET /plugfield/data/hourly`, `GET /plugfield/data/sensor`. Documentação vendor: [Swagger Plugfield](https://wdg.plugfield.com.br/doc-api/index.html).
+Endpoints: `GET|POST /plugfield/device`, `GET /plugfield/device/:deviceId`, `GET /plugfield/data/daily`, `GET /plugfield/data/hourly`, `GET /plugfield/data/sensor`. Não há `POST /plugfield/login` na Aerobi — o token é gerido via env. Documentação vendor: [Swagger Plugfield](https://wdg.plugfield.com.br/doc-api/index.html).
 
 ## Project setup
 
@@ -120,7 +123,7 @@ $ npm run test:cov
 - **Release** (`.github/workflows/release.yml`): push em `main` → `semantic-release` (precisa do secret `GH_TOKEN` com scope `repo`) → tag e imagem `ghcr.io/<owner>/<repo>:<versão>` e `:latest`.
 - **Deploy** (`.github/workflows/deploy.yml`): ao publicar uma release → SSH para o servidor, `.env` a partir de secrets, `docker compose -f docker-compose.prod.yml pull && up -d`.
 
-Secrets típicos do deploy: `SSH_PRIVATE_KEY`, `REMOTE_HOST`, `REMOTE_PORT`, `REMOTE_USER`, `REMOTE_TARGET`, `GH_TOKEN`, `DATABASE_URL`, `CORS_ORIGINS`; opcionais em `.env.example` / workflow.
+Secrets típicos do deploy: `SSH_PRIVATE_KEY`, `REMOTE_HOST`, `REMOTE_PORT`, `REMOTE_USER`, `REMOTE_TARGET`, `GH_TOKEN`, `DATABASE_URL`, `CORS_ORIGINS`. Para a API em produção: **`AEROBI_API_KEY`** (substitui o antigo `RAB_SYNC_API_KEY`, que o workflow já não grava no `.env`), **`PLUGFIELD_API_KEY`** e **`PLUGFIELD_TOKEN`** para o proxy Plugfield; opcionais: `AEROBI_REQUIRE_AUTH`, `PLUGFIELD_API_BASE_URL`, `PLUGFIELD_HTTP_TIMEOUT_MS`, `RAB_SYNC_CRON`, etc. — ver comentários no topo de `.github/workflows/deploy.yml`.
 
 Versões e changelog: [Conventional Commits](https://www.conventionalcommits.org/) em `main`; commit de release usa `[skip ci]` para não duplicar CI.
 

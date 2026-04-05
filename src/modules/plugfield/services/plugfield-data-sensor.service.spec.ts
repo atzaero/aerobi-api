@@ -16,15 +16,15 @@ describe('PlugfieldDataSensorService', () => {
   it('throws BadGatewayException on invalid shape', async () => {
     requestJson.mockResolvedValue('string');
 
-    await expect(
-      service.execute({ deviceId: 'd' }, undefined),
-    ).rejects.toBeInstanceOf(BadGatewayException);
+    await expect(service.execute({ deviceId: 'd' })).rejects.toBeInstanceOf(
+      BadGatewayException,
+    );
   });
 
   it('uses sensor path on execute', async () => {
     requestJson.mockResolvedValue({ ok: true });
 
-    await service.execute({ sensorId: 's' }, undefined);
+    await service.execute({ sensorId: 's' });
 
     expect(requestJson).toHaveBeenCalledWith(
       expect.objectContaining({

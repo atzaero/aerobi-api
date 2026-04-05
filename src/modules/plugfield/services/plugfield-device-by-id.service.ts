@@ -9,16 +9,12 @@ import { PlugfieldHttpService } from './plugfield-http.service';
 export class PlugfieldDeviceByIdService {
   constructor(private readonly plugfieldHttp: PlugfieldHttpService) {}
 
-  async execute(
-    deviceId: string,
-    incomingAuthorization?: string,
-  ): Promise<Record<string, unknown>> {
+  async execute(deviceId: string): Promise<Record<string, unknown>> {
     const encoded = encodeURIComponent(deviceId);
     const raw = await this.plugfieldHttp.requestJson({
       method: 'GET',
       path: `/device/${encoded}`,
       useVendorAuthorization: true,
-      incomingAuthorization,
     });
 
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {

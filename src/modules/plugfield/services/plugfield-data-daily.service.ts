@@ -14,15 +14,7 @@ import { PlugfieldHttpService } from './plugfield-http.service';
 export class PlugfieldDataDailyService {
   constructor(private readonly plugfieldHttp: PlugfieldHttpService) {}
 
-  async execute(
-    query: PlugfieldDataQuery,
-    incomingAuthorization?: string,
-  ): Promise<PlugfieldDataResult> {
-    return requestPlugfieldData(
-      this.plugfieldHttp,
-      '/data/daily',
-      query,
-      incomingAuthorization,
-    );
+  async execute(query: PlugfieldDataQuery): Promise<PlugfieldDataResult> {
+    return requestPlugfieldData(this.plugfieldHttp, '/data/daily', query);
   }
 }

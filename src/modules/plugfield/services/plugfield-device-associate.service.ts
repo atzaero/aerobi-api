@@ -16,7 +16,6 @@ export class PlugfieldDeviceAssociateService {
 
   async execute(
     input: PlugfieldDeviceAssociateInput,
-    incomingAuthorization?: string,
   ): Promise<Record<string, unknown>> {
     const d = input.deviceId?.trim() ?? '';
     const c = input.code?.trim() ?? '';
@@ -31,7 +30,6 @@ export class PlugfieldDeviceAssociateService {
       path: '/device',
       body,
       useVendorAuthorization: true,
-      incomingAuthorization,
     });
 
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {

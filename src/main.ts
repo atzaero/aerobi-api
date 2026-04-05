@@ -42,14 +42,12 @@ async function bootstrap() {
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Aerobi API')
     .setDescription(
-      'API Nest para sincronização do RAB (ANAC). ' +
-        '**Todas as rotas `/rab/*`** exigem header **`X-API-Key`** igual a **`RAB_SYNC_API_KEY`**, ' +
-        'exceto em **`NODE_ENV=development`** sem `RAB_SYNC_REQUIRE_AUTH` (bypass para DX local). ' +
-        'Com `RAB_SYNC_REQUIRE_AUTH=true`, o bypass é desativado também em development. ' +
-        'Ver JSDoc: `RabApiKeyGuard`. ' +
-        '**Rotas `/plugfield/*`** são proxy para a API Plugfield; exigem **`X-API-Key`** = **`PLUGFIELD_SYNC_API_KEY`** ' +
-        '(mesmo padrão de bypass em development com `PLUGFIELD_SYNC_REQUIRE_AUTH`). ' +
-        'Ver JSDoc: `PlugfieldApiKeyGuard`.',
+      'API Nest para sincronização do RAB (ANAC), aeródromos privados e proxy Plugfield. ' +
+        '**Rotas `/rab/*`, `/private-aerodromes/*` e `/plugfield/*`** exigem header **`X-API-Key`** igual a **`AEROBI_API_KEY`**, ' +
+        'exceto em **`NODE_ENV=development`** sem `AEROBI_REQUIRE_AUTH` (bypass para DX local). ' +
+        'Com `AEROBI_REQUIRE_AUTH=true`, o bypass é desativado também em development. ' +
+        'Ver JSDoc: `AerobiApiKeyGuard`. ' +
+        'Credenciais Plugfield (`PLUGFIELD_API_KEY`, `PLUGFIELD_TOKEN`) ficam só no servidor; o cliente não as envia.',
     )
     .setVersion('1.0')
     .addApiKey({ type: 'apiKey', name: 'X-API-Key', in: 'header' })

@@ -9,8 +9,8 @@ export function PlugfieldDeviceListDocs() {
     ApiOperation({
       summary: 'Proxy Plugfield: listar estações',
       description:
-        'Encaminha `GET /device` para a Plugfield. Opcionalmente repassa header `Authorization` do cliente ou usa `PLUGFIELD_VENDOR_AUTHORIZATION`. ' +
-        'Exemplo ilustrativo.',
+        'Encaminha `GET /device` para a Plugfield. A Aerobi envia `Authorization` a partir de `PLUGFIELD_TOKEN` no servidor. ' +
+        '**Autenticação Aerobi:** `X-API-Key` = `AEROBI_API_KEY` (ver `AerobiApiKeyGuard`). Exemplo ilustrativo.',
     }),
     ApiOkResponse({
       description: 'Lista de estações (formato pode variar).',

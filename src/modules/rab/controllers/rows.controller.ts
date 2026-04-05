@@ -1,7 +1,7 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
-import { RabApiKeyGuard } from '@/common/guards/rab-api-key.guard';
+import { AerobiApiKeyGuard } from '@/common/guards/aerobi-api-key.guard';
 
 import { RowsDocs } from '../docs/rows.docs';
 import { RabRowsFindAllQueryDTO } from '../dtos/rab-rows-find-all-query.dto';
@@ -10,7 +10,7 @@ import { RabRowsService } from '../services/rab-rows.service';
 
 @ApiTags('RAB')
 @Controller('rab')
-@UseGuards(RabApiKeyGuard)
+@UseGuards(AerobiApiKeyGuard)
 export class RowsController {
   constructor(private readonly rabRows: RabRowsService) {}
 

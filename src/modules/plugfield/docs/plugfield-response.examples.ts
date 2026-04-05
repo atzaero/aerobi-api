@@ -2,11 +2,6 @@
  * Exemplos ilustrativos para Swagger (formato real pode variar; ver documentação Plugfield).
  */
 
-export const plugfieldLoginResponseExample: Record<string, unknown> = {
-  access_token:
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.example',
-};
-
 export const plugfieldDeviceListResponseExample: unknown[] = [
   {
     deviceId: 'device-uuid-001',

@@ -12,6 +12,7 @@ export function PlugfieldDataDailyDocs() {
     ApiOperation({
       summary: 'Proxy Plugfield: dados diários',
       description:
+        '**Autenticação Aerobi:** `X-API-Key` = `AEROBI_API_KEY`. ' +
         'Encaminha `GET /data/daily` para a Plugfield. Exige `sensorId` ou `deviceId` na query; tempos em Unix ms. ' +
         'A resposta pode ser objeto (ex.: agrupado por timestamp) ou array — ver exemplos.',
     }),

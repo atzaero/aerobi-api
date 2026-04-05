@@ -9,6 +9,7 @@ export function PlugfieldDeviceAssociateDocs() {
     ApiOperation({
       summary: 'Proxy Plugfield: associar estação',
       description:
+        '**Autenticação Aerobi:** `X-API-Key` = `AEROBI_API_KEY`. ' +
         'Encaminha `POST /device` para a Plugfield com `deviceId` ou `code` no corpo. ' +
         'Exemplo ilustrativo.',
     }),

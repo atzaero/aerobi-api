@@ -14,7 +14,7 @@ describe('PlugfieldDataHourlyService', () => {
   it('accepts array response on execute', async () => {
     requestJson.mockResolvedValue([1, 2]);
 
-    const actual = await service.execute({ deviceId: 'd' }, undefined);
+    const actual = await service.execute({ deviceId: 'd' });
 
     expect(actual).toEqual([1, 2]);
     expect(requestJson).toHaveBeenCalledWith(

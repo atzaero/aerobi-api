@@ -4,4 +4,3 @@ export { PlugfieldDataSensorDocs } from './plugfield-data-sensor.docs';
 export { PlugfieldDeviceAssociateDocs } from './plugfield-device-associate.docs';
 export { PlugfieldDeviceByIdDocs } from './plugfield-device-by-id.docs';
 export { PlugfieldDeviceListDocs } from './plugfield-device-list.docs';
-export { PlugfieldLoginDocs } from './plugfield-login.docs';

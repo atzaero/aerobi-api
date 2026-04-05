@@ -9,6 +9,7 @@ export function PlugfieldDeviceByIdDocs() {
     ApiOperation({
       summary: 'Proxy Plugfield: estação por id/código',
       description:
+        '**Autenticação Aerobi:** `X-API-Key` = `AEROBI_API_KEY`. ' +
         'Encaminha `GET /device/{deviceId}` para a Plugfield. Exemplo ilustrativo.',
     }),
     ApiOkResponse({

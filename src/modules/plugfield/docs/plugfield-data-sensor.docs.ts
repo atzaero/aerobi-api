@@ -12,6 +12,7 @@ export function PlugfieldDataSensorDocs() {
     ApiOperation({
       summary: 'Proxy Plugfield: leituras de sensor',
       description:
+        '**Autenticação Aerobi:** `X-API-Key` = `AEROBI_API_KEY`. ' +
         'Encaminha `GET /data/sensor` para a Plugfield. Exige `sensorId` ou `deviceId` na query.',
     }),
     ApiOkResponse({

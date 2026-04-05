@@ -14,7 +14,7 @@ describe('PlugfieldDataDailyService', () => {
   });
 
   it('throws BadRequestException when sensorId and deviceId are missing', async () => {
-    await expect(service.execute({}, undefined)).rejects.toBeInstanceOf(
+    await expect(service.execute({})).rejects.toBeInstanceOf(
       BadRequestException,
     );
   });
@@ -22,10 +22,11 @@ describe('PlugfieldDataDailyService', () => {
   it('calls daily endpoint with trimmed sensorId on execute', async () => {
     requestJson.mockResolvedValue({ a: 1 });
 
-    const actual = await service.execute(
-      { sensorId: ' s1 ', startTime: 1, endTime: 2 },
-      undefined,
-    );
+    const actual = await service.execute({
+      sensorId: ' s1 ',
+      startTime: 1,
+      endTime: 2,
+    });
 
     expect(actual).toEqual({ a: 1 });
     expect(requestJson).toHaveBeenCalledWith(
@@ -45,8 +46,8 @@ describe('PlugfieldDataDailyService', () => {
   it('throws BadGatewayException on invalid data shape', async () => {
     requestJson.mockResolvedValue('string');
 
-    await expect(
-      service.execute({ deviceId: 'd' }, undefined),
-    ).rejects.toBeInstanceOf(BadGatewayException);
+    await expect(service.execute({ deviceId: 'd' })).rejects.toBeInstanceOf(
+      BadGatewayException,
+    );
   });
 });

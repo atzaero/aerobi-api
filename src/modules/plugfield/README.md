@@ -2,13 +2,15 @@
 
 Proxy HTTP para a API vendor [Plugfield](https://wdg.plugfield.com.br/doc-api/index.html). Variáveis e rotas: ver comentários em `plugfield.module.ts` e README raiz do repositório.
 
+**Autenticação:** o cliente envia apenas **`X-API-Key`** = **`AEROBI_API_KEY`** (guard partilhado com RAB e aeródromos privados). **`PLUGFIELD_API_KEY`** e **`PLUGFIELD_TOKEN`** existem só no backend e não são enviados pelo cliente. Não há rota `POST /plugfield/login` na Aerobi.
+
 ## Saídas (tipagens) — estado atual
 
 As respostas expostas pela **aerobi-api** são **propositalmente genéricas**:
 
 | Área | Tipo de retorno (TypeScript) |
 |------|------------------------------|
-| Login, associate, device por id | `Record<string, unknown>` |
+| Associate, device por id | `Record<string, unknown>` |
 | Lista de devices | `Record<string, unknown>[]` |
 | Dados (`daily` / `hourly` / `sensor`) | `PlugfieldDataResult` = `Record<string, unknown> \| unknown[]` |
 

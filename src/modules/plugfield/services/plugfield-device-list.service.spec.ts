@@ -14,7 +14,7 @@ describe('PlugfieldDeviceListService', () => {
   it('normalizes array response on execute', async () => {
     requestJson.mockResolvedValue([{ id: '1' }]);
 
-    const actual = await service.execute({}, undefined);
+    const actual = await service.execute({});
 
     expect(actual).toEqual([{ id: '1' }]);
   });
@@ -22,7 +22,7 @@ describe('PlugfieldDeviceListService', () => {
   it('normalizes wrapped data array on execute', async () => {
     requestJson.mockResolvedValue({ data: [{ id: '1' }] });
 
-    const actual = await service.execute({}, undefined);
+    const actual = await service.execute({});
 
     expect(actual).toEqual([{ id: '1' }]);
   });
@@ -30,7 +30,7 @@ describe('PlugfieldDeviceListService', () => {
   it('returns empty array when response has no recognizable list shape', async () => {
     requestJson.mockResolvedValue({ notList: true });
 
-    const actual = await service.execute({}, undefined);
+    const actual = await service.execute({});
 
     expect(actual).toEqual([]);
   });

@@ -16,20 +16,20 @@ export type PlugfieldHttpRequestOptions = {
   readonly query?: Record<string, string | number | undefined>;
   readonly body?: unknown;
   /**
-   * When false, do not send Authorization to Plugfield (e.g. POST /login).
+   * When true, send `Authorization` from `PLUGFIELD_TOKEN` when configured.
+   * When false, do not send Authorization (legacy paths that did not need Bearer).
    */
   readonly useVendorAuthorization: boolean;
-  /** Optional Authorization header from the incoming Aerobi client request. */
-  readonly incomingAuthorization?: string | undefined;
 };
 
 /**
  * HTTP client for Plugfield vendor API (`prod-api.plugfield.com.br`).
  *
  * **Environment**
- * - `PLUGFIELD_VENDOR_API_KEY` — sent as `x-api-key` (required for outbound calls).
+ * - `PLUGFIELD_API_KEY` — sent as `x-api-key` (required for outbound calls).
  * - `PLUGFIELD_API_BASE_URL` — default `https://prod-api.plugfield.com.br`.
- * - `PLUGFIELD_VENDOR_AUTHORIZATION` — optional default Bearer/token when client does not pass `Authorization`.
+ * - `PLUGFIELD_TOKEN` — optional; when `useVendorAuthorization` is true, sent as `Authorization`
+ *   (if value has no `Bearer ` prefix, `Bearer ` is prepended).
  */
 @Injectable()
 export class PlugfieldHttpService {
@@ -47,11 +47,11 @@ export class PlugfieldHttpService {
     return raw.replace(/\/$/, '');
   }
 
-  getVendorApiKey(): string {
-    const key = this.config.get<string>('PLUGFIELD_VENDOR_API_KEY', '')?.trim();
+  getPlugfieldApiKey(): string {
+    const key = this.config.get<string>('PLUGFIELD_API_KEY', '')?.trim();
     if (!key) {
       throw new ServiceUnavailableException(
-        'Plugfield vendor API key not configured (PLUGFIELD_VENDOR_API_KEY)',
+        'Plugfield API key not configured (PLUGFIELD_API_KEY)',
       );
     }
     return key;
@@ -61,7 +61,7 @@ export class PlugfieldHttpService {
    * Performs a request to Plugfield and returns parsed JSON body.
    */
   async requestJson(options: PlugfieldHttpRequestOptions): Promise<unknown> {
-    const vendorKey = this.getVendorApiKey();
+    const vendorKey = this.getPlugfieldApiKey();
     const base = this.getBaseUrl();
     const path = options.path.startsWith('/')
       ? options.path
@@ -74,9 +74,7 @@ export class PlugfieldHttpService {
     };
 
     if (options.useVendorAuthorization) {
-      const authHeader = this.resolveAuthorizationHeader(
-        options.incomingAuthorization,
-      );
+      const authHeader = this.resolveAuthorizationFromEnv();
       if (authHeader) {
         headers['Authorization'] = authHeader;
       }
@@ -136,17 +134,15 @@ export class PlugfieldHttpService {
     }
   }
 
-  private resolveAuthorizationHeader(
-    incomingAuthorization: string | undefined,
-  ): string | undefined {
-    const fromRequest = incomingAuthorization?.trim();
-    if (fromRequest) {
-      return fromRequest;
+  private resolveAuthorizationFromEnv(): string | undefined {
+    const raw = this.config.get<string>('PLUGFIELD_TOKEN', '')?.trim();
+    if (!raw) {
+      return undefined;
     }
-    const fromEnv = this.config
-      .get<string>('PLUGFIELD_VENDOR_AUTHORIZATION', '')
-      ?.trim();
-    return fromEnv || undefined;
+    if (/^Bearer\s/i.test(raw)) {
+      return raw;
+    }
+    return `Bearer ${raw}`;
   }
 
   private buildAxiosParams(

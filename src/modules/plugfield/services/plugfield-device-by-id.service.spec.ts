@@ -14,7 +14,7 @@ describe('PlugfieldDeviceByIdService', () => {
   it('returns object on execute', async () => {
     requestJson.mockResolvedValue({ id: 'x' });
 
-    const actual = await service.execute('x', undefined);
+    const actual = await service.execute('x');
 
     expect(actual).toEqual({ id: 'x' });
     expect(requestJson).toHaveBeenCalledWith(

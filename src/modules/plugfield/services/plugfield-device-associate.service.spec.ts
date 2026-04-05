@@ -14,7 +14,7 @@ describe('PlugfieldDeviceAssociateService', () => {
   });
 
   it('throws BadRequestException when neither deviceId nor code', async () => {
-    await expect(service.execute({}, undefined)).rejects.toBeInstanceOf(
+    await expect(service.execute({})).rejects.toBeInstanceOf(
       BadRequestException,
     );
   });
@@ -22,7 +22,7 @@ describe('PlugfieldDeviceAssociateService', () => {
   it('posts deviceId when execute receives deviceId', async () => {
     requestJson.mockResolvedValue({ ok: true });
 
-    await service.execute({ deviceId: ' d1 ' }, undefined);
+    await service.execute({ deviceId: ' d1 ' });
 
     expect(requestJson).toHaveBeenCalledWith(
       expect.objectContaining({

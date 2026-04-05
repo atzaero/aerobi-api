@@ -23,7 +23,6 @@ export async function requestPlugfieldData(
   http: PlugfieldHttpService,
   path: '/data/daily' | '/data/hourly' | '/data/sensor',
   query: PlugfieldDataQuery,
-  incomingAuthorization?: string,
 ): Promise<PlugfieldDataResult> {
   const s = query.sensorId?.trim() ?? '';
   const d = query.deviceId?.trim() ?? '';
@@ -41,7 +40,6 @@ export async function requestPlugfieldData(
       endTime: query.endTime,
     },
     useVendorAuthorization: true,
-    incomingAuthorization,
   });
 
   if (!isDataShape(raw)) {
