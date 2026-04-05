@@ -1,3 +1,10 @@
+## [2.0.2](https://github.com/atzaero/aerobi-api/compare/v2.0.1...v2.0.2) (2026-04-05)
+
+
+### Bug Fixes
+
+* **ci:** consolidar deploy em release.yml após build da imagem Docker ([#16](https://github.com/atzaero/aerobi-api/issues/16)) ([86d3966](https://github.com/atzaero/aerobi-api/commit/86d3966d1ffc6d3b7316f23db2761993dacd54e5)), closes [#15](https://github.com/atzaero/aerobi-api/issues/15)
+
 ## [2.0.1](https://github.com/atzaero/aerobi-api/compare/v2.0.0...v2.0.1) (2026-04-05)
 
 
