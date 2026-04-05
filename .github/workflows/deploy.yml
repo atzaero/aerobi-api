@@ -3,6 +3,24 @@ run-name: Deploy ${{ github.event.release.tag_name }} by @${{ github.actor }}
 
 # Disparado quando semantic-release publica uma release.
 # Transfere docker-compose.prod.yml + .env; pull GHCR; sobe stack na rede Docker warpgate.
+#
+# Secrets GitHub (deploy) — obrigatórios típicos:
+#   SSH_PRIVATE_KEY, REMOTE_HOST, REMOTE_PORT, REMOTE_USER, REMOTE_TARGET,
+#   GH_TOKEN, DATABASE_URL, CORS_ORIGINS
+#
+# Autenticação API Aerobi (cliente → Aerobi, header X-API-Key):
+#   AEROBI_API_KEY — obrigatório em produção para rotas /rab, /private-aerodromes, /plugfield (401 se vazio).
+#   AEROBI_REQUIRE_AUTH — opcional (forçar X-API-Key mesmo onde haveria bypass em development).
+#
+# Proxy Plugfield (Aerobi → Plugfield, só no servidor; secrets separados de AEROBI_API_KEY):
+#   PLUGFIELD_API_KEY — x-api-key para a Plugfield.
+#   PLUGFIELD_TOKEN — Authorization (Bearer) para a Plugfield.
+#   PLUGFIELD_API_BASE_URL, PLUGFIELD_HTTP_TIMEOUT_MS — opcionais
+#
+# Agendamento RAB (opcional):
+#   RAB_SYNC_CRON, RAB_SYNC_CRON_DISABLED
+#
+# Obsoleto: este workflow já não escreve RAB_SYNC_API_KEY. Usar só AEROBI_API_KEY. Apagar o secret antigo no GitHub se existir.
 
 on:
   release:
@@ -64,8 +82,14 @@ jobs:
           echo "CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}" >> .env
           if [ -n "${{ secrets.ANAC_RAB_INDEX_URL }}" ]; then echo "ANAC_RAB_INDEX_URL=${{ secrets.ANAC_RAB_INDEX_URL }}" >> .env; fi
           if [ -n "${{ secrets.HTTP_USER_AGENT }}" ]; then echo "HTTP_USER_AGENT=${{ secrets.HTTP_USER_AGENT }}" >> .env; fi
-          if [ -n "${{ secrets.RAB_SYNC_API_KEY }}" ]; then echo "RAB_SYNC_API_KEY=${{ secrets.RAB_SYNC_API_KEY }}" >> .env; fi
-          if [ -n "${{ secrets.RAB_SYNC_REQUIRE_AUTH }}" ]; then echo "RAB_SYNC_REQUIRE_AUTH=${{ secrets.RAB_SYNC_REQUIRE_AUTH }}" >> .env; fi
+          # Cliente → Aerobi (X-API-Key). Substitui secrets antigos por módulo, ex.: RAB_SYNC_API_KEY.
+          if [ -n "${{ secrets.AEROBI_API_KEY }}" ]; then echo "AEROBI_API_KEY=${{ secrets.AEROBI_API_KEY }}" >> .env; fi
+          if [ -n "${{ secrets.AEROBI_REQUIRE_AUTH }}" ]; then echo "AEROBI_REQUIRE_AUTH=${{ secrets.AEROBI_REQUIRE_AUTH }}" >> .env; fi
+          # Aerobi → Plugfield (credenciais só no servidor)
+          if [ -n "${{ secrets.PLUGFIELD_API_KEY }}" ]; then echo "PLUGFIELD_API_KEY=${{ secrets.PLUGFIELD_API_KEY }}" >> .env; fi
+          if [ -n "${{ secrets.PLUGFIELD_TOKEN }}" ]; then echo "PLUGFIELD_TOKEN=${{ secrets.PLUGFIELD_TOKEN }}" >> .env; fi
+          if [ -n "${{ secrets.PLUGFIELD_API_BASE_URL }}" ]; then echo "PLUGFIELD_API_BASE_URL=${{ secrets.PLUGFIELD_API_BASE_URL }}" >> .env; fi
+          if [ -n "${{ secrets.PLUGFIELD_HTTP_TIMEOUT_MS }}" ]; then echo "PLUGFIELD_HTTP_TIMEOUT_MS=${{ secrets.PLUGFIELD_HTTP_TIMEOUT_MS }}" >> .env; fi
           if [ -n "${{ secrets.RAB_SYNC_CRON }}" ]; then echo "RAB_SYNC_CRON=${{ secrets.RAB_SYNC_CRON }}" >> .env; fi
           if [ -n "${{ secrets.RAB_SYNC_CRON_DISABLED }}" ]; then echo "RAB_SYNC_CRON_DISABLED=${{ secrets.RAB_SYNC_CRON_DISABLED }}" >> .env; fi
           scp -i ~/.ssh/deploy_key -P ${{ secrets.REMOTE_PORT }} \

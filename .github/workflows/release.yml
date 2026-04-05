@@ -2,7 +2,8 @@ name: Production Release
 run-name: Release from ${{ github.ref_name }} by @${{ github.actor }}
 
 # Push em main → semantic-release (GH_TOKEN) → tag/release → build/push imagem GHCR.
-# Deploy: workflow deploy.yml em release published.
+# Deploy: workflow deploy.yml em release published (secrets .env: AEROBI_API_KEY, PLUGFIELD_API_KEY,
+# PLUGFIELD_TOKEN; ver cabeçalho de deploy.yml — RAB_SYNC_API_KEY não é mais usado).
 
 on:
   push:

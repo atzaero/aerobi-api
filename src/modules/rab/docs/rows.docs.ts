@@ -13,7 +13,7 @@ import { RabRowResponseDTO } from '../dtos/rab-row-response.dto';
 import { RabRowsPaginatedResponseDTO } from '../dtos/rab-rows-paginated-response.dto';
 
 /**
- * Ver `RabApiKeyGuard`: em produção (ou dev com auth forçada) exige `X-API-Key`.
+ * Ver `AerobiApiKeyGuard`: em produção (ou dev com auth forçada) exige `X-API-Key`.
  */
 export function RowsDocs() {
   return applyDecorators(
@@ -27,7 +27,7 @@ export function RowsDocs() {
       summary:
         'Consulta paginada de linhas RAB por período (dados abertos ANAC)',
       description:
-        '**Autenticação:** `X-API-Key` = `RAB_SYNC_API_KEY` (exceto bypass em `development`; ver guard). ' +
+        '**Autenticação:** `X-API-Key` = `AEROBI_API_KEY` (exceto bypass em `development`; ver guard). ' +
         'Resposta no formato `{ data, meta }` (padrão paginado; metadados em `meta`). ' +
         'Filtros opcionais usam correspondência parcial case-insensitive (`contains`).',
     }),

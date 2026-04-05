@@ -7,7 +7,7 @@ export function SyncStateDocs() {
     ApiOperation({
       summary: 'Estados de sincronização de Aeródromos Privados',
       description:
-        '**Autenticação:** `X-API-Key` = `PRIVATE_AERODROMES_SYNC_API_KEY` (exceto bypass em `development`; ver guard).',
+        '**Autenticação:** `X-API-Key` = `AEROBI_API_KEY` (exceto bypass em `development`; ver `AerobiApiKeyGuard`).',
     }),
   );
 }
