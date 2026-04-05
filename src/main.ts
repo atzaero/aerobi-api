@@ -46,7 +46,10 @@ async function bootstrap() {
         '**Todas as rotas `/rab/*`** exigem header **`X-API-Key`** igual a **`RAB_SYNC_API_KEY`**, ' +
         'exceto em **`NODE_ENV=development`** sem `RAB_SYNC_REQUIRE_AUTH` (bypass para DX local). ' +
         'Com `RAB_SYNC_REQUIRE_AUTH=true`, o bypass é desativado também em development. ' +
-        'Ver JSDoc: `RabApiKeyGuard`.',
+        'Ver JSDoc: `RabApiKeyGuard`. ' +
+        '**Rotas `/plugfield/*`** são proxy para a API Plugfield; exigem **`X-API-Key`** = **`PLUGFIELD_SYNC_API_KEY`** ' +
+        '(mesmo padrão de bypass em development com `PLUGFIELD_SYNC_REQUIRE_AUTH`). ' +
+        'Ver JSDoc: `PlugfieldApiKeyGuard`.',
     )
     .setVersion('1.0')
     .addApiKey({ type: 'apiKey', name: 'X-API-Key', in: 'header' })

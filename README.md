@@ -71,6 +71,17 @@ docker compose -f docker-compose.prod.yml up -d
 
 Cron: variável `RAB_SYNC_CRON` (padrão `0 5 * * *`). Desative jobs com `RAB_SYNC_CRON_DISABLED=true`.
 
+### Proxy Plugfield (`/plugfield/*`)
+
+Rotas que encaminham pedidos à API Plugfield (`https://prod-api.plugfield.com.br` por defeito). Todas exigem header **`X-API-Key`** = **`PLUGFIELD_SYNC_API_KEY`**, exceto **`NODE_ENV=development`** sem `PLUGFIELD_SYNC_REQUIRE_AUTH` (igual ao padrão RAB). Com `PLUGFIELD_SYNC_REQUIRE_AUTH=true`, a chave é exigida também em development.
+
+- **`PLUGFIELD_VENDOR_API_KEY`** — enviada à Plugfield como `x-api-key` (obrigatória para chamadas outbound).
+- **`PLUGFIELD_VENDOR_AUTHORIZATION`** — opcional; usada se o cliente não enviar `Authorization`.
+- **`PLUGFIELD_API_BASE_URL`** — opcional (default `https://prod-api.plugfield.com.br`).
+- **`PLUGFIELD_HTTP_TIMEOUT_MS`** — timeout HTTP em ms (default `8000`).
+
+Endpoints: `POST /plugfield/login`, `GET|POST /plugfield/device`, `GET /plugfield/device/:deviceId`, `GET /plugfield/data/daily`, `GET /plugfield/data/hourly`, `GET /plugfield/data/sensor`. Documentação vendor: [Swagger Plugfield](https://wdg.plugfield.com.br/doc-api/index.html).
+
 ## Project setup
 
 ```bash
