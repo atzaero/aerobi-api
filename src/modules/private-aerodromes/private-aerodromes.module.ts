@@ -4,12 +4,16 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 
 import { AerobiApiKeyGuard } from '@/common/guards/aerobi-api-key.guard';
 
+import { PrivateAerodromesLatestPeriodController } from './controllers/latest-period.controller';
+import { PrivateAerodromesRowsController } from './controllers/rows.controller';
 import { SyncController } from './controllers/sync.controller';
 import { SyncStateController } from './controllers/sync-state.controller';
 import { PrivateAerodromeRepository } from './repositories/private-aerodrome.repository';
 import { PrivateAerodromesSyncStateRepository } from './repositories/private-aerodromes-sync-state.repository';
 import { AnacPrivateAerodromesSourceService } from './services/anac-private-aerodromes-source.service';
 import { PrivateAerodromesCsvParserService } from './services/private-aerodromes-csv-parser.service';
+import { PrivateAerodromesLatestPeriodService } from './services/private-aerodromes-latest-period.service';
+import { PrivateAerodromesRowsService } from './services/private-aerodromes-rows.service';
 import { PrivateAerodromesSyncService } from './services/private-aerodromes-sync.service';
 import { PrivateAerodromesSyncStateService } from './services/private-aerodromes-sync-state.service';
 
@@ -31,7 +35,12 @@ import { PrivateAerodromesSyncStateService } from './services/private-aerodromes
       }),
     }),
   ],
-  controllers: [SyncController, SyncStateController],
+  controllers: [
+    SyncController,
+    SyncStateController,
+    PrivateAerodromesRowsController,
+    PrivateAerodromesLatestPeriodController,
+  ],
   providers: [
     AerobiApiKeyGuard,
     AnacPrivateAerodromesSourceService,
@@ -40,6 +49,8 @@ import { PrivateAerodromesSyncStateService } from './services/private-aerodromes
     PrivateAerodromesSyncStateRepository,
     PrivateAerodromesSyncStateService,
     PrivateAerodromesSyncService,
+    PrivateAerodromesRowsService,
+    PrivateAerodromesLatestPeriodService,
   ],
   exports: [PrivateAerodromesSyncService],
 })
