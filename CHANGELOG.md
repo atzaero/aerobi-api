@@ -1,3 +1,10 @@
+# [2.2.0](https://github.com/atzaero/aerobi-api/compare/v2.1.0...v2.2.0) (2026-04-06)
+
+
+### Features
+
+* **public-aerodromes:** extração e API de aeródromos públicos (ANAC CSV) ([#22](https://github.com/atzaero/aerobi-api/issues/22)) ([e3c4f79](https://github.com/atzaero/aerobi-api/commit/e3c4f79bf43c279a751c4b58647428e5511e0c2b))
+
 # [2.1.0](https://github.com/atzaero/aerobi-api/compare/v2.0.2...v2.1.0) (2026-04-06)
 
 
