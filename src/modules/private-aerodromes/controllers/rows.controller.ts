@@ -14,7 +14,7 @@ import { PrivateAerodromesRowsService } from '../services/private-aerodromes-row
 export class PrivateAerodromesRowsController {
   constructor(private readonly rows: PrivateAerodromesRowsService) {}
 
-  @Get('data')
+  @Get()
   @PrivateAerodromesDataDocs()
   handle(
     @Query() query: PrivateAerodromesFindAllQueryDTO,

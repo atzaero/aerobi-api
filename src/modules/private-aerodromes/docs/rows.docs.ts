@@ -24,7 +24,7 @@ export function PrivateAerodromesDataDocs() {
       PrivateAerodromesPaginatedResponseDTO,
     ),
     ApiOperation({
-      summary: 'Consulta paginada de aeródromos privados (dados abertos ANAC)',
+      summary: 'Consulta paginada de aeródromos privados (GET /private-aerodromes)',
       description:
         '**Autenticação:** `X-API-Key` = `AEROBI_API_KEY` (exceto bypass em `development`; ver guard). ' +
         'Resposta no formato `{ data, meta }` (padrão paginado; metadados em `meta`). ' +
