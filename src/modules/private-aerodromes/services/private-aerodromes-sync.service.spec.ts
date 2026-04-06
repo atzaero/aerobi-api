@@ -17,10 +17,7 @@ function makeCsvArrayBuffer(
   content = 'Atualizado em: 2024-01-15\nSJXX;Nome',
 ): ArrayBuffer {
   const buf = Buffer.from(content, 'utf-8');
-  return buf.buffer.slice(
-    buf.byteOffset,
-    buf.byteOffset + buf.byteLength,
-  ) as ArrayBuffer;
+  return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
 }
 
 function hashArrayBuffer(ab: ArrayBuffer): string {
