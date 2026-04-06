@@ -1,0 +1,20 @@
+export type PublicAerodromesCsvRow = {
+  codigoOaci: string | null;
+  ciad: string;
+  nome: string | null;
+  municipio: string | null;
+  uf: string | null;
+  municipioServido: string | null;
+  ufServido: string | null;
+  latitude: string | null;
+  longitude: string | null;
+  altitude: string | null;
+  operacaoDiurna: string | null;
+  operacaoNoturna: string | null;
+  situacao: string | null;
+  validadeRegistro: string | null;
+  portariaRegistro: string | null;
+  linkPortaria: string | null;
+  latGeoPoint: string | null;
+  lonGeoPoint: string | null;
+};
