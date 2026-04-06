@@ -80,4 +80,11 @@ export class PrivateAerodromesSyncStateRepository {
       orderBy: [{ syncedAt: 'desc' }, { datasetKey: 'asc' }],
     });
   }
+
+  findLatestSuccessful() {
+    return this.prisma.privateAerodromesSyncState.findFirst({
+      where: { status: PrivateAerodromesSyncStatus.SUCCESS },
+      orderBy: { syncedAt: 'desc' },
+    });
+  }
 }
