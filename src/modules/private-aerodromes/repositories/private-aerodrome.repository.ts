@@ -69,6 +69,23 @@ export class PrivateAerodromeRepository {
     )`;
   }
 
+  findMany(
+    where: Prisma.PrivateAerodromeWhereInput,
+    skip: number,
+    take: number,
+  ) {
+    return this.prisma.privateAerodrome.findMany({
+      where,
+      skip,
+      take,
+      orderBy: { ciad: 'asc' },
+    });
+  }
+
+  count(where: Prisma.PrivateAerodromeWhereInput) {
+    return this.prisma.privateAerodrome.count({ where });
+  }
+
   async upsertBatch(rows: PrivateAerodromesCsvRow[]): Promise<void> {
     for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
       const chunk = rows.slice(i, i + CHUNK_SIZE);
