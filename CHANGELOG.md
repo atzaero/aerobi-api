@@ -1,3 +1,10 @@
+# [2.1.0](https://github.com/atzaero/aerobi-api/compare/v2.0.2...v2.1.0) (2026-04-06)
+
+
+### Features
+
+* **private-aerodromes:** adicionar GET /private-aerodromes paginado e GET /latest-period ([#19](https://github.com/atzaero/aerobi-api/issues/19)) ([fa5375b](https://github.com/atzaero/aerobi-api/commit/fa5375b7b2512f6b763d17895d681874114d06bb)), closes [#18](https://github.com/atzaero/aerobi-api/issues/18)
+
 ## [2.0.2](https://github.com/atzaero/aerobi-api/compare/v2.0.1...v2.0.2) (2026-04-05)
 
 
