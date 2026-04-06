@@ -5,35 +5,11 @@ import { createId } from '@paralleldrive/cuid2';
 import { PrismaService } from '@/prisma/prisma.service';
 
 import type { PrivateAerodromesCsvRow } from '../types/private-aerodromes-csv-row.type';
-
-const CHUNK_SIZE = 500;
-
-const CONFLICT_UPDATE = Prisma.sql`
-  ON CONFLICT ("ciad") DO UPDATE SET
-    "codigo_oaci" = EXCLUDED."codigo_oaci",
-    "nome" = EXCLUDED."nome",
-    "municipio" = EXCLUDED."municipio",
-    "uf" = EXCLUDED."uf",
-    "longitude" = EXCLUDED."longitude",
-    "latitude" = EXCLUDED."latitude",
-    "altitude" = EXCLUDED."altitude",
-    "operacao_diurna" = EXCLUDED."operacao_diurna",
-    "operacao_noturna" = EXCLUDED."operacao_noturna",
-    "designacao_1" = EXCLUDED."designacao_1",
-    "comprimento_1" = EXCLUDED."comprimento_1",
-    "largura_1" = EXCLUDED."largura_1",
-    "resistencia_1" = EXCLUDED."resistencia_1",
-    "superficie_1" = EXCLUDED."superficie_1",
-    "designacao_2" = EXCLUDED."designacao_2",
-    "comprimento_2" = EXCLUDED."comprimento_2",
-    "largura_2" = EXCLUDED."largura_2",
-    "resistencia_2" = EXCLUDED."resistencia_2",
-    "superficie_2" = EXCLUDED."superficie_2",
-    "portaria_registro" = EXCLUDED."portaria_registro",
-    "link_portaria" = EXCLUDED."link_portaria",
-    "lat_geo_point" = EXCLUDED."lat_geo_point",
-    "lon_geo_point" = EXCLUDED."lon_geo_point"
-`;
+import {
+  PRIVATE_AERODROME_CHUNK_SIZE,
+  PRIVATE_AERODROME_CONFLICT_UPDATE,
+  PRIVATE_AERODROME_INSERT_COLUMNS,
+} from './private-aerodrome.sql';
 
 @Injectable()
 export class PrivateAerodromeRepository {
@@ -87,19 +63,13 @@ export class PrivateAerodromeRepository {
   }
 
   async upsertBatch(rows: PrivateAerodromesCsvRow[]): Promise<void> {
-    for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
-      const chunk = rows.slice(i, i + CHUNK_SIZE);
+    for (let i = 0; i < rows.length; i += PRIVATE_AERODROME_CHUNK_SIZE) {
+      const chunk = rows.slice(i, i + PRIVATE_AERODROME_CHUNK_SIZE);
       const tuples = chunk.map((r) => this.rowToSqlTuple(r));
       await this.prisma.$executeRaw`
-        INSERT INTO "private_aerodrome" (
-          "id", "codigo_oaci", "ciad", "nome", "municipio", "uf",
-          "longitude", "latitude", "altitude", "operacao_diurna",
-          "operacao_noturna", "designacao_1", "comprimento_1", "largura_1",
-          "resistencia_1", "superficie_1", "designacao_2", "comprimento_2",
-          "largura_2", "resistencia_2", "superficie_2", "portaria_registro",
-          "link_portaria", "lat_geo_point", "lon_geo_point"
-        ) VALUES ${Prisma.join(tuples, ', ')}
-        ${CONFLICT_UPDATE}
+        INSERT INTO "private_aerodrome" ${PRIVATE_AERODROME_INSERT_COLUMNS}
+        VALUES ${Prisma.join(tuples, ', ')}
+        ${PRIVATE_AERODROME_CONFLICT_UPDATE}
       `;
     }
   }
