@@ -12,8 +12,8 @@ export class SolQueryDto {
   @ApiProperty({ description: 'Código ICAO do aeródromo', example: 'SBGR' })
   @IsString()
   @IsNotEmpty()
-  @Transform(({ value }) =>
-    typeof value === 'string' ? value.trim().toUpperCase() : value,
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim().toUpperCase() : undefined,
   )
   icaoCode: string;
 

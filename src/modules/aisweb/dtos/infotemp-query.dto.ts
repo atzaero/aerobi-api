@@ -9,15 +9,17 @@ export class InfotempQueryDto {
   })
   @IsOptional()
   @IsString()
-  @Transform(({ value }) =>
-    typeof value === 'string' ? value.trim().toUpperCase() : value,
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim().toUpperCase() : undefined,
   )
   icaoCode?: string;
 
   @ApiPropertyOptional({ description: 'Número do INFOTEMP', example: '1' })
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : undefined,
+  )
   number?: string;
 
   @ApiPropertyOptional({
