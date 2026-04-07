@@ -1,3 +1,10 @@
+# [2.3.0](https://github.com/atzaero/aerobi-api/compare/v2.2.0...v2.3.0) (2026-04-07)
+
+
+### Features
+
+* **aisweb:** módulo AISWEB — proxy NOTAM, ROTAER, SOL e Infotemp ([#25](https://github.com/atzaero/aerobi-api/issues/25)) ([734634b](https://github.com/atzaero/aerobi-api/commit/734634b7d03ff2752073d0181c562b57a66cca87)), closes [#24](https://github.com/atzaero/aerobi-api/issues/24)
+
 # [2.2.0](https://github.com/atzaero/aerobi-api/compare/v2.1.0...v2.2.0) (2026-04-06)
 
 
