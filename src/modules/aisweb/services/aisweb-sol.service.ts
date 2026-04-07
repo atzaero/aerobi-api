@@ -16,13 +16,16 @@ function formatDate(d: Date): string {
 function unwrapString(value: unknown): string {
   if (value == null) return '';
   if (typeof value === 'string') return value;
+  if (typeof value === 'number') return String(value);
+  if (Array.isArray(value))
+    return value.length > 0 ? unwrapString(value[0]) : '';
   if (
     typeof value === 'object' &&
     '#text' in (value as Record<string, unknown>)
   ) {
-    return String((value as Record<string, unknown>)['#text'] ?? '');
+    return unwrapString((value as Record<string, unknown>)['#text']);
   }
-  return String(value);
+  return '';
 }
 
 @Injectable()

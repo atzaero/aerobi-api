@@ -11,5 +11,6 @@ export function unwrapCdata(value: unknown): string {
   if (typeof value === 'object' && value !== null && '#text' in value) {
     return unwrapCdata((value as { '#text'?: unknown })['#text']);
   }
-  return String(value);
+  if (typeof value === 'object') return '';
+  return String(value as string | number | boolean);
 }

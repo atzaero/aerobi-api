@@ -15,7 +15,8 @@ export function unwrapCdata(value: unknown): string {
   if (typeof value === 'object' && value !== null && '#text' in value) {
     return unwrapCdata((value as { '#text'?: unknown })['#text']);
   }
-  return String(value);
+  if (typeof value === 'object') return '';
+  return String(value as string | number | boolean);
 }
 
 /** Texto de um nó XML (CDATA → #text; ignora atributos). Suporta arrays de CDATA (v5). */
@@ -33,7 +34,10 @@ export function xmlElementTextContent(node: unknown): string {
     if (Array.isArray(textVal)) {
       return textVal.map(xmlElementTextContent).join('').trim();
     }
-    return String(textVal ?? '').trim();
+    if (textVal == null) return '';
+    if (typeof textVal === 'string') return textVal.trim();
+    if (typeof textVal === 'number') return String(textVal);
+    return '';
   }
   let acc = '';
   for (const [k, v] of Object.entries(o)) {
@@ -75,7 +79,11 @@ export function parseTaggedValue(raw: unknown): {
   const compl = attrString(o, 'compl');
   let value = '';
   if ('#text' in o && o['#text'] != null) {
-    value = String(o['#text']).trim();
+    const textNode = o['#text'];
+    value =
+      typeof textNode === 'string' || typeof textNode === 'number'
+        ? String(textNode).trim()
+        : xmlElementTextContent(textNode);
   } else {
     for (const [k, v] of Object.entries(o)) {
       if (k.startsWith('@_')) continue;
@@ -129,7 +137,9 @@ export function normalizeValue(
     }
     return out;
   }
-  return String(raw);
+  if (typeof raw === 'string') return raw;
+  if (typeof raw === 'number') return String(raw);
+  return '';
 }
 
 export function ensureArray<T>(value: T | T[] | undefined): T[] {
@@ -222,15 +232,23 @@ function normalizeComplements(raw: unknown): Record<string, unknown> {
     (c: unknown) => {
       if (c == null || typeof c !== 'object') return {};
       const co = c as Record<string, unknown>;
-      const cod = attrString(co, 'cod') ?? (co.cod != null ? unwrapCdata(co.cod).trim() || undefined : undefined);
-      const n = attrString(co, 'n') ?? (co.n != null ? unwrapCdata(co.n).trim() || undefined : undefined);
+      const cod =
+        attrString(co, 'cod') ??
+        (co.cod != null ? unwrapCdata(co.cod).trim() || undefined : undefined);
+      const n =
+        attrString(co, 'n') ??
+        (co.n != null ? unwrapCdata(co.n).trim() || undefined : undefined);
       const textRaw = co['#text'];
-      const text = xmlElementTextContent(textRaw).replace(/\s+/g, ' ').trim() || undefined;
+      const text =
+        xmlElementTextContent(textRaw).replace(/\s+/g, ' ').trim() || undefined;
       return { cod, n, text };
     },
   );
   return {
-    count: countRaw != null ? (unwrapOptionalNum(countRaw) ?? unwrapCdata(countRaw)) : undefined,
+    count:
+      countRaw != null
+        ? (unwrapOptionalNum(countRaw) ?? unwrapCdata(countRaw))
+        : undefined,
     items,
   };
 }
