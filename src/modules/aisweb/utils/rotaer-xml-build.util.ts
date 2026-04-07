@@ -2,22 +2,7 @@
  * Normalização do XML AISWEB (raiz aisweb) → objeto pré-validação.
  */
 
-/**
- * Extrai texto de CDATA ou valor direto (fast-xml-parser v5).
- * v5 envolve CDATA em array: [{"#text":"valor"}].
- */
-export function unwrapCdata(value: unknown): string {
-  if (value == null) return '';
-  if (typeof value === 'string') return value;
-  if (Array.isArray(value)) {
-    return value.length > 0 ? unwrapCdata(value[0]) : '';
-  }
-  if (typeof value === 'object' && value !== null && '#text' in value) {
-    return unwrapCdata((value as { '#text'?: unknown })['#text']);
-  }
-  if (typeof value === 'object') return '';
-  return String(value as string | number | boolean);
-}
+import { unwrapCdata } from './aisweb-xml-cdata.util';
 
 /** Texto de um nó XML (CDATA → #text; ignora atributos). Suporta arrays de CDATA (v5). */
 export function xmlElementTextContent(node: unknown): string {
