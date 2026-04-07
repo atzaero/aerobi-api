@@ -6,9 +6,33 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
-import { of, throwError } from 'rxjs';
+import type { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import { Observable, of, throwError } from 'rxjs';
 
 import { AiswebHttpService } from './aisweb-http.service';
+
+const emptyAxiosConfig = {} as InternalAxiosRequestConfig;
+
+function textAxiosResponse(
+  status: number,
+  data: string | number,
+): AxiosResponse<string> {
+  const body: string = typeof data === 'string' ? data : String(data);
+  return {
+    data: body,
+    status,
+    statusText: status >= 200 && status < 300 ? 'OK' : 'Error',
+    headers: {},
+    config: emptyAxiosConfig,
+  };
+}
+
+function ofTextAxiosResponse(
+  status: number,
+  data: string | number,
+): Observable<AxiosResponse<string>> {
+  return of(textAxiosResponse(status, data));
+}
 
 describe('AiswebHttpService', () => {
   let service: AiswebHttpService;
@@ -106,9 +130,7 @@ describe('AiswebHttpService', () => {
 
   describe('fetchWithFallback', () => {
     it('retorna o texto da primeira URL com resposta 2xx', async () => {
-      httpService.get.mockReturnValue(
-        of({ status: 200, data: '<xml/>' } as any),
-      );
+      httpService.get.mockReturnValue(ofTextAxiosResponse(200, '<xml/>'));
       await expect(service.fetchWithFallback('area=test')).resolves.toBe(
         '<xml/>',
       );
@@ -116,14 +138,14 @@ describe('AiswebHttpService', () => {
     });
 
     it('converte data não-string para string', async () => {
-      httpService.get.mockReturnValue(of({ status: 200, data: 42 } as any));
+      httpService.get.mockReturnValue(ofTextAxiosResponse(200, 42));
       await expect(service.fetchWithFallback('area=test')).resolves.toBe('42');
     });
 
     it('tenta a segunda URL quando a primeira retorna status de erro', async () => {
       httpService.get
-        .mockReturnValueOnce(of({ status: 503, data: '' } as any))
-        .mockReturnValueOnce(of({ status: 200, data: '<xml/>' } as any));
+        .mockReturnValueOnce(ofTextAxiosResponse(503, ''))
+        .mockReturnValueOnce(ofTextAxiosResponse(200, '<xml/>'));
       await expect(service.fetchWithFallback('area=test')).resolves.toBe(
         '<xml/>',
       );
@@ -137,7 +159,7 @@ describe('AiswebHttpService', () => {
             Object.assign(new Error('ECONNREFUSED'), { isAxiosError: true }),
           ),
         )
-        .mockReturnValueOnce(of({ status: 200, data: '<xml/>' } as any));
+        .mockReturnValueOnce(ofTextAxiosResponse(200, '<xml/>'));
       await expect(service.fetchWithFallback('area=test')).resolves.toBe(
         '<xml/>',
       );
@@ -145,8 +167,8 @@ describe('AiswebHttpService', () => {
 
     it('lança BadGatewayException quando todas as URLs falham', async () => {
       httpService.get
-        .mockReturnValueOnce(of({ status: 500, data: '' } as any))
-        .mockReturnValueOnce(of({ status: 500, data: '' } as any));
+        .mockReturnValueOnce(ofTextAxiosResponse(500, ''))
+        .mockReturnValueOnce(ofTextAxiosResponse(500, ''));
       await expect(service.fetchWithFallback('area=test')).rejects.toThrow(
         BadGatewayException,
       );
@@ -160,10 +182,7 @@ describe('AiswebHttpService', () => {
 
     it('retorna o XML parseado em caso de sucesso', async () => {
       httpService.get.mockReturnValue(
-        of({
-          status: 200,
-          data: '<aisweb><area>sol</area></aisweb>',
-        } as any),
+        ofTextAxiosResponse(200, '<aisweb><area>sol</area></aisweb>'),
       );
       const result = (await service.executeXmlQuery('sol', {
         icaoCode: 'SBGR',
@@ -172,9 +191,7 @@ describe('AiswebHttpService', () => {
     });
 
     it('lança UnprocessableEntityException quando o parseXml lança erro', async () => {
-      httpService.get.mockReturnValue(
-        of({ status: 200, data: '<xml/>' } as any),
-      );
+      httpService.get.mockReturnValue(ofTextAxiosResponse(200, '<xml/>'));
       jest.spyOn(service, 'parseXml').mockImplementation(() => {
         throw new Error('parse error simulado');
       });
@@ -184,7 +201,7 @@ describe('AiswebHttpService', () => {
     });
 
     it('propaga BadGatewayException do fetchWithFallback', async () => {
-      httpService.get.mockReturnValue(of({ status: 503, data: '' } as any));
+      httpService.get.mockReturnValue(ofTextAxiosResponse(503, ''));
       await expect(service.executeXmlQuery('infotemp', {})).rejects.toThrow(
         BadGatewayException,
       );
