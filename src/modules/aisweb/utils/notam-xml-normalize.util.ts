@@ -1,3 +1,4 @@
+import { ensureArray } from './aisweb-xml-array.util';
 import { unwrapCdata } from './aisweb-xml-cdata.util';
 
 const NOTAM_ITEM_KEYS = [
@@ -101,7 +102,7 @@ export function normalizeNotamItems(parsed: ParsedNotamXml): {
 
   const raw = withAttrs.item;
   if (raw != null) {
-    const rawItems = Array.isArray(raw) ? raw : [raw];
+    const rawItems = ensureArray(raw);
     const items = rawItems.map((it: unknown) => {
       if (it == null || typeof it !== 'object') return {};
       return toNormalizedItem(it as Record<string, unknown>);

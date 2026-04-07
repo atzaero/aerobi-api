@@ -1,3 +1,4 @@
+import { ensureArray } from './aisweb-xml-array.util';
 import { unwrapCdata } from './aisweb-xml-cdata.util';
 
 /** Remove o literal SQL {ts 'YYYY-MM-DD HH:mm:ss'} que a AISWEB retorna em campos de data. */
@@ -49,7 +50,7 @@ export function normalizeInfotempItems(parsed: ParsedInfotempXml): {
 
   const raw = withAttrs.item;
   if (raw != null) {
-    const rawItems = Array.isArray(raw) ? raw : [raw];
+    const rawItems = ensureArray(raw);
     const items = rawItems.map((it: unknown) => {
       if (it == null || typeof it !== 'object') return {};
       return toNormalizedItem(it as Record<string, unknown>);

@@ -2,6 +2,7 @@
  * Normalização do XML AISWEB (raiz aisweb) → objeto pré-validação.
  */
 
+import { ensureArray } from './aisweb-xml-array.util';
 import { unwrapCdata } from './aisweb-xml-cdata.util';
 
 /** Texto de um nó XML (CDATA → #text; ignora atributos). Suporta arrays de CDATA (v5). */
@@ -125,11 +126,6 @@ export function normalizeValue(
   if (typeof raw === 'string') return raw;
   if (typeof raw === 'number') return String(raw);
   return '';
-}
-
-export function ensureArray<T>(value: T | T[] | undefined): T[] {
-  if (value == null) return [];
-  return Array.isArray(value) ? value : [value];
 }
 
 export function collectLightEntriesFromLightsNodes(lightsRaw: unknown): {

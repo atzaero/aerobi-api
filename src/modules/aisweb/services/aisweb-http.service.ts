@@ -4,6 +4,7 @@ import {
   Injectable,
   Logger,
   ServiceUnavailableException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { isAxiosError } from 'axios';
@@ -97,6 +98,31 @@ export class AiswebHttpService {
       parseTagValue: false,
     });
     return parser.parse(text);
+  }
+
+  /**
+   * Obtém credenciais, monta a query string, faz o fetch e parseia o XML.
+   * Centraliza o padrão repetido em todos os services de endpoint.
+   */
+  async executeXmlQuery(
+    area: string,
+    params: Record<string, string | number | undefined>,
+  ): Promise<unknown> {
+    const qs = this.buildQueryString({
+      apiKey: this.getApiKey(),
+      apiPass: this.getApiPass(),
+      area,
+      ...params,
+    });
+    const text = await this.fetchWithFallback(qs);
+    try {
+      return this.parseXml(text);
+    } catch (err) {
+      this.logger.error(`Falha ao parsear XML ${area}: ${String(err)}`);
+      throw new UnprocessableEntityException(
+        `Resposta inválida da API AISWEB (${area})`,
+      );
+    }
   }
 
   buildQueryString(

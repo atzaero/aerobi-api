@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  UnprocessableEntityException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
 import { NotamQueryDto } from '../dtos/notam-query.dto';
 import { NotamResponseDto } from '../dtos/notam-response.dto';
@@ -14,18 +10,10 @@ import { AiswebHttpService } from './aisweb-http.service';
 
 @Injectable()
 export class AiswebNotamService {
-  private readonly logger = new Logger(AiswebNotamService.name);
-
   constructor(private readonly aiswebHttp: AiswebHttpService) {}
 
   async execute(query: NotamQueryDto): Promise<NotamResponseDto> {
-    const apiKey = this.aiswebHttp.getApiKey();
-    const apiPass = this.aiswebHttp.getApiPass();
-
-    const qs = this.aiswebHttp.buildQueryString({
-      apiKey,
-      apiPass,
-      area: 'notam',
+    const parsed = await this.aiswebHttp.executeXmlQuery('notam', {
       dist: query.dist,
       nof: query.nof,
       serie: query.serie,
@@ -43,18 +31,6 @@ export class AiswebNotamService {
       icaocode: query.icaocode,
       type: query.type,
     });
-
-    const text = await this.aiswebHttp.fetchWithFallback(qs);
-
-    let parsed: unknown;
-    try {
-      parsed = this.aiswebHttp.parseXml(text);
-    } catch (err) {
-      this.logger.error(`Falha ao parsear XML notam: ${String(err)}`);
-      throw new UnprocessableEntityException(
-        'Resposta inválida da API AISWEB (notam)',
-      );
-    }
 
     const { total, updatedat, rawItems } = normalizeNotamItems(
       parsed as ParsedNotamXml,
