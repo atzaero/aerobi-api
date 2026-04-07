@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 
+import { AiswebModule } from '@/modules/aisweb/aisweb.module';
 import { HealthModule } from '@/modules/health/health.module';
 import { PlugfieldModule } from '@/modules/plugfield/plugfield.module';
 import { PrivateAerodromesModule } from '@/modules/private-aerodromes/private-aerodromes.module';
@@ -18,6 +19,7 @@ import { PrismaModule } from '@/prisma/prisma.module';
     HealthModule,
     RabModule,
     PlugfieldModule,
+    AiswebModule,
     PrivateAerodromesModule,
     PublicAerodromesModule,
     SchedulerModule,

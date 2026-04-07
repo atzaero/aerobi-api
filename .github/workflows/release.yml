@@ -10,12 +10,16 @@ run-name: Release from ${{ github.ref_name }} by @${{ github.actor }}
 #   DATABASE_URL, CORS_ORIGINS
 #
 # Autenticação API Aerobi (cliente → Aerobi, header X-API-Key):
-#   AEROBI_API_KEY — obrigatório em produção para rotas /rab, /private-aerodromes, /plugfield.
+#   AEROBI_API_KEY — obrigatório em produção para rotas /rab, /private-aerodromes, /plugfield, /aisweb.
 #   AEROBI_REQUIRE_AUTH — opcional.
 #
 # Proxy Plugfield (Aerobi → Plugfield, só no servidor):
 #   PLUGFIELD_API_KEY, PLUGFIELD_TOKEN
 #   PLUGFIELD_API_BASE_URL, PLUGFIELD_HTTP_TIMEOUT_MS — opcionais
+#
+# Proxy AISWEB / DECEA (Aerobi → AISWEB, só no servidor):
+#   AISWEB_API_KEY, AISWEB_API_PASS — necessários para rotas /aisweb/*
+#   AISWEB_HTTP_TIMEOUT_MS — opcional
 #
 # Agendamento RAB (opcional):
 #   RAB_SYNC_CRON, RAB_SYNC_CRON_DISABLED
@@ -163,6 +167,9 @@ jobs:
           if [ -n "${{ secrets.PLUGFIELD_TOKEN }}" ]; then echo "PLUGFIELD_TOKEN=${{ secrets.PLUGFIELD_TOKEN }}" >> .env; fi
           if [ -n "${{ secrets.PLUGFIELD_API_BASE_URL }}" ]; then echo "PLUGFIELD_API_BASE_URL=${{ secrets.PLUGFIELD_API_BASE_URL }}" >> .env; fi
           if [ -n "${{ secrets.PLUGFIELD_HTTP_TIMEOUT_MS }}" ]; then echo "PLUGFIELD_HTTP_TIMEOUT_MS=${{ secrets.PLUGFIELD_HTTP_TIMEOUT_MS }}" >> .env; fi
+          if [ -n "${{ secrets.AISWEB_API_KEY }}" ]; then echo "AISWEB_API_KEY=${{ secrets.AISWEB_API_KEY }}" >> .env; fi
+          if [ -n "${{ secrets.AISWEB_API_PASS }}" ]; then echo "AISWEB_API_PASS=${{ secrets.AISWEB_API_PASS }}" >> .env; fi
+          if [ -n "${{ secrets.AISWEB_HTTP_TIMEOUT_MS }}" ]; then echo "AISWEB_HTTP_TIMEOUT_MS=${{ secrets.AISWEB_HTTP_TIMEOUT_MS }}" >> .env; fi
           if [ -n "${{ secrets.RAB_SYNC_CRON }}" ]; then echo "RAB_SYNC_CRON=${{ secrets.RAB_SYNC_CRON }}" >> .env; fi
           if [ -n "${{ secrets.RAB_SYNC_CRON_DISABLED }}" ]; then echo "RAB_SYNC_CRON_DISABLED=${{ secrets.RAB_SYNC_CRON_DISABLED }}" >> .env; fi
           scp -i ~/.ssh/deploy_key -P ${{ secrets.REMOTE_PORT }} \

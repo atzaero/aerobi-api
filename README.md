@@ -64,7 +64,7 @@ docker compose -f docker-compose.prod.yml up -d
 
 ### Autenticação HTTP (API key única)
 
-- Rotas **`/rab/*`**, **`/private-aerodromes/*`** e **`/plugfield/*`** exigem header **`X-API-Key`** = **`AEROBI_API_KEY`**, exceto **`NODE_ENV=development`** sem `AEROBI_REQUIRE_AUTH` (bypass para DX). Com `AEROBI_REQUIRE_AUTH=true`, a chave é exigida também em development.
+- Rotas **`/rab/*`**, **`/private-aerodromes/*`**, **`/plugfield/*`** e **`/aisweb/*`** exigem header **`X-API-Key`** = **`AEROBI_API_KEY`**, exceto **`NODE_ENV=development`** sem `AEROBI_REQUIRE_AUTH` (bypass para DX). Com `AEROBI_REQUIRE_AUTH=true`, a chave é exigida também em development.
 - Em produção, `AEROBI_API_KEY` tem de estar definida; caso contrário essas rotas respondem 401.
 - No **aerobi-web** (Next), define **`AEROBI_API_KEY`** (ou o valor configurado no hosting) para enviar `X-API-Key` nas chamadas à API.
 
@@ -84,6 +84,13 @@ Rotas que encaminham pedidos à API Plugfield (`https://prod-api.plugfield.com.b
 - **`PLUGFIELD_HTTP_TIMEOUT_MS`** — timeout HTTP em ms (default `8000`).
 
 Endpoints: `GET|POST /plugfield/device`, `GET /plugfield/device/:deviceId`, `GET /plugfield/data/daily`, `GET /plugfield/data/hourly`, `GET /plugfield/data/sensor`. Não há `POST /plugfield/login` na Aerobi — o token é gerido via env. Documentação vendor: [Swagger Plugfield](https://wdg.plugfield.com.br/doc-api/index.html).
+
+### Proxy AISWEB (`/aisweb/*`)
+
+Rotas que consultam serviços AISWEB/DECEA (NOTAM, ROTAER, SOL, Infotemp). O **cliente** usa a mesma **`X-API-Key`** = **`AEROBI_API_KEY`**. As credenciais AISWEB ficam **só no servidor**:
+
+- **`AISWEB_API_KEY`** e **`AISWEB_API_PASS`** — enviadas à AISWEB (obrigatórias para chamadas outbound).
+- **`AISWEB_HTTP_TIMEOUT_MS`** — opcional (ver `.env.example`).
 
 ## Project setup
 
@@ -120,10 +127,9 @@ $ npm run test:cov
 ## CI, release e deploy
 
 - **CI** (`.github/workflows/ci.yml`): push em `develop` e PRs para `main` / `develop`.
-- **Release** (`.github/workflows/release.yml`): push em `main` → `semantic-release` (precisa do secret `GH_TOKEN` com scope `repo`) → tag e imagem `ghcr.io/<owner>/<repo>:<versão>` e `:latest`.
-- **Deploy** (`.github/workflows/deploy.yml`): ao publicar uma release → SSH para o servidor, `.env` a partir de secrets, `docker compose -f docker-compose.prod.yml pull && up -d`.
+- **Release** (`.github/workflows/release.yml`): push em `main` → `semantic-release` (precisa do secret `GH_TOKEN` com scope `repo`) → tag e imagem `ghcr.io/<owner>/<repo>:<versão>` e `:latest`, e **deploy** no mesmo ficheiro (job `deploy`): SSH para o servidor, `.env` a partir de secrets, `docker compose -f docker-compose.prod.yml pull && up -d`.
 
-Secrets típicos do deploy: `SSH_PRIVATE_KEY`, `REMOTE_HOST`, `REMOTE_PORT`, `REMOTE_USER`, `REMOTE_TARGET`, `GH_TOKEN`, `DATABASE_URL`, `CORS_ORIGINS`. Para a API em produção: **`AEROBI_API_KEY`** (substitui o antigo `RAB_SYNC_API_KEY`, que o workflow já não grava no `.env`), **`PLUGFIELD_API_KEY`** e **`PLUGFIELD_TOKEN`** para o proxy Plugfield; opcionais: `AEROBI_REQUIRE_AUTH`, `PLUGFIELD_API_BASE_URL`, `PLUGFIELD_HTTP_TIMEOUT_MS`, `RAB_SYNC_CRON`, etc. — ver comentários no topo de `.github/workflows/deploy.yml`.
+Secrets típicos do deploy: `SSH_PRIVATE_KEY`, `REMOTE_HOST`, `REMOTE_PORT`, `REMOTE_USER`, `REMOTE_TARGET`, `GH_TOKEN`, `DATABASE_URL`, `CORS_ORIGINS`. Para a API em produção: **`AEROBI_API_KEY`**, **`PLUGFIELD_API_KEY`** e **`PLUGFIELD_TOKEN`** (proxy Plugfield), **`AISWEB_API_KEY`** e **`AISWEB_API_PASS`** (proxy AISWEB); opcionais: `AEROBI_REQUIRE_AUTH`, `PLUGFIELD_API_BASE_URL`, `PLUGFIELD_HTTP_TIMEOUT_MS`, `AISWEB_HTTP_TIMEOUT_MS`, `RAB_SYNC_CRON`, etc. — ver comentários no topo de `.github/workflows/release.yml`.
 
 Versões e changelog: [Conventional Commits](https://www.conventionalcommits.org/) em `main`; commit de release usa `[skip ci]` para não duplicar CI.
 
