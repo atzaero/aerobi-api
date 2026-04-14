@@ -1,4 +1,4 @@
-import { BadGatewayException, BadRequestException } from '@nestjs/common';
+import { BadGatewayException } from '@nestjs/common';
 
 import { PlugfieldHttpService } from './plugfield-http.service';
 import { PlugfieldDataDailyService } from './plugfield-data-daily.service';
@@ -13,41 +13,38 @@ describe('PlugfieldDataDailyService', () => {
     service = new PlugfieldDataDailyService(http);
   });
 
-  it('throws BadRequestException when sensorId and deviceId are missing', async () => {
-    await expect(service.execute({})).rejects.toBeInstanceOf(
-      BadRequestException,
-    );
-  });
-
-  it('calls daily endpoint with trimmed sensorId on execute', async () => {
-    requestJson.mockResolvedValue({ a: 1 });
+  it('sends device, begin, end to Plugfield', async () => {
+    requestJson.mockResolvedValue([{ id: 1 }]);
 
     const actual = await service.execute({
-      sensorId: ' s1 ',
-      startTime: 1,
-      endTime: 2,
+      device: 9133,
+      begin: '01/04/2026',
+      end: '14/04/2026',
     });
 
-    expect(actual).toEqual({ a: 1 });
+    expect(actual).toEqual([{ id: 1 }]);
     expect(requestJson).toHaveBeenCalledWith(
       expect.objectContaining({
         method: 'GET',
         path: '/data/daily',
         query: {
-          sensorId: 's1',
-          deviceId: undefined,
-          startTime: 1,
-          endTime: 2,
+          device: 9133,
+          begin: '01/04/2026',
+          end: '14/04/2026',
         },
       }),
     );
   });
 
-  it('throws BadGatewayException on invalid data shape', async () => {
-    requestJson.mockResolvedValue('string');
+  it('throws BadGatewayException on null response', async () => {
+    requestJson.mockResolvedValue(null);
 
-    await expect(service.execute({ deviceId: 'd' })).rejects.toBeInstanceOf(
-      BadGatewayException,
-    );
+    await expect(
+      service.execute({
+        device: 9133,
+        begin: '01/04/2026',
+        end: '14/04/2026',
+      }),
+    ).rejects.toBeInstanceOf(BadGatewayException);
   });
 });

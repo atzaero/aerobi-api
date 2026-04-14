@@ -1,14 +1,12 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsInt, IsOptional, Min } from 'class-validator';
 
 export class PlugfieldDeviceListQueryDto {
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ default: 1 })
   @IsOptional()
-  @IsString()
-  deviceId?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  code?: string;
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
 }

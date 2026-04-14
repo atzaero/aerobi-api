@@ -29,7 +29,7 @@ export type PlugfieldHttpRequestOptions = {
  * - `PLUGFIELD_API_KEY` — sent as `x-api-key` (required for outbound calls).
  * - `PLUGFIELD_API_BASE_URL` — default `https://prod-api.plugfield.com.br`.
  * - `PLUGFIELD_TOKEN` — optional; when `useVendorAuthorization` is true, sent as `Authorization`
- *   (if value has no `Bearer ` prefix, `Bearer ` is prepended).
+ *   (raw token without `Bearer ` prefix — Plugfield API expects it this way).
  */
 @Injectable()
 export class PlugfieldHttpService {
@@ -139,10 +139,11 @@ export class PlugfieldHttpService {
     if (!raw) {
       return undefined;
     }
+    // Plugfield API espera token raw sem prefixo Bearer
     if (/^Bearer\s/i.test(raw)) {
-      return raw;
+      return raw.replace(/^Bearer\s+/i, '');
     }
-    return `Bearer ${raw}`;
+    return raw;
   }
 
   private buildAxiosParams(

@@ -18,8 +18,7 @@ export class PlugfieldDeviceListService {
       method: 'GET',
       path: '/device',
       query: {
-        deviceId: query.deviceId,
-        code: query.code,
+        page: query.page ?? 1,
       },
       useVendorAuthorization: true,
     });
