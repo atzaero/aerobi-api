@@ -1,11 +1,10 @@
 /**
  * Tipos partilhados do proxy Plugfield.
- * Referência UI: https://wdg.plugfield.com.br/doc-api/index.html
+ * Referência: https://wdg.plugfield.com.br/doc-api/index.html
  */
 
 export type PlugfieldDeviceListQuery = {
-  readonly deviceId?: string;
-  readonly code?: string;
+  readonly page?: number;
 };
 
 export type PlugfieldDeviceAssociateInput = {
@@ -13,11 +12,24 @@ export type PlugfieldDeviceAssociateInput = {
   readonly code?: string;
 };
 
-export type PlugfieldDataQuery = {
-  readonly sensorId?: string;
-  readonly deviceId?: string;
-  readonly startTime?: number;
-  readonly endTime?: number;
+export type PlugfieldDataSensorQuery = {
+  readonly device: number;
+  readonly sensor: number;
+  readonly time?: number;
+  readonly timeMax?: number;
+  readonly groupedBy?: string;
+};
+
+export type PlugfieldDataDailyQuery = {
+  readonly device: number;
+  readonly begin: string;
+  readonly end: string;
+};
+
+export type PlugfieldDataHourlyQuery = {
+  readonly device: number;
+  readonly begin: string;
+  readonly end: string;
 };
 
 export type PlugfieldDataResult = Record<string, unknown> | unknown[];

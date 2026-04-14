@@ -21,5 +21,13 @@ export function normalizePlugfieldDeviceList(json: unknown): unknown[] {
   ) {
     return (json as { devices: unknown[] }).devices;
   }
+  if (
+    json &&
+    typeof json === 'object' &&
+    'deviceList' in json &&
+    Array.isArray((json as { deviceList?: unknown[] }).deviceList)
+  ) {
+    return (json as { deviceList: unknown[] }).deviceList;
+  }
   return [];
 }

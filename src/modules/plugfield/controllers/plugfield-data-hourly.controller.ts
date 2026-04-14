@@ -4,7 +4,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { AerobiApiKeyGuard } from '@/common/guards/aerobi-api-key.guard';
 
 import { PlugfieldDataHourlyDocs } from '../docs/plugfield-data-hourly.docs';
-import { PlugfieldDataQueryDto } from '../dtos/plugfield-data-query.dto';
+import { PlugfieldDataHourlyQueryDto } from '../dtos/plugfield-data-hourly-query.dto';
 import type { PlugfieldDataResult } from '../types/plugfield.types';
 import { PlugfieldDataHourlyService } from '../services/plugfield-data-hourly.service';
 
@@ -19,13 +19,12 @@ export class PlugfieldDataHourlyController {
   @Get('data/hourly')
   @PlugfieldDataHourlyDocs()
   async handle(
-    @Query() query: PlugfieldDataQueryDto,
+    @Query() query: PlugfieldDataHourlyQueryDto,
   ): Promise<PlugfieldDataResult> {
     return this.plugfieldDataHourly.execute({
-      sensorId: query.sensorId,
-      deviceId: query.deviceId,
-      startTime: query.startTime,
-      endTime: query.endTime,
+      device: query.device,
+      begin: query.begin,
+      end: query.end,
     });
   }
 }

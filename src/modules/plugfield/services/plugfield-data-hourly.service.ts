@@ -1,10 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { BadGatewayException, Injectable } from '@nestjs/common';
 
 import type {
-  PlugfieldDataQuery,
+  PlugfieldDataHourlyQuery,
   PlugfieldDataResult,
 } from '../types/plugfield.types';
-import { requestPlugfieldData } from '../utils/plugfield-data-request.util';
 import { PlugfieldHttpService } from './plugfield-http.service';
 
 /**
@@ -14,7 +13,24 @@ import { PlugfieldHttpService } from './plugfield-http.service';
 export class PlugfieldDataHourlyService {
   constructor(private readonly plugfieldHttp: PlugfieldHttpService) {}
 
-  async execute(query: PlugfieldDataQuery): Promise<PlugfieldDataResult> {
-    return requestPlugfieldData(this.plugfieldHttp, '/data/hourly', query);
+  async execute(query: PlugfieldDataHourlyQuery): Promise<PlugfieldDataResult> {
+    const raw = await this.plugfieldHttp.requestJson({
+      method: 'GET',
+      path: '/data/hourly',
+      query: {
+        device: query.device,
+        begin: query.begin,
+        end: query.end,
+      },
+      useVendorAuthorization: true,
+    });
+
+    if (raw === null || raw === undefined) {
+      throw new BadGatewayException(
+        'Plugfield data endpoint returned an unexpected response shape',
+      );
+    }
+
+    return raw as PlugfieldDataResult;
   }
 }
