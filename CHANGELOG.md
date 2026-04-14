@@ -1,3 +1,11 @@
+## [2.3.1](https://github.com/atzaero/aerobi-api/compare/v2.3.0...v2.3.1) (2026-04-14)
+
+
+### Bug Fixes
+
+* **plugfield:** alinhar query params e docs Swagger com spec Plugfield ([cb58286](https://github.com/atzaero/aerobi-api/commit/cb582860cfb6ebb21fbdcac92323abbd1d323f9c)), closes [#186](https://github.com/atzaero/aerobi-api/issues/186)
+* **plugfield:** remover prefixo Bearer do header Authorization ([d2069f9](https://github.com/atzaero/aerobi-api/commit/d2069f906df30e232aaf61978c82a3dd1709362a))
+
 # [2.3.0](https://github.com/atzaero/aerobi-api/compare/v2.2.0...v2.3.0) (2026-04-07)
 
 
