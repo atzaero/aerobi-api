@@ -1,3 +1,10 @@
+## [2.3.2](https://github.com/atzaero/aerobi-api/compare/v2.3.1...v2.3.2) (2026-04-14)
+
+
+### Bug Fixes
+
+* **core:** habilitar shutdown hooks para graceful shutdown ([d2fa510](https://github.com/atzaero/aerobi-api/commit/d2fa510df7ace61254311aa182a68be956d8c058))
+
 ## [2.3.1](https://github.com/atzaero/aerobi-api/compare/v2.3.0...v2.3.1) (2026-04-14)
 
 
