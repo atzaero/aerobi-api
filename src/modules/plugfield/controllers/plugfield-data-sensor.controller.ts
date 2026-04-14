@@ -4,7 +4,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { AerobiApiKeyGuard } from '@/common/guards/aerobi-api-key.guard';
 
 import { PlugfieldDataSensorDocs } from '../docs/plugfield-data-sensor.docs';
-import { PlugfieldDataQueryDto } from '../dtos/plugfield-data-query.dto';
+import { PlugfieldDataSensorQueryDto } from '../dtos/plugfield-data-sensor-query.dto';
 import type { PlugfieldDataResult } from '../types/plugfield.types';
 import { PlugfieldDataSensorService } from '../services/plugfield-data-sensor.service';
 
@@ -19,13 +19,14 @@ export class PlugfieldDataSensorController {
   @Get('data/sensor')
   @PlugfieldDataSensorDocs()
   async handle(
-    @Query() query: PlugfieldDataQueryDto,
+    @Query() query: PlugfieldDataSensorQueryDto,
   ): Promise<PlugfieldDataResult> {
     return this.plugfieldDataSensor.execute({
-      sensorId: query.sensorId,
-      deviceId: query.deviceId,
-      startTime: query.startTime,
-      endTime: query.endTime,
+      device: query.device,
+      sensor: query.sensor,
+      time: query.time,
+      timeMax: query.timeMax,
+      groupedBy: query.groupedBy,
     });
   }
 }

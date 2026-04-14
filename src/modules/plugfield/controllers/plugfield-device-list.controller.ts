@@ -21,8 +21,7 @@ export class PlugfieldDeviceListController {
     @Query() query: PlugfieldDeviceListQueryDto,
   ): Promise<Record<string, unknown>[]> {
     return this.plugfieldDeviceList.execute({
-      deviceId: query.deviceId,
-      code: query.code,
+      page: query.page,
     });
   }
 }

@@ -79,7 +79,7 @@ describe('PlugfieldHttpService', () => {
     expect(call.headers['Authorization']).toBeUndefined();
   });
 
-  it('sends Authorization from PLUGFIELD_TOKEN with Bearer prefix when missing', async () => {
+  it('sends Authorization from PLUGFIELD_TOKEN as raw token without Bearer prefix', async () => {
     const config = {
       get: jest.fn((key: string, def?: unknown) => {
         if (key === 'PLUGFIELD_API_KEY') {
@@ -107,10 +107,10 @@ describe('PlugfieldHttpService', () => {
     const calls = httpRequest.mock.calls as unknown as Array<
       [{ headers: Record<string, string | undefined> }]
     >;
-    expect(calls[0][0].headers['Authorization']).toBe('Bearer raw-jwt-token');
+    expect(calls[0][0].headers['Authorization']).toBe('raw-jwt-token');
   });
 
-  it('keeps Authorization when PLUGFIELD_TOKEN already has Bearer prefix', async () => {
+  it('strips Bearer prefix from PLUGFIELD_TOKEN when already present', async () => {
     const config = {
       get: jest.fn((key: string, def?: unknown) => {
         if (key === 'PLUGFIELD_API_KEY') {
@@ -138,7 +138,7 @@ describe('PlugfieldHttpService', () => {
     const calls = httpRequest.mock.calls as unknown as Array<
       [{ headers: Record<string, string | undefined> }]
     >;
-    expect(calls[0][0].headers['Authorization']).toBe('Bearer token-1');
+    expect(calls[0][0].headers['Authorization']).toBe('token-1');
   });
 
   it('throws ServiceUnavailableException when PLUGFIELD_API_KEY is missing', async () => {

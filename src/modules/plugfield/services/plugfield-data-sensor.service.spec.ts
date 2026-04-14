@@ -13,23 +13,55 @@ describe('PlugfieldDataSensorService', () => {
     service = new PlugfieldDataSensorService(http);
   });
 
-  it('throws BadGatewayException on invalid shape', async () => {
-    requestJson.mockResolvedValue('string');
+  it('sends correct query params to Plugfield', async () => {
+    requestJson.mockResolvedValue({ data: [] });
 
-    await expect(service.execute({ deviceId: 'd' })).rejects.toBeInstanceOf(
-      BadGatewayException,
-    );
-  });
-
-  it('uses sensor path on execute', async () => {
-    requestJson.mockResolvedValue({ ok: true });
-
-    await service.execute({ sensorId: 's' });
+    await service.execute({
+      device: 9133,
+      sensor: 8,
+      time: 1000,
+      timeMax: 2000,
+      groupedBy: 'day',
+    });
 
     expect(requestJson).toHaveBeenCalledWith(
       expect.objectContaining({
+        method: 'GET',
         path: '/data/sensor',
+        query: {
+          device: 9133,
+          sensor: 8,
+          time: 1000,
+          timeMax: 2000,
+          groupedBy: 'day',
+        },
       }),
     );
+  });
+
+  it('omits optional params when not provided', async () => {
+    requestJson.mockResolvedValue({ data: [] });
+
+    await service.execute({ device: 9133, sensor: 8 });
+
+    expect(requestJson).toHaveBeenCalledWith(
+      expect.objectContaining({
+        query: {
+          device: 9133,
+          sensor: 8,
+          time: undefined,
+          timeMax: undefined,
+          groupedBy: undefined,
+        },
+      }),
+    );
+  });
+
+  it('throws BadGatewayException on null response', async () => {
+    requestJson.mockResolvedValue(null);
+
+    await expect(
+      service.execute({ device: 9133, sensor: 8 }),
+    ).rejects.toBeInstanceOf(BadGatewayException);
   });
 });

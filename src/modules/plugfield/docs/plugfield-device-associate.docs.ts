@@ -10,8 +10,13 @@ export function PlugfieldDeviceAssociateDocs() {
       summary: 'Proxy Plugfield: associar estação',
       description:
         '**Autenticação Aerobi:** `X-API-Key` = `AEROBI_API_KEY`. ' +
-        'Encaminha `POST /device` para a Plugfield com `deviceId` ou `code` no corpo. ' +
-        'Exemplo ilustrativo.',
+        'Encaminha `POST /device` para a Plugfield com `deviceId` ou `code` no corpo.\n\n' +
+        '**Exemplo curl:**\n```\n' +
+        "curl -X POST 'http://localhost:3333/plugfield/device' \\\n" +
+        "  -H 'X-API-Key: <AEROBI_API_KEY>' \\\n" +
+        "  -H 'Content-Type: application/json' \\\n" +
+        `  -d '{"code": "TRODPIXX"}'\n` +
+        '```',
     }),
     ApiOkResponse({
       description: 'Resultado da associação (formato pode variar).',

@@ -1,10 +1,7 @@
 import { applyDecorators } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiSecurity } from '@nestjs/swagger';
 
-import {
-  plugfieldDataGroupedResponseExample,
-  plugfieldDataSeriesResponseExample,
-} from './plugfield-response.examples';
+import { plugfieldDataSensorResponseExample } from './plugfield-response.examples';
 
 export function PlugfieldDataSensorDocs() {
   return applyDecorators(
@@ -13,33 +10,32 @@ export function PlugfieldDataSensorDocs() {
       summary: 'Proxy Plugfield: leituras de sensor',
       description:
         '**Autenticação Aerobi:** `X-API-Key` = `AEROBI_API_KEY`. ' +
-        'Encaminha `GET /data/sensor` para a Plugfield. Exige `sensorId` ou `deviceId` na query.',
+        'Encaminha `GET /data/sensor` para a Plugfield. Exige `sensor` e `device` na query.\n\n' +
+        '**Exemplo curl:**\n```\n' +
+        "curl -X GET 'http://localhost:3333/plugfield/data/sensor?device=9133&sensor=8' \\\n" +
+        "  -H 'X-API-Key: <AEROBI_API_KEY>'\n" +
+        '```',
     }),
     ApiOkResponse({
-      description:
-        'Leituras de sensor (objeto ou array). Exemplos ilustrativos.',
-      content: {
-        'application/json': {
-          schema: {
-            oneOf: [
-              { type: 'object', additionalProperties: true },
-              {
-                type: 'array',
-                items: { type: 'object', additionalProperties: true },
+      description: 'Leituras de sensor com valores mín/máx e array de dados.',
+      schema: {
+        type: 'object',
+        properties: {
+          valueMinFormatted: { type: 'number', example: 12.8 },
+          valueMaxFormatted: { type: 'number', example: 32.8 },
+          data: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                id: { type: 'integer', example: 6666 },
+                valueFormatted: { type: 'number', example: 18.5 },
+                time: { type: 'integer', example: 1776142415000 },
               },
-            ],
-          },
-          examples: {
-            readingsArray: {
-              summary: 'Array de leituras (típico)',
-              value: plugfieldDataSeriesResponseExample,
-            },
-            groupedByTimestampMs: {
-              summary: 'Objeto agrupado por timestamp (ms)',
-              value: plugfieldDataGroupedResponseExample,
             },
           },
         },
+        example: plugfieldDataSensorResponseExample,
       },
     }),
   );

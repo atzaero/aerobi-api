@@ -25,7 +25,7 @@ import { PlugfieldHttpService } from './services/plugfield-http.service';
  *
  * **Aerobi → Plugfield (servidor):**
  * - `PLUGFIELD_API_KEY` — header `x-api-key`.
- * - `PLUGFIELD_TOKEN` — header `Authorization` nas rotas que exigem Bearer (prefixo `Bearer ` acrescentado se faltar).
+ * - `PLUGFIELD_TOKEN` — header `Authorization` (raw token, sem prefixo `Bearer`).
  * - `PLUGFIELD_HTTP_TIMEOUT_MS` — timeout HTTP (default `8000`).
  * - `PLUGFIELD_API_BASE_URL` — base URL da Plugfield.
  */
