@@ -46,3 +46,7 @@ prisma/migrations/migration_lock.toml
 *.tmp
 *.temp
 .mcp.json
+
+# Claude Code / Cursor — versionar `.claude/commands/` e `.cursor/commands/`
+# Configuração local da máquina (não commitar)
+.claude/settings.local.json
