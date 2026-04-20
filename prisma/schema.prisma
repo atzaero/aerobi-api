@@ -22,16 +22,16 @@ enum PrivateAerodromesSyncStatus {
 }
 
 model RabSyncState {
-  id             String         @id @default(cuid())
-  period         String         @unique
-  sourceUrl      String         @map("source_url")
-  lastModified   String?        @map("last_modified")
-  contentLength  BigInt?        @map("content_length")
-  contentHash    String?        @map("content_hash")
-  parsedRowCount Int?           @map("parsed_row_count")
-  syncedAt       DateTime?      @map("synced_at") @db.Timestamptz(3)
-  status         RabSyncStatus  @default(PENDING)
-  errorMessage   String?        @map("error_message")
+  id             String        @id @default(cuid())
+  period         String        @unique
+  sourceUrl      String        @map("source_url")
+  lastModified   String?       @map("last_modified")
+  contentLength  BigInt?       @map("content_length")
+  contentHash    String?       @map("content_hash")
+  parsedRowCount Int?          @map("parsed_row_count")
+  syncedAt       DateTime?     @map("synced_at") @db.Timestamptz(3)
+  status         RabSyncStatus @default(PENDING)
+  errorMessage   String?       @map("error_message")
 
   @@map("rab_sync_state")
 }
@@ -142,33 +142,354 @@ model PublicAerodrome {
 }
 
 model PrivateAerodrome {
-  id              String  @id @default(cuid())
-  codigoOaci      String? @map("codigo_oaci")
-  ciad            String  @unique
-  nome            String?
-  municipio       String?
-  uf              String?
-  longitude       String?
-  latitude        String?
-  altitude        String?
-  operacaoDiurna  String? @map("operacao_diurna")
-  operacaoNoturna String? @map("operacao_noturna")
-  designacao1     String? @map("designacao_1")
-  comprimento1    String? @map("comprimento_1")
-  largura1        String? @map("largura_1")
-  resistencia1    String? @map("resistencia_1")
-  superficie1     String? @map("superficie_1")
-  designacao2     String? @map("designacao_2")
-  comprimento2    String? @map("comprimento_2")
-  largura2        String? @map("largura_2")
-  resistencia2    String? @map("resistencia_2")
-  superficie2     String? @map("superficie_2")
+  id               String  @id @default(cuid())
+  codigoOaci       String? @map("codigo_oaci")
+  ciad             String  @unique
+  nome             String?
+  municipio        String?
+  uf               String?
+  longitude        String?
+  latitude         String?
+  altitude         String?
+  operacaoDiurna   String? @map("operacao_diurna")
+  operacaoNoturna  String? @map("operacao_noturna")
+  designacao1      String? @map("designacao_1")
+  comprimento1     String? @map("comprimento_1")
+  largura1         String? @map("largura_1")
+  resistencia1     String? @map("resistencia_1")
+  superficie1      String? @map("superficie_1")
+  designacao2      String? @map("designacao_2")
+  comprimento2     String? @map("comprimento_2")
+  largura2         String? @map("largura_2")
+  resistencia2     String? @map("resistencia_2")
+  superficie2      String? @map("superficie_2")
   portariaRegistro String? @map("portaria_registro")
-  linkPortaria    String? @map("link_portaria")
-  latGeoPoint     String? @map("lat_geo_point")
-  lonGeoPoint     String? @map("lon_geo_point")
+  linkPortaria     String? @map("link_portaria")
+  latGeoPoint      String? @map("lat_geo_point")
+  lonGeoPoint      String? @map("lon_geo_point")
 
   @@index([codigoOaci])
   @@index([uf, municipio])
   @@map("private_aerodrome")
+}
+
+// =============================================================================
+// Domínio operacional (ex-Firestore). Ver docs/PADRAO_DATAS_UTC.md,
+// docs/OPERACIONAL_ANALISE_REDUNDANCIA.md e aerobi-web/docs/data-model/model.ts.
+// Todas as entidades: auditoria completa +
+// DateTime com @db.Timestamptz(3), exceto campos explicitamente @db.Date.
+// Ordem nos modelos: campos de negócio → relações [] → campos *At / *By (incl. revisão/pouso/etc.) → @@index/@@map.
+// PKs e FKs internas: UUID (`@default(uuid()) @db.Uuid`). Tabelas legadas RAB/ANAC
+// acima permanecem com `cuid()` — não alterar.
+// =============================================================================
+
+/// Siglas das UFs do Brasil (alinhado a `BR_UFS` / tipo `Uf` no model.ts do web).
+enum Uf {
+  AC
+  AL
+  AM
+  AP
+  BA
+  CE
+  DF
+  ES
+  GO
+  MA
+  MG
+  MS
+  MT
+  PA
+  PB
+  PE
+  PI
+  PR
+  RJ
+  RN
+  RO
+  RR
+  RS
+  SC
+  SE
+  SP
+  TO
+}
+
+enum LandingRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum AerodromeGeojsonStatus {
+  READY
+  ERROR
+}
+
+enum AerodromeGeojsonKind {
+  AERODROME_MAP
+}
+
+enum GeojsonMapFileType {
+  KML
+  KMZ
+}
+
+enum FeedbackRating {
+  POSITIVE
+  NEGATIVE
+}
+
+/// Grupo de aeródromos por UF (equivale a `states/{uf}/groups/{id}` no Firestore).
+model AerodromeGroup {
+  id                String   @id @default(uuid()) @db.Uuid
+  uf                Uf
+  groupName         String   @map("group_name")
+  ownerId           String?  @map("owner_id")
+  deletionRequested Boolean? @map("deletion_requested")
+
+  operationalAerodromes OperationalAerodrome[]
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdBy String?   @map("created_by")
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedBy String?   @map("updated_by")
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+  deletedBy String?   @map("deleted_by")
+
+  @@index([uf])
+  @@map("aerodrome_groups")
+}
+
+/// Aeródromo gerenciado no produto (distinto de cadastro ANAC público/privado).
+model OperationalAerodrome {
+  id      String         @id @default(uuid()) @db.Uuid
+  groupId String         @map("group_id") @db.Uuid
+  group   AerodromeGroup @relation(fields: [groupId], references: [id], onDelete: Restrict)
+
+  icao        String
+  ciad        String?
+  designation String? @map("designation")
+  length      String? @map("length")
+  width       String? @map("width")
+  resistance  String? @map("resistance")
+  surface     String? @map("surface")
+  altitude    String? @map("altitude")
+
+  name                     String   @map("name")
+  municipality             String?  @map("municipality")
+  latitude                 String   @map("latitude")
+  longitude                String   @map("longitude")
+  latitudeFormatted        String?  @map("latitude_formatted")
+  longitudeFormatted       String?  @map("longitude_formatted")
+  operation                String?  @map("operation")
+  lit                      Boolean? @map("lit")
+  fueling                  Boolean? @map("fueling")
+  observation              String?  @map("observation") @db.Text
+  construction             Boolean? @map("construction")
+  isOpen                   Boolean  @map("is_open")
+  isView                   Boolean  @map("is_view")
+  weatherStationCode       String?  @map("weather_station_code")
+  weatherStationDisplay    String?  @map("weather_station_display")
+  fileType                 String?  @map("file_type")
+  imgUrl                   String?  @map("img_url") @db.Text
+  kmlUrl                   String?  @map("kml_url") @db.Text
+  registrationOrdinanceUrl String?  @map("registration_ordinance_url") @db.Text
+  planOrdinanceUrl         String?  @map("plan_ordinance_url") @db.Text
+  grantTermUrl             String?  @map("grant_term_url") @db.Text
+  aeronauticalStudyUrl     String?  @map("aeronautical_study_url") @db.Text
+  weatherUrl               String?  @map("weather_url") @db.Text
+  windUrl                  String?  @map("wind_url") @db.Text
+  videoUrl                 String?  @map("video_url") @db.Text
+
+  landingRequests LandingRequest[]
+  technicalVisits TechnicalVisit[]
+  /// No máximo um GeoJSON operacional por aeródromo (1:1).
+  geojson         AerodromeGeojson?
+  feedbacks       AerodromeFeedback[]
+  pilotLandings   PilotLanding[]
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdBy String?   @map("created_by")
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedBy String?   @map("updated_by")
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+  deletedBy String?   @map("deleted_by")
+
+  @@unique([groupId, icao])
+  @@index([groupId])
+  @@index([icao, isView])
+  @@map("operational_aerodromes")
+}
+
+/// Solicitação de pouso (unifica awaitemails + answeredemails).
+model LandingRequest {
+  id                     String               @id @default(uuid()) @db.Uuid
+  operationalAerodromeId String               @map("operational_aerodrome_id") @db.Uuid
+  operationalAerodrome   OperationalAerodrome @relation(fields: [operationalAerodromeId], references: [id], onDelete: Restrict)
+
+  status      LandingRequestStatus @map("status")
+  requestDate DateTime             @map("request_date") @db.Timestamptz(3)
+
+  email                String? @map("email")
+  pilotCode            String? @map("pilot_code")
+  aircraftModel        String? @map("aircraft_model")
+  aircraftRegistration String? @map("aircraft_registration")
+  departureAerodrome   String? @map("departure_aerodrome")
+  observation          String? @map("observation") @db.Text
+
+  /// Momento em que o coordenador revisou e aprovou ou rejeitou (Firestore legado: `responseDate`).
+  reviewedAt DateTime? @map("reviewed_at") @db.Timestamptz(3)
+  /// Firebase Auth uid de quem revisou (legado: `responseby.uid`). Nome/e-mail ficam no Firestore até existir tabela `users`.
+  reviewedBy String?   @map("reviewed_by")
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdBy String?   @map("created_by")
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedBy String?   @map("updated_by")
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+  deletedBy String?   @map("deleted_by")
+
+  @@index([operationalAerodromeId, status])
+  @@index([operationalAerodromeId, requestDate])
+  @@map("landing_requests")
+}
+
+/// Visita técnica em aeródromo (`technicalVisit` no Firestore). ICAO, CIAD, pista, nome e município do aeródromo vêm de `operational_aerodromes` via FK (evita duplicar o cadastro).
+model TechnicalVisit {
+  id                     String               @id @default(uuid()) @db.Uuid
+  operationalAerodromeId String               @map("operational_aerodrome_id") @db.Uuid
+  operationalAerodrome   OperationalAerodrome @relation(fields: [operationalAerodromeId], references: [id], onDelete: Restrict)
+
+  /// Uids Auth (preferencial) ou e-mail na importação legada — quem editou a visita, em ordem. Firestore ainda usa objetos `{ name, email, date }?` até cutover.
+  modifierUsers String[] @default([]) @map("modifier_users")
+
+  gatesPadlocksObservation          String?  @map("gates_padlocks_observation") @db.Text
+  hasGatesPadlocks                  Boolean? @map("has_gates_padlocks")
+  fenceObservation                  String?  @map("fence_observation") @db.Text
+  hasFence                          Boolean? @map("has_fence")
+  standardPlateObservation          String?  @map("standard_plate_observation") @db.Text
+  hasStandardPlate                  Boolean? @map("has_standard_plate")
+  qualityObservation                String?  @map("quality_observation") @db.Text
+  qualityOthersObservation          String?  @map("quality_others_observation") @db.Text
+  hasQualityHoles                   Boolean? @map("has_quality_holes")
+  hasQualityAsphalt                 Boolean? @map("has_quality_asphalt")
+  hasQualityOthers                  Boolean? @map("has_quality_others")
+  horizontalSignageObservation      String?  @map("horizontal_signage_observation") @db.Text
+  hasHorizontalSignage              Boolean? @map("has_horizontal_signage")
+  unobstructedHeadboardsObservation String?  @map("unobstructed_headboards_observation") @db.Text
+  hasUnobstructedHeadboards         Boolean? @map("has_unobstructed_headboards")
+  trackRangeObservation             String?  @map("track_range_observation") @db.Text
+  hasTrackRange                     Boolean? @map("has_track_range")
+  pavementRegularity                Boolean? @map("pavement_regularity")
+  trashDebrisObservation            String?  @map("trash_debris_observation") @db.Text
+  hasTrashDebris                    Boolean? @map("has_trash_debris")
+  delimitedPerimeterObservation     String?  @map("delimited_perimeter_observation") @db.Text
+  hasDelimitedPerimeter             Boolean? @map("has_delimited_perimeter")
+  hasInvasion                       Boolean? @map("has_invasion")
+  extraObservation                  String?  @map("extra_observation") @db.Text
+
+  visitAt DateTime @map("visit_at") @db.Timestamptz(3)
+  /// Firebase Auth uid de quem realizou a visita. Nome em `users` (futuro). Legado Firestore: `VISITORNAME` até cutover; import pode deixar null.
+  visitBy String?  @map("visit_by")
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdBy String?   @map("created_by")
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedBy String?   @map("updated_by")
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+  deletedBy String?   @map("deleted_by")
+
+  @@index([operationalAerodromeId, visitAt])
+  @@map("technical_visits")
+}
+
+/// GeoJSON operacional inline (1:1 com o aeródromo; equivale a um doc na coleção `geojsons` no Firestore).
+model AerodromeGeojson {
+  id String @id @default(uuid()) @db.Uuid
+
+  /// Um registro por aeródromo operacional.
+  operationalAerodromeId String               @unique @map("operational_aerodrome_id") @db.Uuid
+  operationalAerodrome   OperationalAerodrome @relation(fields: [operationalAerodromeId], references: [id], onDelete: Restrict)
+
+  /// Mantido para compatibilidade conceitual (ex.: `aerodrome_map`); o vínculo é único via `operational_aerodrome_id`.
+  kind   AerodromeGeojsonKind
+  status AerodromeGeojsonStatus
+
+  /// GeoJSON RFC 7946 (jsonb). Opcional quando `status` = ERROR sem payload inline.
+  geoJson      Json?               @map("geo_json")
+  geoJsonBytes Int                 @default(0) @map("geo_json_bytes")
+  featureCount Int                 @default(0) @map("feature_count")
+  mapFileType  GeojsonMapFileType? @map("map_file_type")
+
+  sourceStoragePath  String? @map("source_storage_path") @db.Text
+  sourceUpdatedAt    String? @map("source_updated_at")
+  geoJsonStoragePath String? @map("geo_json_storage_path") @db.Text
+  versionHash        String? @map("version_hash")
+  errorMessage       String? @map("error_message") @db.Text
+  processingMs       Int?    @map("processing_ms")
+  sourceBytes        Int?    @map("source_bytes")
+  kmlTextBytes       Int?    @map("kml_text_bytes")
+  zipBytes           Int?    @map("zip_bytes")
+
+  generatedAt DateTime? @map("generated_at") @db.Timestamptz(3)
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdBy String?   @map("created_by")
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedBy String?   @map("updated_by")
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+  deletedBy String?   @map("deleted_by")
+
+  @@index([status])
+  @@map("aerodrome_geojsons")
+}
+
+/// Avaliação pública (subcoleção `feedbacks` no Firestore).
+model AerodromeFeedback {
+  id                     String               @id @default(uuid()) @db.Uuid
+  operationalAerodromeId String               @map("operational_aerodrome_id") @db.Uuid
+  operationalAerodrome   OperationalAerodrome @relation(fields: [operationalAerodromeId], references: [id], onDelete: Restrict)
+
+  rating       FeedbackRating @map("rating")
+  comment      String?        @map("comment") @db.Text
+  sessionHash  String         @map("session_hash")
+  /// Dia da avaliação (rate limit diário alinhado ao Firestore `date` YYYY-MM-DD).
+  feedbackDate DateTime       @map("feedback_date") @db.Date
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdBy String?   @map("created_by")
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedBy String?   @map("updated_by")
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+  deletedBy String?   @map("deleted_by")
+
+  @@unique([sessionHash, operationalAerodromeId, feedbackDate])
+  @@index([operationalAerodromeId, feedbackDate])
+  @@map("aerodrome_feedbacks")
+}
+
+/// Registro de pouso do piloto (coleção raiz `landings` no Firestore).
+model PilotLanding {
+  id                     String                @id @default(uuid()) @db.Uuid
+  operationalAerodromeId String?               @map("operational_aerodrome_id") @db.Uuid
+  operationalAerodrome   OperationalAerodrome? @relation(fields: [operationalAerodromeId], references: [id], onDelete: SetNull)
+
+  registration String   @map("registration")
+  localName    String   @map("local_name")
+  localIcao    String   @map("local_icao")
+  checked      Boolean  @map("checked")
+  imagesPath   String   @map("images_path")
+  /// Instante do pouso informado pelo piloto (UTC). Migração: parse do legado Firestore `date`.
+  landingAt    DateTime @map("landing_at") @db.Timestamptz(3)
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdBy String?   @map("created_by")
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedBy String?   @map("updated_by")
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+  deletedBy String?   @map("deleted_by")
+
+  @@index([operationalAerodromeId])
+  @@index([registration])
+  @@map("pilot_landings")
 }
