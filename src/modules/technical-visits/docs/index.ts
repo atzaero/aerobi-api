@@ -1,0 +1,5 @@
+export { CreateTechnicalVisitDocs } from './create-technical-visit.docs';
+export { FindTechnicalVisitByIdDocs } from './find-technical-visit-by-id.docs';
+export { ListTechnicalVisitsDocs } from './list-technical-visits.docs';
+export { RemoveTechnicalVisitDocs } from './remove-technical-visit.docs';
+export { UpdateTechnicalVisitDocs } from './update-technical-visit.docs';
