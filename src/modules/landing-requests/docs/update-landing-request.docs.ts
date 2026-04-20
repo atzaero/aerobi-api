@@ -12,7 +12,7 @@ export function UpdateLandingRequestDocs() {
   return applyDecorators(
     ApiSecurity('api_key'),
     ApiOperation({ summary: 'Atualiza um(a) LandingRequest por id' }),
-    ApiParam({ name: 'id', description: 'Identificador' }),
+    ApiParam({ name: 'landingRequestId', description: 'Identificador' }),
     ApiOkResponse({ type: LandingRequestResponseDTO }),
   );
 }

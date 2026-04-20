@@ -4,6 +4,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { AerobiApiKeyGuard } from '@/common/guards/aerobi-api-key.guard';
 
 import { RemoveTechnicalVisitDocs } from '../docs/remove-technical-visit.docs';
+import { TechnicalVisitParamDTO } from '../dtos/technical-visit-param.dto';
 import { TechnicalVisitResponseDTO } from '../dtos/technical-visit-response.dto';
 import { RemoveTechnicalVisitService } from '../services/remove-technical-visit.service';
 
@@ -13,10 +14,15 @@ import { RemoveTechnicalVisitService } from '../services/remove-technical-visit.
 export class RemoveTechnicalVisitController {
   constructor(private readonly service: RemoveTechnicalVisitService) {}
 
-  @Delete(':id')
+  @Delete(':technicalVisitId')
   @RemoveTechnicalVisitDocs()
-  handle(@Param('id') id: string): Promise<TechnicalVisitResponseDTO> {
+  handle(
+    @Param() params: TechnicalVisitParamDTO,
+  ): Promise<TechnicalVisitResponseDTO> {
     // TODO: obter deletedBy do contexto autenticado
-    return this.service.execute({ id, deletedBy: 'system' });
+    return this.service.execute({
+      id: params.technicalVisitId,
+      deletedBy: 'system',
+    });
   }
 }

@@ -4,6 +4,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { AerobiApiKeyGuard } from '@/common/guards/aerobi-api-key.guard';
 
 import { RemovePilotLandingDocs } from '../docs/remove-pilot-landing.docs';
+import { PilotLandingParamDTO } from '../dtos/pilot-landing-param.dto';
 import { PilotLandingResponseDTO } from '../dtos/pilot-landing-response.dto';
 import { RemovePilotLandingService } from '../services/remove-pilot-landing.service';
 
@@ -13,10 +14,15 @@ import { RemovePilotLandingService } from '../services/remove-pilot-landing.serv
 export class RemovePilotLandingController {
   constructor(private readonly service: RemovePilotLandingService) {}
 
-  @Delete(':id')
+  @Delete(':pilotLandingId')
   @RemovePilotLandingDocs()
-  handle(@Param('id') id: string): Promise<PilotLandingResponseDTO> {
+  handle(
+    @Param() params: PilotLandingParamDTO,
+  ): Promise<PilotLandingResponseDTO> {
     // TODO: obter deletedBy do contexto autenticado
-    return this.service.execute({ id, deletedBy: 'system' });
+    return this.service.execute({
+      id: params.pilotLandingId,
+      deletedBy: 'system',
+    });
   }
 }

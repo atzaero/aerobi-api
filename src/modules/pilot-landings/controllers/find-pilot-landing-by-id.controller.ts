@@ -4,6 +4,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { AerobiApiKeyGuard } from '@/common/guards/aerobi-api-key.guard';
 
 import { FindPilotLandingByIdDocs } from '../docs/find-pilot-landing-by-id.docs';
+import { PilotLandingParamDTO } from '../dtos/pilot-landing-param.dto';
 import { PilotLandingResponseDTO } from '../dtos/pilot-landing-response.dto';
 import { FindPilotLandingByIdService } from '../services/find-pilot-landing-by-id.service';
 
@@ -13,9 +14,11 @@ import { FindPilotLandingByIdService } from '../services/find-pilot-landing-by-i
 export class FindPilotLandingByIdController {
   constructor(private readonly service: FindPilotLandingByIdService) {}
 
-  @Get(':id')
+  @Get(':pilotLandingId')
   @FindPilotLandingByIdDocs()
-  handle(@Param('id') id: string): Promise<PilotLandingResponseDTO> {
-    return this.service.execute({ id });
+  handle(
+    @Param() params: PilotLandingParamDTO,
+  ): Promise<PilotLandingResponseDTO> {
+    return this.service.execute({ id: params.pilotLandingId });
   }
 }

@@ -14,7 +14,7 @@ export function RemoveAerodromeGroupDocs() {
     ApiOperation({
       summary: 'Remove (soft delete) um(a) AerodromeGroup por id',
     }),
-    ApiParam({ name: 'id', description: 'Identificador' }),
+    ApiParam({ name: 'aerodromeGroupId', description: 'Identificador' }),
     ApiOkResponse({ type: AerodromeGroupResponseDTO }),
   );
 }

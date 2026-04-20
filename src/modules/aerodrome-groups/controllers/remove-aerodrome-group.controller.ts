@@ -4,6 +4,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { AerobiApiKeyGuard } from '@/common/guards/aerobi-api-key.guard';
 
 import { RemoveAerodromeGroupDocs } from '../docs/remove-aerodrome-group.docs';
+import { AerodromeGroupParamDTO } from '../dtos/aerodrome-group-param.dto';
 import { AerodromeGroupResponseDTO } from '../dtos/aerodrome-group-response.dto';
 import { RemoveAerodromeGroupService } from '../services/remove-aerodrome-group.service';
 
@@ -13,10 +14,15 @@ import { RemoveAerodromeGroupService } from '../services/remove-aerodrome-group.
 export class RemoveAerodromeGroupController {
   constructor(private readonly service: RemoveAerodromeGroupService) {}
 
-  @Delete(':id')
+  @Delete(':aerodromeGroupId')
   @RemoveAerodromeGroupDocs()
-  handle(@Param('id') id: string): Promise<AerodromeGroupResponseDTO> {
+  handle(
+    @Param() params: AerodromeGroupParamDTO,
+  ): Promise<AerodromeGroupResponseDTO> {
     // TODO: obter deletedBy do contexto autenticado
-    return this.service.execute({ id, deletedBy: 'system' });
+    return this.service.execute({
+      id: params.aerodromeGroupId,
+      deletedBy: 'system',
+    });
   }
 }

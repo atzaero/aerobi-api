@@ -4,6 +4,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { AerobiApiKeyGuard } from '@/common/guards/aerobi-api-key.guard';
 
 import { UpdateTechnicalVisitDocs } from '../docs/update-technical-visit.docs';
+import { TechnicalVisitParamDTO } from '../dtos/technical-visit-param.dto';
 import { TechnicalVisitResponseDTO } from '../dtos/technical-visit-response.dto';
 import { UpdateTechnicalVisitDTO } from '../dtos/update-technical-visit.dto';
 import { UpdateTechnicalVisitService } from '../services/update-technical-visit.service';
@@ -14,12 +15,12 @@ import { UpdateTechnicalVisitService } from '../services/update-technical-visit.
 export class UpdateTechnicalVisitController {
   constructor(private readonly service: UpdateTechnicalVisitService) {}
 
-  @Patch(':id')
+  @Patch(':technicalVisitId')
   @UpdateTechnicalVisitDocs()
   handle(
-    @Param('id') id: string,
+    @Param() params: TechnicalVisitParamDTO,
     @Body() dto: UpdateTechnicalVisitDTO,
   ): Promise<TechnicalVisitResponseDTO> {
-    return this.service.execute({ id, ...dto });
+    return this.service.execute({ id: params.technicalVisitId, ...dto });
   }
 }

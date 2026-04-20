@@ -12,7 +12,7 @@ export function UpdateAerodromeGroupDocs() {
   return applyDecorators(
     ApiSecurity('api_key'),
     ApiOperation({ summary: 'Atualiza um(a) AerodromeGroup por id' }),
-    ApiParam({ name: 'id', description: 'Identificador' }),
+    ApiParam({ name: 'aerodromeGroupId', description: 'Identificador' }),
     ApiOkResponse({ type: AerodromeGroupResponseDTO }),
   );
 }

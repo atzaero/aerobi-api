@@ -12,7 +12,7 @@ export function UpdateAerodromeFeedbackDocs() {
   return applyDecorators(
     ApiSecurity('api_key'),
     ApiOperation({ summary: 'Atualiza um(a) AerodromeFeedback por id' }),
-    ApiParam({ name: 'id', description: 'Identificador' }),
+    ApiParam({ name: 'aerodromeFeedbackId', description: 'Identificador' }),
     ApiOkResponse({ type: AerodromeFeedbackResponseDTO }),
   );
 }

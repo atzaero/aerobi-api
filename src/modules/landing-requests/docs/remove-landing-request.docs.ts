@@ -14,7 +14,7 @@ export function RemoveLandingRequestDocs() {
     ApiOperation({
       summary: 'Remove (soft delete) um(a) LandingRequest por id',
     }),
-    ApiParam({ name: 'id', description: 'Identificador' }),
+    ApiParam({ name: 'landingRequestId', description: 'Identificador' }),
     ApiOkResponse({ type: LandingRequestResponseDTO }),
   );
 }

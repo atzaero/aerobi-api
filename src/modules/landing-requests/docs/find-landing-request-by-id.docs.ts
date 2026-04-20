@@ -12,7 +12,7 @@ export function FindLandingRequestByIdDocs() {
   return applyDecorators(
     ApiSecurity('api_key'),
     ApiOperation({ summary: 'Busca um(a) LandingRequest por id' }),
-    ApiParam({ name: 'id', description: 'Identificador' }),
+    ApiParam({ name: 'landingRequestId', description: 'Identificador' }),
     ApiOkResponse({ type: LandingRequestResponseDTO }),
   );
 }

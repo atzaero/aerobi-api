@@ -4,6 +4,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { AerobiApiKeyGuard } from '@/common/guards/aerobi-api-key.guard';
 
 import { UpdateAerodromeGroupDocs } from '../docs/update-aerodrome-group.docs';
+import { AerodromeGroupParamDTO } from '../dtos/aerodrome-group-param.dto';
 import { AerodromeGroupResponseDTO } from '../dtos/aerodrome-group-response.dto';
 import { UpdateAerodromeGroupDTO } from '../dtos/update-aerodrome-group.dto';
 import { UpdateAerodromeGroupService } from '../services/update-aerodrome-group.service';
@@ -14,12 +15,12 @@ import { UpdateAerodromeGroupService } from '../services/update-aerodrome-group.
 export class UpdateAerodromeGroupController {
   constructor(private readonly service: UpdateAerodromeGroupService) {}
 
-  @Patch(':id')
+  @Patch(':aerodromeGroupId')
   @UpdateAerodromeGroupDocs()
   handle(
-    @Param('id') id: string,
+    @Param() params: AerodromeGroupParamDTO,
     @Body() dto: UpdateAerodromeGroupDTO,
   ): Promise<AerodromeGroupResponseDTO> {
-    return this.service.execute({ id, ...dto });
+    return this.service.execute({ id: params.aerodromeGroupId, ...dto });
   }
 }

@@ -4,6 +4,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { AerobiApiKeyGuard } from '@/common/guards/aerobi-api-key.guard';
 
 import { FindAerodromeGroupByIdDocs } from '../docs/find-aerodrome-group-by-id.docs';
+import { AerodromeGroupParamDTO } from '../dtos/aerodrome-group-param.dto';
 import { AerodromeGroupResponseDTO } from '../dtos/aerodrome-group-response.dto';
 import { FindAerodromeGroupByIdService } from '../services/find-aerodrome-group-by-id.service';
 
@@ -13,9 +14,11 @@ import { FindAerodromeGroupByIdService } from '../services/find-aerodrome-group-
 export class FindAerodromeGroupByIdController {
   constructor(private readonly service: FindAerodromeGroupByIdService) {}
 
-  @Get(':id')
+  @Get(':aerodromeGroupId')
   @FindAerodromeGroupByIdDocs()
-  handle(@Param('id') id: string): Promise<AerodromeGroupResponseDTO> {
-    return this.service.execute({ id });
+  handle(
+    @Param() params: AerodromeGroupParamDTO,
+  ): Promise<AerodromeGroupResponseDTO> {
+    return this.service.execute({ id: params.aerodromeGroupId });
   }
 }

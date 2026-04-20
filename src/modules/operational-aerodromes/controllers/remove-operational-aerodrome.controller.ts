@@ -4,6 +4,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { AerobiApiKeyGuard } from '@/common/guards/aerobi-api-key.guard';
 
 import { RemoveOperationalAerodromeDocs } from '../docs/remove-operational-aerodrome.docs';
+import { OperationalAerodromeParamDTO } from '../dtos/operational-aerodrome-param.dto';
 import { OperationalAerodromeResponseDTO } from '../dtos/operational-aerodrome-response.dto';
 import { RemoveOperationalAerodromeService } from '../services/remove-operational-aerodrome.service';
 
@@ -13,10 +14,15 @@ import { RemoveOperationalAerodromeService } from '../services/remove-operationa
 export class RemoveOperationalAerodromeController {
   constructor(private readonly service: RemoveOperationalAerodromeService) {}
 
-  @Delete(':id')
+  @Delete(':operationalAerodromeId')
   @RemoveOperationalAerodromeDocs()
-  handle(@Param('id') id: string): Promise<OperationalAerodromeResponseDTO> {
+  handle(
+    @Param() params: OperationalAerodromeParamDTO,
+  ): Promise<OperationalAerodromeResponseDTO> {
     // TODO: obter deletedBy do contexto autenticado
-    return this.service.execute({ id, deletedBy: 'system' });
+    return this.service.execute({
+      id: params.operationalAerodromeId,
+      deletedBy: 'system',
+    });
   }
 }

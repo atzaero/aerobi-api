@@ -12,7 +12,7 @@ export function FindTechnicalVisitByIdDocs() {
   return applyDecorators(
     ApiSecurity('api_key'),
     ApiOperation({ summary: 'Busca um(a) TechnicalVisit por id' }),
-    ApiParam({ name: 'id', description: 'Identificador' }),
+    ApiParam({ name: 'technicalVisitId', description: 'Identificador' }),
     ApiOkResponse({ type: TechnicalVisitResponseDTO }),
   );
 }

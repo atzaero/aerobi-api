@@ -4,6 +4,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { AerobiApiKeyGuard } from '@/common/guards/aerobi-api-key.guard';
 
 import { RemoveLandingRequestDocs } from '../docs/remove-landing-request.docs';
+import { LandingRequestParamDTO } from '../dtos/landing-request-param.dto';
 import { LandingRequestResponseDTO } from '../dtos/landing-request-response.dto';
 import { RemoveLandingRequestService } from '../services/remove-landing-request.service';
 
@@ -13,10 +14,15 @@ import { RemoveLandingRequestService } from '../services/remove-landing-request.
 export class RemoveLandingRequestController {
   constructor(private readonly service: RemoveLandingRequestService) {}
 
-  @Delete(':id')
+  @Delete(':landingRequestId')
   @RemoveLandingRequestDocs()
-  handle(@Param('id') id: string): Promise<LandingRequestResponseDTO> {
+  handle(
+    @Param() params: LandingRequestParamDTO,
+  ): Promise<LandingRequestResponseDTO> {
     // TODO: obter deletedBy do contexto autenticado
-    return this.service.execute({ id, deletedBy: 'system' });
+    return this.service.execute({
+      id: params.landingRequestId,
+      deletedBy: 'system',
+    });
   }
 }

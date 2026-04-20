@@ -12,7 +12,7 @@ export function UpdateOperationalAerodromeDocs() {
   return applyDecorators(
     ApiSecurity('api_key'),
     ApiOperation({ summary: 'Atualiza um(a) OperationalAerodrome por id' }),
-    ApiParam({ name: 'id', description: 'Identificador' }),
+    ApiParam({ name: 'operationalAerodromeId', description: 'Identificador' }),
     ApiOkResponse({ type: OperationalAerodromeResponseDTO }),
   );
 }

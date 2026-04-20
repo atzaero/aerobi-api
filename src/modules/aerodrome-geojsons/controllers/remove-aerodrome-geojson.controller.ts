@@ -4,6 +4,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { AerobiApiKeyGuard } from '@/common/guards/aerobi-api-key.guard';
 
 import { RemoveAerodromeGeojsonDocs } from '../docs/remove-aerodrome-geojson.docs';
+import { AerodromeGeojsonParamDTO } from '../dtos/aerodrome-geojson-param.dto';
 import { AerodromeGeojsonResponseDTO } from '../dtos/aerodrome-geojson-response.dto';
 import { RemoveAerodromeGeojsonService } from '../services/remove-aerodrome-geojson.service';
 
@@ -13,10 +14,15 @@ import { RemoveAerodromeGeojsonService } from '../services/remove-aerodrome-geoj
 export class RemoveAerodromeGeojsonController {
   constructor(private readonly service: RemoveAerodromeGeojsonService) {}
 
-  @Delete(':id')
+  @Delete(':aerodromeGeojsonId')
   @RemoveAerodromeGeojsonDocs()
-  handle(@Param('id') id: string): Promise<AerodromeGeojsonResponseDTO> {
+  handle(
+    @Param() params: AerodromeGeojsonParamDTO,
+  ): Promise<AerodromeGeojsonResponseDTO> {
     // TODO: obter deletedBy do contexto autenticado
-    return this.service.execute({ id, deletedBy: 'system' });
+    return this.service.execute({
+      id: params.aerodromeGeojsonId,
+      deletedBy: 'system',
+    });
   }
 }

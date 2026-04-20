@@ -12,7 +12,7 @@ export function FindAerodromeGeojsonByIdDocs() {
   return applyDecorators(
     ApiSecurity('api_key'),
     ApiOperation({ summary: 'Busca um(a) AerodromeGeojson por id' }),
-    ApiParam({ name: 'id', description: 'Identificador' }),
+    ApiParam({ name: 'aerodromeGeojsonId', description: 'Identificador' }),
     ApiOkResponse({ type: AerodromeGeojsonResponseDTO }),
   );
 }

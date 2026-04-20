@@ -4,6 +4,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { AerobiApiKeyGuard } from '@/common/guards/aerobi-api-key.guard';
 
 import { UpdateAerodromeGeojsonDocs } from '../docs/update-aerodrome-geojson.docs';
+import { AerodromeGeojsonParamDTO } from '../dtos/aerodrome-geojson-param.dto';
 import { AerodromeGeojsonResponseDTO } from '../dtos/aerodrome-geojson-response.dto';
 import { UpdateAerodromeGeojsonDTO } from '../dtos/update-aerodrome-geojson.dto';
 import { UpdateAerodromeGeojsonService } from '../services/update-aerodrome-geojson.service';
@@ -14,12 +15,12 @@ import { UpdateAerodromeGeojsonService } from '../services/update-aerodrome-geoj
 export class UpdateAerodromeGeojsonController {
   constructor(private readonly service: UpdateAerodromeGeojsonService) {}
 
-  @Patch(':id')
+  @Patch(':aerodromeGeojsonId')
   @UpdateAerodromeGeojsonDocs()
   handle(
-    @Param('id') id: string,
+    @Param() params: AerodromeGeojsonParamDTO,
     @Body() dto: UpdateAerodromeGeojsonDTO,
   ): Promise<AerodromeGeojsonResponseDTO> {
-    return this.service.execute({ id, ...dto });
+    return this.service.execute({ id: params.aerodromeGeojsonId, ...dto });
   }
 }

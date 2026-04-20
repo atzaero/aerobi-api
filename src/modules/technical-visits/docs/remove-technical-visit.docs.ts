@@ -14,7 +14,7 @@ export function RemoveTechnicalVisitDocs() {
     ApiOperation({
       summary: 'Remove (soft delete) um(a) TechnicalVisit por id',
     }),
-    ApiParam({ name: 'id', description: 'Identificador' }),
+    ApiParam({ name: 'technicalVisitId', description: 'Identificador' }),
     ApiOkResponse({ type: TechnicalVisitResponseDTO }),
   );
 }

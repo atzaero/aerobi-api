@@ -14,7 +14,7 @@ export function RemoveAerodromeFeedbackDocs() {
     ApiOperation({
       summary: 'Remove (soft delete) um(a) AerodromeFeedback por id',
     }),
-    ApiParam({ name: 'id', description: 'Identificador' }),
+    ApiParam({ name: 'aerodromeFeedbackId', description: 'Identificador' }),
     ApiOkResponse({ type: AerodromeFeedbackResponseDTO }),
   );
 }

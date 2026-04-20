@@ -12,7 +12,7 @@ export function FindAerodromeGroupByIdDocs() {
   return applyDecorators(
     ApiSecurity('api_key'),
     ApiOperation({ summary: 'Busca um(a) AerodromeGroup por id' }),
-    ApiParam({ name: 'id', description: 'Identificador' }),
+    ApiParam({ name: 'aerodromeGroupId', description: 'Identificador' }),
     ApiOkResponse({ type: AerodromeGroupResponseDTO }),
   );
 }

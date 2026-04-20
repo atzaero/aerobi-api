@@ -12,7 +12,7 @@ export function UpdateAerodromeGeojsonDocs() {
   return applyDecorators(
     ApiSecurity('api_key'),
     ApiOperation({ summary: 'Atualiza um(a) AerodromeGeojson por id' }),
-    ApiParam({ name: 'id', description: 'Identificador' }),
+    ApiParam({ name: 'aerodromeGeojsonId', description: 'Identificador' }),
     ApiOkResponse({ type: AerodromeGeojsonResponseDTO }),
   );
 }

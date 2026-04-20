@@ -4,6 +4,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { AerobiApiKeyGuard } from '@/common/guards/aerobi-api-key.guard';
 
 import { UpdatePilotLandingDocs } from '../docs/update-pilot-landing.docs';
+import { PilotLandingParamDTO } from '../dtos/pilot-landing-param.dto';
 import { PilotLandingResponseDTO } from '../dtos/pilot-landing-response.dto';
 import { UpdatePilotLandingDTO } from '../dtos/update-pilot-landing.dto';
 import { UpdatePilotLandingService } from '../services/update-pilot-landing.service';
@@ -14,12 +15,12 @@ import { UpdatePilotLandingService } from '../services/update-pilot-landing.serv
 export class UpdatePilotLandingController {
   constructor(private readonly service: UpdatePilotLandingService) {}
 
-  @Patch(':id')
+  @Patch(':pilotLandingId')
   @UpdatePilotLandingDocs()
   handle(
-    @Param('id') id: string,
+    @Param() params: PilotLandingParamDTO,
     @Body() dto: UpdatePilotLandingDTO,
   ): Promise<PilotLandingResponseDTO> {
-    return this.service.execute({ id, ...dto });
+    return this.service.execute({ id: params.pilotLandingId, ...dto });
   }
 }

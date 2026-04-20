@@ -12,7 +12,7 @@ export function FindPilotLandingByIdDocs() {
   return applyDecorators(
     ApiSecurity('api_key'),
     ApiOperation({ summary: 'Busca um(a) PilotLanding por id' }),
-    ApiParam({ name: 'id', description: 'Identificador' }),
+    ApiParam({ name: 'pilotLandingId', description: 'Identificador' }),
     ApiOkResponse({ type: PilotLandingResponseDTO }),
   );
 }

@@ -4,6 +4,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { AerobiApiKeyGuard } from '@/common/guards/aerobi-api-key.guard';
 
 import { UpdateAerodromeFeedbackDocs } from '../docs/update-aerodrome-feedback.docs';
+import { AerodromeFeedbackParamDTO } from '../dtos/aerodrome-feedback-param.dto';
 import { AerodromeFeedbackResponseDTO } from '../dtos/aerodrome-feedback-response.dto';
 import { UpdateAerodromeFeedbackDTO } from '../dtos/update-aerodrome-feedback.dto';
 import { UpdateAerodromeFeedbackService } from '../services/update-aerodrome-feedback.service';
@@ -14,12 +15,12 @@ import { UpdateAerodromeFeedbackService } from '../services/update-aerodrome-fee
 export class UpdateAerodromeFeedbackController {
   constructor(private readonly service: UpdateAerodromeFeedbackService) {}
 
-  @Patch(':id')
+  @Patch(':aerodromeFeedbackId')
   @UpdateAerodromeFeedbackDocs()
   handle(
-    @Param('id') id: string,
+    @Param() params: AerodromeFeedbackParamDTO,
     @Body() dto: UpdateAerodromeFeedbackDTO,
   ): Promise<AerodromeFeedbackResponseDTO> {
-    return this.service.execute({ id, ...dto });
+    return this.service.execute({ id: params.aerodromeFeedbackId, ...dto });
   }
 }

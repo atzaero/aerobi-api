@@ -4,6 +4,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { AerobiApiKeyGuard } from '@/common/guards/aerobi-api-key.guard';
 
 import { RemoveAerodromeFeedbackDocs } from '../docs/remove-aerodrome-feedback.docs';
+import { AerodromeFeedbackParamDTO } from '../dtos/aerodrome-feedback-param.dto';
 import { AerodromeFeedbackResponseDTO } from '../dtos/aerodrome-feedback-response.dto';
 import { RemoveAerodromeFeedbackService } from '../services/remove-aerodrome-feedback.service';
 
@@ -13,10 +14,15 @@ import { RemoveAerodromeFeedbackService } from '../services/remove-aerodrome-fee
 export class RemoveAerodromeFeedbackController {
   constructor(private readonly service: RemoveAerodromeFeedbackService) {}
 
-  @Delete(':id')
+  @Delete(':aerodromeFeedbackId')
   @RemoveAerodromeFeedbackDocs()
-  handle(@Param('id') id: string): Promise<AerodromeFeedbackResponseDTO> {
+  handle(
+    @Param() params: AerodromeFeedbackParamDTO,
+  ): Promise<AerodromeFeedbackResponseDTO> {
     // TODO: obter deletedBy do contexto autenticado
-    return this.service.execute({ id, deletedBy: 'system' });
+    return this.service.execute({
+      id: params.aerodromeFeedbackId,
+      deletedBy: 'system',
+    });
   }
 }

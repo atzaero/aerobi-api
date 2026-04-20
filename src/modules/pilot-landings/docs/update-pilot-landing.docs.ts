@@ -12,7 +12,7 @@ export function UpdatePilotLandingDocs() {
   return applyDecorators(
     ApiSecurity('api_key'),
     ApiOperation({ summary: 'Atualiza um(a) PilotLanding por id' }),
-    ApiParam({ name: 'id', description: 'Identificador' }),
+    ApiParam({ name: 'pilotLandingId', description: 'Identificador' }),
     ApiOkResponse({ type: PilotLandingResponseDTO }),
   );
 }

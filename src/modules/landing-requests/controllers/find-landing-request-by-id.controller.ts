@@ -4,6 +4,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { AerobiApiKeyGuard } from '@/common/guards/aerobi-api-key.guard';
 
 import { FindLandingRequestByIdDocs } from '../docs/find-landing-request-by-id.docs';
+import { LandingRequestParamDTO } from '../dtos/landing-request-param.dto';
 import { LandingRequestResponseDTO } from '../dtos/landing-request-response.dto';
 import { FindLandingRequestByIdService } from '../services/find-landing-request-by-id.service';
 
@@ -13,9 +14,11 @@ import { FindLandingRequestByIdService } from '../services/find-landing-request-
 export class FindLandingRequestByIdController {
   constructor(private readonly service: FindLandingRequestByIdService) {}
 
-  @Get(':id')
+  @Get(':landingRequestId')
   @FindLandingRequestByIdDocs()
-  handle(@Param('id') id: string): Promise<LandingRequestResponseDTO> {
-    return this.service.execute({ id });
+  handle(
+    @Param() params: LandingRequestParamDTO,
+  ): Promise<LandingRequestResponseDTO> {
+    return this.service.execute({ id: params.landingRequestId });
   }
 }
