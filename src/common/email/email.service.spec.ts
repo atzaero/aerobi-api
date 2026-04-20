@@ -92,9 +92,12 @@ describe('EmailService', () => {
     );
 
     const warnSpy = jest
-
       .spyOn(
-        (service as unknown as { logger: { warn: () => void } }).logger,
+        (
+          service as unknown as {
+            logger: { warn: (...args: unknown[]) => void };
+          }
+        ).logger,
         'warn',
       )
       .mockImplementation(() => undefined);
