@@ -1,3 +1,10 @@
+# [2.4.0](https://github.com/atzaero/aerobi-api/compare/v2.3.2...v2.4.0) (2026-04-20)
+
+
+### Features
+
+* **prisma:** domínio operacional ex-Firestore ([#36](https://github.com/atzaero/aerobi-api/issues/36)) ([#37](https://github.com/atzaero/aerobi-api/issues/37)) ([e162ec8](https://github.com/atzaero/aerobi-api/commit/e162ec82b263a6e6df1078cf6ca2505b39ff68a9))
+
 ## [2.3.2](https://github.com/atzaero/aerobi-api/compare/v2.3.1...v2.3.2) (2026-04-14)
 
 
