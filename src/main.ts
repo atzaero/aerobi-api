@@ -42,8 +42,8 @@ async function bootstrap() {
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Aerobi API')
     .setDescription(
-      'API Nest para sincronização do RAB (ANAC), aeródromos privados e proxy Plugfield. ' +
-        '**Rotas `/rab/*`, `/private-aerodromes/*` e `/plugfield/*`** exigem header **`X-API-Key`** igual a **`AEROBI_API_KEY`**, ' +
+      'API Nest para sincronização do RAB (ANAC), aeródromos privados, proxy Plugfield e consulta de licenças de piloto. ' +
+        '**Rotas `/rab/*`, `/private-aerodromes/*`, `/plugfield/*` e `/anac/*`** exigem header **`X-API-Key`** igual a **`AEROBI_API_KEY`**, ' +
         'exceto em **`NODE_ENV=development`** sem `AEROBI_REQUIRE_AUTH` (bypass para DX local). ' +
         'Com `AEROBI_REQUIRE_AUTH=true`, o bypass é desativado também em development. ' +
         'Ver JSDoc: `AerobiApiKeyGuard`. ' +

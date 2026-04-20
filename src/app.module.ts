@@ -6,6 +6,7 @@ import { AerodromeFeedbacksModule } from '@/modules/aerodrome-feedbacks/aerodrom
 import { AerodromeGeojsonsModule } from '@/modules/aerodrome-geojsons/aerodrome-geojsons.module';
 import { AerodromeGroupsModule } from '@/modules/aerodrome-groups/aerodrome-groups.module';
 import { AiswebModule } from '@/modules/aisweb/aisweb.module';
+import { AnacModule } from '@/modules/anac/anac.module';
 import { HealthModule } from '@/modules/health/health.module';
 import { LandingRequestsModule } from '@/modules/landing-requests/landing-requests.module';
 import { OperationalAerodromesModule } from '@/modules/operational-aerodromes/operational-aerodromes.module';
@@ -24,6 +25,7 @@ import { PrismaModule } from '@/prisma/prisma.module';
     ScheduleModule.forRoot(),
     PrismaModule,
     HealthModule,
+    AnacModule,
     RabModule,
     PlugfieldModule,
     AiswebModule,
