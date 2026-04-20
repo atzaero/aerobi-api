@@ -468,6 +468,42 @@ model AerodromeFeedback {
   @@map("aerodrome_feedbacks")
 }
 
+/// Tipos de token genérico usados pelo módulo `tokens` (email verification,
+/// password reset, OTP, etc). Modelagem é genérica via `subject_id: String`
+/// — sem FK a `users` por enquanto, já que a tabela não existe.
+enum TokenType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+  OTP
+  GENERIC
+}
+
+/// Token de uso único (one-shot) com hash bcrypt no campo `token_hash`.
+/// O token plain é enviado ao usuário (email, SMS, etc.) e jamais persistido.
+/// Validação confere: hash bate + não expirou + não usado + não soft-deleted.
+model Token {
+  id        String    @id @default(uuid()) @db.Uuid
+  type      TokenType @map("type")
+  tokenHash String    @map("token_hash")
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(3)
+  used      Boolean   @default(false)
+  metadata  Json?
+  subjectId String    @map("subject_id")
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdBy String?   @map("created_by")
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedBy String?   @map("updated_by")
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+  deletedBy String?   @map("deleted_by")
+
+  @@index([type])
+  @@index([tokenHash])
+  @@index([subjectId, type])
+  @@index([deletedAt])
+  @@map("tokens")
+}
+
 /// Registro de pouso do piloto (coleção raiz `landings` no Firestore).
 model PilotLanding {
   id                     String                @id @default(uuid()) @db.Uuid
