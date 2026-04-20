@@ -17,6 +17,7 @@ import { PublicAerodromesModule } from '@/modules/public-aerodromes/public-aerod
 import { RabModule } from '@/modules/rab/rab.module';
 import { SchedulerModule } from '@/modules/scheduler/scheduler.module';
 import { TechnicalVisitsModule } from '@/modules/technical-visits/technical-visits.module';
+import { TokensModule } from '@/modules/tokens/tokens.module';
 import { PrismaModule } from '@/prisma/prisma.module';
 
 @Module({
@@ -39,6 +40,7 @@ import { PrismaModule } from '@/prisma/prisma.module';
     AerodromeGeojsonsModule,
     AerodromeFeedbacksModule,
     PilotLandingsModule,
+    TokensModule,
   ],
 })
 export class AppModule {}
