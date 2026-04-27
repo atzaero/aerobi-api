@@ -12,7 +12,7 @@ export class HealthController {
 
   @Get()
   @HealthDocs()
-  handle(): HealthResponseDto {
+  async handle(): Promise<HealthResponseDto> {
     return this.healthService.execute();
   }
 }
