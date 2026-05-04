@@ -2,7 +2,6 @@ import type { PrivateAerodromesSyncState } from '@/generated/prisma/client';
 import { PrivateAerodromesSyncStatus } from '@/generated/prisma/client';
 import { createHash } from 'node:crypto';
 
-import { SyncPrivateAerodromesDto } from '../dtos/sync-private-aerodromes.dto';
 import { PrivateAerodromeRepository } from '../repositories/private-aerodrome.repository';
 import { PrivateAerodromesSyncStateRepository } from '../repositories/private-aerodromes-sync-state.repository';
 

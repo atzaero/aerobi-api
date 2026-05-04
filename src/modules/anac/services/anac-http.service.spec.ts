@@ -43,6 +43,7 @@ describe('AnacHttpService', () => {
     await service.fetchLicenseData('123.456.789-00', '123456');
 
     expect(httpService.post).toHaveBeenCalledTimes(1);
+    /* eslint-disable @typescript-eslint/no-unsafe-assignment -- jest matcher objects are loosely typed */
     expect(httpService.post).toHaveBeenCalledWith(
       'https://consultadelicencas.anac.gov.br/consultadelicencas/',
       expect.any(URLSearchParams),
@@ -53,6 +54,7 @@ describe('AnacHttpService', () => {
         }),
       }),
     );
+    /* eslint-enable @typescript-eslint/no-unsafe-assignment */
   });
 
   it('inclui CPF e CANAC no formData', async () => {

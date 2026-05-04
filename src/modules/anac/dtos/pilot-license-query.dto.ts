@@ -9,7 +9,9 @@ export class PilotLicenseQueryDto {
   })
   @IsString()
   @IsNotEmpty()
-  @Transform(({ value }) => value?.trim())
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : '',
+  )
   cpf!: string;
 
   @ApiProperty({
@@ -18,6 +20,8 @@ export class PilotLicenseQueryDto {
   })
   @IsString()
   @IsNotEmpty()
-  @Transform(({ value }) => value?.trim())
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : '',
+  )
   canac!: string;
 }
