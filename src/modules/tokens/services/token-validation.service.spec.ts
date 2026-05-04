@@ -26,7 +26,7 @@ function buildTokenRecord(overrides: Partial<Token> = {}): Token {
     deletedAt: null,
     deletedBy: null,
     ...overrides,
-  } as Token;
+  };
 }
 
 describe('TokenValidationService', () => {

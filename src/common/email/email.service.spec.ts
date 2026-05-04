@@ -115,7 +115,7 @@ describe('EmailService', () => {
     expect(html).toContain('[NAME]');
     expect(html).toContain('[MESSAGE]');
     expect(warnSpy).toHaveBeenCalledTimes(1);
-    const firstCallArg = warnSpy.mock.calls[0][0] as unknown as string;
+    const firstCallArg = warnSpy.mock.calls[0][0] as string;
     expect(firstCallArg).toContain('NAME');
     expect(firstCallArg).toContain('MESSAGE');
   });

@@ -22,6 +22,7 @@ padrões arquiteturais e boas práticas do projeto.
 4. **Reportar problemas** — listar issues encontrados com arquivo e linha
 5. **Sugerir correções** — propor solução para cada problema encontrado
 6. **Aguardar aprovação** — não prosseguir com commit/PR sem resolução dos problemas críticos
+7. **Revisão automatizada (opcional)** — para relatório estruturado 🔴/🟡/🔵 com `arquivo:linha`, invocar o subagente `code-reviewer` conforme [`.claude/agents/code-reviewer.md`](../agents/code-reviewer.md) (também referenciado por `/complete-flow`).
 
 Problemas são classificados em:
 

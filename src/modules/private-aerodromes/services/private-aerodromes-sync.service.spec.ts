@@ -139,7 +139,7 @@ describe('PrivateAerodromesSyncService', () => {
 
       const result = await service.execute({
         force: true,
-      } as SyncPrivateAerodromesDto);
+      });
 
       expect(result.skipped).toBe(false);
       expect(download).toHaveBeenCalledTimes(1);
@@ -181,7 +181,7 @@ describe('PrivateAerodromesSyncService', () => {
 
       const result = await service.execute({
         force: true,
-      } as SyncPrivateAerodromesDto);
+      });
 
       expect(result.skipped).toBe(false);
       expect(upsertRunning).toHaveBeenCalledTimes(1);

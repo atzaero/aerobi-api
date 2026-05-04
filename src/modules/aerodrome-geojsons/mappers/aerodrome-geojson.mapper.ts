@@ -5,7 +5,7 @@ import { AerodromeGeojsonResponseDTO } from '../dtos/aerodrome-geojson-response.
 export class AerodromeGeojsonMapper {
   static toApiRow(entity: AerodromeGeojson): AerodromeGeojsonResponseDTO {
     // TODO: implementar mapeamento completo
-    return { id: entity.id } as AerodromeGeojsonResponseDTO;
+    return { id: entity.id };
   }
 
   static toApiRows(

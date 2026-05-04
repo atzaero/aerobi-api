@@ -5,7 +5,7 @@ import { LandingRequestResponseDTO } from '../dtos/landing-request-response.dto'
 export class LandingRequestMapper {
   static toApiRow(entity: LandingRequest): LandingRequestResponseDTO {
     // TODO: implementar mapeamento completo
-    return { id: entity.id } as LandingRequestResponseDTO;
+    return { id: entity.id };
   }
 
   static toApiRows(entities: LandingRequest[]): LandingRequestResponseDTO[] {
