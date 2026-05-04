@@ -43,7 +43,7 @@ describe('RateLimiterService', () => {
     expect(service.checkRateLimit(ip)).toBe(false);
 
     // Aguarda 61 segundos (mais que o window de 60s)
-    await new Promise(resolve => setTimeout(resolve, 61000));
+    await new Promise((resolve) => setTimeout(resolve, 61000));
 
     expect(service.checkRateLimit(ip)).toBe(true);
   });

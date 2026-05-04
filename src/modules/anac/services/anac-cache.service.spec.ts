@@ -29,7 +29,7 @@ describe('AnacCacheService', () => {
   it('retorna null para chave expirada', async () => {
     service.setCache('key1', { test: 'value' });
     // Aguarda mais que o TTL (5 minutos)
-    await new Promise(resolve => setTimeout(resolve, 301000));
+    await new Promise((resolve) => setTimeout(resolve, 301000));
     expect(service.getCache('key1')).toBeNull();
   });
 
