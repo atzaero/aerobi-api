@@ -7,7 +7,7 @@ describe('parseDate', () => {
   });
 
   it('retorna null para string undefined', () => {
-    expect(parseDate(undefined as any)).toBeNull();
+    expect(parseDate(undefined)).toBeNull();
   });
 
   it('retorna null para formato inválido', () => {

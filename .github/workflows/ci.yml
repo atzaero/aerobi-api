@@ -49,6 +49,12 @@ jobs:
 
       - run: npx prisma generate
 
+      - name: Validate Prisma schema
+        run: npx prisma validate
+
+      - name: ESLint
+        run: npm run lint:check
+
       - run: npm run format:check
 
       - run: npm run build

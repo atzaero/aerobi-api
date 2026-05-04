@@ -1,6 +1,5 @@
 import type { RabRow } from '@/generated/prisma/client';
 
-import { RabRowsFindAllQueryDTO } from '../dtos/rab-rows-find-all-query.dto';
 import { RabRowRepository } from '../repositories/rab-row.repository';
 
 import { AnacIndexService } from './anac-index.service';

@@ -1,4 +1,4 @@
-export function parseDate(dateStr: string): Date | null {
+export function parseDate(dateStr: string | undefined): Date | null {
   if (!dateStr) return null;
 
   // Tenta formatos DD/MM/AAAA ou DD/MM/AA

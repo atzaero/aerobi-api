@@ -1,6 +1,5 @@
 import type { PrivateAerodrome } from '@/generated/prisma/client';
 
-import { PrivateAerodromesFindAllQueryDTO } from '../dtos/private-aerodromes-find-all-query.dto';
 import { PrivateAerodromeRepository } from '../repositories/private-aerodrome.repository';
 
 import { PrivateAerodromesRowsService } from './private-aerodromes-rows.service';
