@@ -6,7 +6,8 @@ import * as iconv from 'iconv-lite';
 @Injectable()
 export class AnacHttpService {
   private readonly logger = new Logger(AnacHttpService.name);
-  private readonly url = 'https://consultadelicencas.anac.gov.br/consultadelicencas/';
+  private readonly url =
+    'https://consultadelicencas.anac.gov.br/consultadelicencas/';
 
   constructor(private readonly http: HttpService) {}
 

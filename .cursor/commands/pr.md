@@ -69,7 +69,7 @@ Closes #[numero]
 ## Checklist
 
 - [ ] Código revisado (`/review` executado)
-- [ ] CI / testes relevantes passam (incl. e2e com Docker se aplicável)
+- [ ] CI / testes relevantes passam (unitários)
 - [ ] Migrações Prisma revisadas (se houver)
 - [ ] Sem credenciais ou dados sensíveis
 - [ ] Commits seguem Conventional Commits

@@ -26,11 +26,16 @@ describe('AnacCacheService', () => {
     expect(service.getCache('key1')).toEqual(data);
   });
 
-  it('retorna null para chave expirada', async () => {
-    service.setCache('key1', { test: 'value' });
-    // Aguarda mais que o TTL (5 minutos)
-    await new Promise(resolve => setTimeout(resolve, 301000));
-    expect(service.getCache('key1')).toBeNull();
+  it('retorna null para chave expirada', () => {
+    jest.useFakeTimers();
+    try {
+      service.setCache('key1', { test: 'value' });
+      // TTL 5 min no serviço — avança tempo sem 301s reais na CI
+      jest.advanceTimersByTime(5 * 60 * 1000 + 1);
+      expect(service.getCache('key1')).toBeNull();
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('sobrescreve dados existentes', () => {
