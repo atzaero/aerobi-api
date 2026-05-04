@@ -1,4 +1,4 @@
-import type { Token } from '@/generated/prisma/client';
+import type { Prisma, Token } from '@/generated/prisma/client';
 import type { TokenType } from '@/generated/prisma/enums';
 
 /**
@@ -12,7 +12,7 @@ export interface CreateTokenData {
   type: TokenType;
   tokenHash: string;
   expiresAt: Date;
-  metadata?: Record<string, unknown>;
+  metadata?: Prisma.InputJsonValue;
   createdBy?: string;
 }
 
