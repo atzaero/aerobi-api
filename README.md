@@ -123,7 +123,8 @@ $ npm run test:cov
 
 ## CI, release e deploy
 
-- **CI** (`.github/workflows/ci.yml`): push em `develop` e PRs para `main` / `develop`.
+- **CI** (`.github/workflows/ci.yml`): push em `develop` e PRs para `main` / `develop`. Para o GitHub **bloquear merge com CI vermelho**, um admin deve configurar branch protection com checks obrigatórios — ver [`.github/BRANCH_PROTECTION.md`](.github/BRANCH_PROTECTION.md).
+- **Dependabot** (`.github/dependabot.yml`): PRs semanais de atualização de dependências npm (revisão humana continua obrigatória).
 - **Release** (`.github/workflows/release.yml`): push em `main` → `semantic-release` (precisa do secret `GH_TOKEN` com scope `repo`) → tag e imagem `ghcr.io/<owner>/<repo>:<versão>` e `:latest`, e **deploy** no mesmo ficheiro (job `deploy`): SSH para o servidor, `.env` a partir de secrets, `docker compose -f docker-compose.prod.yml pull && up -d`.
 
 Secrets típicos do deploy: `SSH_PRIVATE_KEY`, `REMOTE_HOST`, `REMOTE_PORT`, `REMOTE_USER`, `REMOTE_TARGET`, `GH_TOKEN`, `DATABASE_URL`, `CORS_ORIGINS`. Para a API em produção: **`AEROBI_API_KEY`**, **`PLUGFIELD_API_KEY`** e **`PLUGFIELD_TOKEN`** (proxy Plugfield), **`AISWEB_API_KEY`** e **`AISWEB_API_PASS`** (proxy AISWEB); opcionais: `AEROBI_REQUIRE_AUTH`, `PLUGFIELD_API_BASE_URL`, `PLUGFIELD_HTTP_TIMEOUT_MS`, `AISWEB_HTTP_TIMEOUT_MS`, `RAB_SYNC_CRON`, etc. — ver comentários no topo de `.github/workflows/release.yml`.
