@@ -5,7 +5,7 @@ import { TechnicalVisitResponseDTO } from '../dtos/technical-visit-response.dto'
 export class TechnicalVisitMapper {
   static toApiRow(entity: TechnicalVisit): TechnicalVisitResponseDTO {
     // TODO: implementar mapeamento completo
-    return { id: entity.id } as TechnicalVisitResponseDTO;
+    return { id: entity.id };
   }
 
   static toApiRows(entities: TechnicalVisit[]): TechnicalVisitResponseDTO[] {

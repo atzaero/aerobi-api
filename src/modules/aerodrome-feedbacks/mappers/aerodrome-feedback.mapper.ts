@@ -5,7 +5,7 @@ import { AerodromeFeedbackResponseDTO } from '../dtos/aerodrome-feedback-respons
 export class AerodromeFeedbackMapper {
   static toApiRow(entity: AerodromeFeedback): AerodromeFeedbackResponseDTO {
     // TODO: implementar mapeamento completo
-    return { id: entity.id } as AerodromeFeedbackResponseDTO;
+    return { id: entity.id };
   }
 
   static toApiRows(

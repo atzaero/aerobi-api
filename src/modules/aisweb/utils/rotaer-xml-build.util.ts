@@ -92,7 +92,7 @@ export function normalizeValue(
   if (typeof raw === 'string') return raw;
   if (typeof raw === 'number') return raw;
   if (Array.isArray(raw)) {
-    return raw.map(normalizeValue) as unknown[];
+    return raw.map(normalizeValue);
   }
   if (typeof raw === 'object' && raw !== null) {
     const obj = raw as Record<string, unknown>;

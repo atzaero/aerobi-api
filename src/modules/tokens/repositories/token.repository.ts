@@ -34,7 +34,7 @@ export class TokenRepository implements ITokenRepository {
         expiresAt: data.expiresAt,
         subjectId: data.subjectId,
         ...(data.metadata !== undefined && {
-          metadata: data.metadata as object,
+          metadata: data.metadata,
         }),
         ...(data.createdBy !== undefined && { createdBy: data.createdBy }),
       },

@@ -91,7 +91,7 @@ describe('EmailVerificationTokenService', () => {
     generatePlainToken.mockReturnValue('plain');
     hashToken.mockResolvedValue('hashed');
     computeExpiresAt.mockReturnValue(new Date());
-    create.mockResolvedValue({} as Token);
+    create.mockResolvedValue({});
 
     await service.createEmailVerificationToken('subject-1', 15);
 

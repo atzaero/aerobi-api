@@ -189,7 +189,7 @@ export class AnacScraperService {
       }
     });
 
-    let possuiCarteira = data.tabelaPrincipalEncontrada || false;
+    const possuiCarteira = data.tabelaPrincipalEncontrada || false;
 
     // Usar a validade da habilitação mais recente
     let validadePrincipal: string | null = null;

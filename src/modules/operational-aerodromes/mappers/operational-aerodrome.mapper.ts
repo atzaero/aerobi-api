@@ -7,7 +7,7 @@ export class OperationalAerodromeMapper {
     entity: OperationalAerodrome,
   ): OperationalAerodromeResponseDTO {
     // TODO: implementar mapeamento completo
-    return { id: entity.id } as OperationalAerodromeResponseDTO;
+    return { id: entity.id };
   }
 
   static toApiRows(
