@@ -35,17 +35,22 @@ describe('RateLimiterService', () => {
     expect(service.checkRateLimit(ip)).toBe(false);
   });
 
-  it('reseta o contador após o tempo limite', async () => {
-    const ip = '127.0.0.1';
-    for (let i = 0; i < 10; i++) {
-      service.checkRateLimit(ip);
+  it('reseta o contador após o tempo limite', () => {
+    jest.useFakeTimers();
+    try {
+      const ip = '127.0.0.1';
+      for (let i = 0; i < 10; i++) {
+        service.checkRateLimit(ip);
+      }
+      expect(service.checkRateLimit(ip)).toBe(false);
+
+      // Janela de 60s no serviço — avança 61s sem espera real (CI + limite Jest 5s)
+      jest.advanceTimersByTime(61_000);
+
+      expect(service.checkRateLimit(ip)).toBe(true);
+    } finally {
+      jest.useRealTimers();
     }
-    expect(service.checkRateLimit(ip)).toBe(false);
-
-    // Aguarda 61 segundos (mais que o window de 60s)
-    await new Promise((resolve) => setTimeout(resolve, 61000));
-
-    expect(service.checkRateLimit(ip)).toBe(true);
   });
 
   it('trata IPs diferentes independentemente', () => {
