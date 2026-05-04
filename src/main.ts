@@ -59,6 +59,9 @@ async function bootstrap() {
 
   const port = configService.get<number>('PORT', 3333);
   await app.listen(port);
+  console.log(
+    `[aerobi-api] PR smoke test — branch test, listening on :${String(port)}`,
+  );
 }
 
 void bootstrap();
