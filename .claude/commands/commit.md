@@ -52,7 +52,7 @@ Backend **NestJS** ([aerobi-api](https://github.com/atzaero/aerobi-api)):
 - `src/` — aplicação Nest (módulos, controllers, services, guards, etc.)
 - `src/modules/<dominio>/` — funcionalidades por domínio (quando aplicável)
 - `prisma/` — schema e migrações
-- `test/` — testes e2e (Jest)
+- Testes unitários em `src/**/*.spec.ts` (Jest)
 - `.github/workflows/` — CI
 - `docker-compose.dev.yml` — desenvolvimento com serviço `api` e Postgres
 
@@ -77,7 +77,6 @@ docker compose -f docker-compose.dev.yml run --rm api npm run lint
 docker compose -f docker-compose.dev.yml run --rm api npm run format:check
 docker compose -f docker-compose.dev.yml run --rm api npm run build
 docker compose -f docker-compose.dev.yml run --rm api npm run test
-docker compose -f docker-compose.dev.yml run --rm api npm run test:e2e
 ```
 
 O Compose sobe dependências necessárias (ex.: Postgres saudável antes do `api`). Preferir **rodar no container** quando a alteração afeta Prisma, integrações ou quando o host divergir do CI.
@@ -90,7 +89,6 @@ Sugerido (host ou, quando indicado acima, via `docker compose ... run --rm api .
 - `npm run build`
 - `npm run lint` (atenção: o script usa `--fix`; para só verificar, usar `npx eslint` com flags de check se necessário)
 - `npm run test`
-- Se tocou em rotas integração/DB: `npm run test:e2e` **no container**
 
 ## Workflow
 
@@ -125,7 +123,7 @@ src/modules/foo/foo.service.ts
 
 ```
 src/modules/bar/bar.service.ts
-test/bar.e2e-spec.ts
+src/modules/bar/bar.service.spec.ts
 ```
 
 → `fix(bar): corrige timezone no agendamento`
