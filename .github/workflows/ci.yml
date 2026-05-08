@@ -27,14 +27,6 @@ jobs:
           node-version: 22
           cache: npm
 
-      # Lockfile foi regerado com npm 11; CI default em Node 22 ainda traz npm 10. Alinhar para evitar EUSAGE em `npm ci`.
-      - name: Pin npm 11
-        # corepack evita o bug de auto-upgrade `npm install -g npm@11` (MODULE_NOT_FOUND promise-retry)
-        run: |
-          corepack enable
-          corepack prepare npm@11.6.2 --activate
-          npm --version
-
       # Production deps only (--omit=dev): avoids dev-only transitive issues (e.g. npm CLI via semantic-release).
       # Lockfile-only; fails on high+ in the install tree that ships (tighten to moderate later if desired).
       - name: Dependency audit
@@ -52,13 +44,6 @@ jobs:
         with:
           node-version: 22
           cache: npm
-
-      - name: Pin npm 11
-        # corepack evita o bug de auto-upgrade `npm install -g npm@11` (MODULE_NOT_FOUND promise-retry)
-        run: |
-          corepack enable
-          corepack prepare npm@11.6.2 --activate
-          npm --version
 
       - run: npm ci
 
@@ -104,13 +89,6 @@ jobs:
         with:
           node-version: 22
           cache: npm
-
-      - name: Pin npm 11
-        # corepack evita o bug de auto-upgrade `npm install -g npm@11` (MODULE_NOT_FOUND promise-retry)
-        run: |
-          corepack enable
-          corepack prepare npm@11.6.2 --activate
-          npm --version
 
       - run: npm ci
 
