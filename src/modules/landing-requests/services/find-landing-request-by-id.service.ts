@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
+
+import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
+import { ErrorMessageService } from '@/common/error-messages/error-message.service';
+import { ErrorCode } from '@/common/enums/error-code.enum';
 
 import { LandingRequestResponseDTO } from '../dtos/landing-request-response.dto';
 import { LandingRequestMapper } from '../mappers/landing-request.mapper';
@@ -8,15 +12,24 @@ export type FindLandingRequestByIdServiceInput = { id: string };
 
 @Injectable()
 export class FindLandingRequestByIdService {
-  constructor(private readonly repo: LandingRequestRepository) {}
+  constructor(
+    private readonly repo: LandingRequestRepository,
+    private readonly errorMessageService: ErrorMessageService,
+  ) {}
 
   async execute(
     input: FindLandingRequestByIdServiceInput,
   ): Promise<LandingRequestResponseDTO> {
-    // TODO: implementar
     const entity = await this.repo.findById(input.id);
     if (!entity) {
-      throw new NotFoundException(`LandingRequest ${input.id} not found`);
+      throw new CustomHttpException(
+        this.errorMessageService.getMessage(ErrorCode.RESOURCE_NOT_FOUND, {
+          RESOURCE: 'Pedido de pouso',
+          ID: input.id,
+        }),
+        HttpStatus.NOT_FOUND,
+        ErrorCode.RESOURCE_NOT_FOUND,
+      );
     }
     return LandingRequestMapper.toApiRow(entity);
   }

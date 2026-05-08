@@ -23,6 +23,19 @@ export function ListPilotLandingsDocs() {
     ApiOperation({ summary: 'Lista paginada de Pilot Landings' }),
     ApiQuery({ name: 'page', required: false, example: 1 }),
     ApiQuery({ name: 'limit', required: false, example: 10 }),
+    ApiQuery({
+      name: 'operationalAerodromeId',
+      required: false,
+      format: 'uuid',
+      description: 'Filtra pelo aeródromo operacional associado',
+    }),
+    ApiQuery({
+      name: 'registration',
+      required: false,
+      description:
+        'Filtra por substring da matrícula da aeronave (case insensitive)',
+      example: 'PT-',
+    }),
     ApiOkResponse({ type: PilotLandingsPaginatedResponseDTO }),
   );
 }

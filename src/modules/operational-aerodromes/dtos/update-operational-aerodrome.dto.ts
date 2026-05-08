@@ -1,11 +1,7 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { OmitType, PartialType } from '@nestjs/swagger';
 
-/**
- * Body para PATCH /operational-aerodromes/:id.
- *
- * TODO: adicionar campos editáveis conforme schema.prisma do model OperationalAerodrome.
- */
-export class UpdateOperationalAerodromeDTO {
-  @ApiPropertyOptional({ description: 'TODO: descrever campo' })
-  placeholder?: string;
-}
+import { CreateOperationalAerodromeDTO } from './create-operational-aerodrome.dto';
+
+export class UpdateOperationalAerodromeDTO extends PartialType(
+  OmitType(CreateOperationalAerodromeDTO, ['createdBy'] as const),
+) {}

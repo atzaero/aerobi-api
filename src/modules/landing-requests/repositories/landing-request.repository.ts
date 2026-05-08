@@ -5,12 +5,15 @@ import { PrismaService } from '@/prisma/prisma.service';
 
 import type { ILandingRequestRepository } from './landing-request.repository.interface';
 
+const activeWhere: Pick<Prisma.LandingRequestWhereInput, 'deletedAt'> = {
+  deletedAt: null,
+};
+
 @Injectable()
 export class LandingRequestRepository implements ILandingRequestRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   create(data: Prisma.LandingRequestCreateInput): Promise<LandingRequest> {
-    // TODO: implementar
     return this.prisma.landingRequest.create({ data });
   }
 
@@ -18,13 +21,16 @@ export class LandingRequestRepository implements ILandingRequestRepository {
     id: string,
     data: Prisma.LandingRequestUpdateInput,
   ): Promise<LandingRequest> {
-    // TODO: implementar
-    return this.prisma.landingRequest.update({ where: { id }, data });
+    return this.prisma.landingRequest.update({
+      where: { id, ...activeWhere },
+      data,
+    });
   }
 
   findById(id: string): Promise<LandingRequest | null> {
-    // TODO: implementar (considerar filtrar deletedAt = null)
-    return this.prisma.landingRequest.findUnique({ where: { id } });
+    return this.prisma.landingRequest.findFirst({
+      where: { id, ...activeWhere },
+    });
   }
 
   findMany(
@@ -32,20 +38,32 @@ export class LandingRequestRepository implements ILandingRequestRepository {
     skip: number,
     take: number,
   ): Promise<LandingRequest[]> {
-    // TODO: implementar (considerar filtrar deletedAt = null e ordenar)
-    return this.prisma.landingRequest.findMany({ where, skip, take });
+    return this.prisma.landingRequest.findMany({
+      where: {
+        AND: [{ ...where }, activeWhere],
+      },
+      skip,
+      take,
+      orderBy: { requestDate: 'desc' },
+    });
   }
 
   count(where: Prisma.LandingRequestWhereInput): Promise<number> {
-    // TODO: implementar
-    return this.prisma.landingRequest.count({ where });
+    return this.prisma.landingRequest.count({
+      where: {
+        AND: [{ ...where }, activeWhere],
+      },
+    });
   }
 
   softDelete(id: string, deletedBy: string): Promise<LandingRequest> {
-    // TODO: implementar (conferir se updatedBy também precisa ser atualizado)
     return this.prisma.landingRequest.update({
-      where: { id },
-      data: { deletedAt: new Date(), deletedBy },
+      where: { id, ...activeWhere },
+      data: {
+        deletedAt: new Date(),
+        deletedBy,
+        updatedBy: deletedBy,
+      },
     });
   }
 }

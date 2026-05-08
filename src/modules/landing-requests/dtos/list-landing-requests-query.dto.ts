@@ -1,9 +1,18 @@
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsEnum, IsOptional, IsUUID } from 'class-validator';
+
+import { LandingRequestStatus } from '@/generated/prisma/client';
+
 import { BasePaginationQueryDTO } from '@/common/dtos/base-pagination-query.dto';
 
-/**
- * Query params para GET /landing-requests.
- *
- * Extende BasePaginationQueryDTO (page/limit).
- * TODO: adicionar filtros específicos.
- */
-export class ListLandingRequestsQueryDTO extends BasePaginationQueryDTO {}
+export class ListLandingRequestsQueryDTO extends BasePaginationQueryDTO {
+  @ApiPropertyOptional({ format: 'uuid' })
+  @IsOptional()
+  @IsUUID('4')
+  operationalAerodromeId?: string;
+
+  @ApiPropertyOptional({ enum: LandingRequestStatus })
+  @IsOptional()
+  @IsEnum(LandingRequestStatus)
+  status?: LandingRequestStatus;
+}

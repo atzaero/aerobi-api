@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
+import type { Prisma } from '@/generated/prisma/client';
+
 import { AerodromeGroupResponseDTO } from '../dtos/aerodrome-group-response.dto';
 import { CreateAerodromeGroupDTO } from '../dtos/create-aerodrome-group.dto';
 import { AerodromeGroupMapper } from '../mappers/aerodrome-group.mapper';
@@ -12,8 +14,15 @@ export class CreateAerodromeGroupService {
   async execute(
     dto: CreateAerodromeGroupDTO,
   ): Promise<AerodromeGroupResponseDTO> {
-    // TODO: implementar
-    const created = await this.repo.create(dto as never);
+    const data: Prisma.AerodromeGroupCreateInput = {
+      uf: dto.uf,
+      groupName: dto.groupName,
+      ownerId: dto.ownerId,
+      deletionRequested: dto.deletionRequested,
+      createdBy: dto.createdBy,
+    };
+
+    const created = await this.repo.create(data);
     return AerodromeGroupMapper.toApiRow(created);
   }
 }

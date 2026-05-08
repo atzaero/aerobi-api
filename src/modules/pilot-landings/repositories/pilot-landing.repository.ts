@@ -5,12 +5,16 @@ import { PrismaService } from '@/prisma/prisma.service';
 
 import type { IPilotLandingRepository } from './pilot-landing.repository.interface';
 
+/** Filtro base: apenas registos não apagados (soft delete). */
+const activeWhere: Pick<Prisma.PilotLandingWhereInput, 'deletedAt'> = {
+  deletedAt: null,
+};
+
 @Injectable()
 export class PilotLandingRepository implements IPilotLandingRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   create(data: Prisma.PilotLandingCreateInput): Promise<PilotLanding> {
-    // TODO: implementar
     return this.prisma.pilotLanding.create({ data });
   }
 
@@ -18,13 +22,19 @@ export class PilotLandingRepository implements IPilotLandingRepository {
     id: string,
     data: Prisma.PilotLandingUpdateInput,
   ): Promise<PilotLanding> {
-    // TODO: implementar
-    return this.prisma.pilotLanding.update({ where: { id }, data });
+    return this.prisma.pilotLanding.update({
+      where: {
+        id,
+        ...activeWhere,
+      },
+      data,
+    });
   }
 
   findById(id: string): Promise<PilotLanding | null> {
-    // TODO: implementar (considerar filtrar deletedAt = null)
-    return this.prisma.pilotLanding.findUnique({ where: { id } });
+    return this.prisma.pilotLanding.findFirst({
+      where: { id, ...activeWhere },
+    });
   }
 
   findMany(
@@ -32,20 +42,35 @@ export class PilotLandingRepository implements IPilotLandingRepository {
     skip: number,
     take: number,
   ): Promise<PilotLanding[]> {
-    // TODO: implementar (considerar filtrar deletedAt = null e ordenar)
-    return this.prisma.pilotLanding.findMany({ where, skip, take });
+    return this.prisma.pilotLanding.findMany({
+      where: {
+        AND: [{ ...where }, activeWhere],
+      },
+      skip,
+      take,
+      orderBy: { landingAt: 'desc' },
+    });
   }
 
   count(where: Prisma.PilotLandingWhereInput): Promise<number> {
-    // TODO: implementar
-    return this.prisma.pilotLanding.count({ where });
+    return this.prisma.pilotLanding.count({
+      where: {
+        AND: [{ ...where }, activeWhere],
+      },
+    });
   }
 
   softDelete(id: string, deletedBy: string): Promise<PilotLanding> {
-    // TODO: implementar (conferir se updatedBy também precisa ser atualizado)
     return this.prisma.pilotLanding.update({
-      where: { id },
-      data: { deletedAt: new Date(), deletedBy },
+      where: {
+        id,
+        ...activeWhere,
+      },
+      data: {
+        deletedAt: new Date(),
+        deletedBy,
+        updatedBy: deletedBy,
+      },
     });
   }
 }

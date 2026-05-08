@@ -1,6 +1,8 @@
 import { applyDecorators } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiSecurity } from '@nestjs/swagger';
 
+import { SyncRabResponseDto } from '../dtos/sync-rab-response.dto';
+
 /**
  * Swagger para `POST /rab/sync`.
  *
@@ -16,7 +18,11 @@ export function SyncDocs() {
         '**`NODE_ENV=development`** sem `AEROBI_REQUIRE_AUTH`: pedido permitido sem `X-API-Key` (bypass). ' +
         '**Caso contrário:** enviar **`X-API-Key`** igual a `AEROBI_API_KEY`.',
     }),
-    ApiResponse({ status: 200, description: 'Resultado da sync' }),
+    ApiResponse({
+      status: 200,
+      description: 'Resultado da sync RAB.',
+      type: SyncRabResponseDto,
+    }),
     ApiResponse({
       status: 401,
       description:

@@ -5,12 +5,15 @@ import { PrismaService } from '@/prisma/prisma.service';
 
 import type { IAerodromeGroupRepository } from './aerodrome-group.repository.interface';
 
+const activeWhere: Pick<Prisma.AerodromeGroupWhereInput, 'deletedAt'> = {
+  deletedAt: null,
+};
+
 @Injectable()
 export class AerodromeGroupRepository implements IAerodromeGroupRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   create(data: Prisma.AerodromeGroupCreateInput): Promise<AerodromeGroup> {
-    // TODO: implementar
     return this.prisma.aerodromeGroup.create({ data });
   }
 
@@ -18,13 +21,16 @@ export class AerodromeGroupRepository implements IAerodromeGroupRepository {
     id: string,
     data: Prisma.AerodromeGroupUpdateInput,
   ): Promise<AerodromeGroup> {
-    // TODO: implementar
-    return this.prisma.aerodromeGroup.update({ where: { id }, data });
+    return this.prisma.aerodromeGroup.update({
+      where: { id, ...activeWhere },
+      data,
+    });
   }
 
   findById(id: string): Promise<AerodromeGroup | null> {
-    // TODO: implementar (considerar filtrar deletedAt = null)
-    return this.prisma.aerodromeGroup.findUnique({ where: { id } });
+    return this.prisma.aerodromeGroup.findFirst({
+      where: { id, ...activeWhere },
+    });
   }
 
   findMany(
@@ -32,20 +38,32 @@ export class AerodromeGroupRepository implements IAerodromeGroupRepository {
     skip: number,
     take: number,
   ): Promise<AerodromeGroup[]> {
-    // TODO: implementar (considerar filtrar deletedAt = null e ordenar)
-    return this.prisma.aerodromeGroup.findMany({ where, skip, take });
+    return this.prisma.aerodromeGroup.findMany({
+      where: {
+        AND: [{ ...where }, activeWhere],
+      },
+      skip,
+      take,
+      orderBy: { updatedAt: 'desc' },
+    });
   }
 
   count(where: Prisma.AerodromeGroupWhereInput): Promise<number> {
-    // TODO: implementar
-    return this.prisma.aerodromeGroup.count({ where });
+    return this.prisma.aerodromeGroup.count({
+      where: {
+        AND: [{ ...where }, activeWhere],
+      },
+    });
   }
 
   softDelete(id: string, deletedBy: string): Promise<AerodromeGroup> {
-    // TODO: implementar (conferir se updatedBy também precisa ser atualizado)
     return this.prisma.aerodromeGroup.update({
-      where: { id },
-      data: { deletedAt: new Date(), deletedBy },
+      where: { id, ...activeWhere },
+      data: {
+        deletedAt: new Date(),
+        deletedBy,
+        updatedBy: deletedBy,
+      },
     });
   }
 }
