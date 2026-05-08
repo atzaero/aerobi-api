@@ -5,6 +5,10 @@ import { PrismaService } from '@/prisma/prisma.service';
 
 import type { IAerodromeFeedbackRepository } from './aerodrome-feedback.repository.interface';
 
+const activeWhere: Pick<Prisma.AerodromeFeedbackWhereInput, 'deletedAt'> = {
+  deletedAt: null,
+};
+
 @Injectable()
 export class AerodromeFeedbackRepository implements IAerodromeFeedbackRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -12,7 +16,6 @@ export class AerodromeFeedbackRepository implements IAerodromeFeedbackRepository
   create(
     data: Prisma.AerodromeFeedbackCreateInput,
   ): Promise<AerodromeFeedback> {
-    // TODO: implementar
     return this.prisma.aerodromeFeedback.create({ data });
   }
 
@@ -20,13 +23,16 @@ export class AerodromeFeedbackRepository implements IAerodromeFeedbackRepository
     id: string,
     data: Prisma.AerodromeFeedbackUpdateInput,
   ): Promise<AerodromeFeedback> {
-    // TODO: implementar
-    return this.prisma.aerodromeFeedback.update({ where: { id }, data });
+    return this.prisma.aerodromeFeedback.update({
+      where: { id, ...activeWhere },
+      data,
+    });
   }
 
   findById(id: string): Promise<AerodromeFeedback | null> {
-    // TODO: implementar (considerar filtrar deletedAt = null)
-    return this.prisma.aerodromeFeedback.findUnique({ where: { id } });
+    return this.prisma.aerodromeFeedback.findFirst({
+      where: { id, ...activeWhere },
+    });
   }
 
   findMany(
@@ -34,20 +40,32 @@ export class AerodromeFeedbackRepository implements IAerodromeFeedbackRepository
     skip: number,
     take: number,
   ): Promise<AerodromeFeedback[]> {
-    // TODO: implementar (considerar filtrar deletedAt = null e ordenar)
-    return this.prisma.aerodromeFeedback.findMany({ where, skip, take });
+    return this.prisma.aerodromeFeedback.findMany({
+      where: {
+        AND: [{ ...where }, activeWhere],
+      },
+      skip,
+      take,
+      orderBy: { feedbackDate: 'desc' },
+    });
   }
 
   count(where: Prisma.AerodromeFeedbackWhereInput): Promise<number> {
-    // TODO: implementar
-    return this.prisma.aerodromeFeedback.count({ where });
+    return this.prisma.aerodromeFeedback.count({
+      where: {
+        AND: [{ ...where }, activeWhere],
+      },
+    });
   }
 
   softDelete(id: string, deletedBy: string): Promise<AerodromeFeedback> {
-    // TODO: implementar (conferir se updatedBy também precisa ser atualizado)
     return this.prisma.aerodromeFeedback.update({
-      where: { id },
-      data: { deletedAt: new Date(), deletedBy },
+      where: { id, ...activeWhere },
+      data: {
+        deletedAt: new Date(),
+        deletedBy,
+        updatedBy: deletedBy,
+      },
     });
   }
 }

@@ -1,6 +1,8 @@
 import { applyDecorators } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiSecurity } from '@nestjs/swagger';
 
+import { SyncPublicAerodromesResponseDto } from '../dtos/sync-public-aerodromes-response.dto';
+
 export function SyncDocs() {
   return applyDecorators(
     ApiSecurity('api_key'),
@@ -10,7 +12,12 @@ export function SyncDocs() {
         '**`NODE_ENV=development`** sem `AEROBI_REQUIRE_AUTH`: pedido permitido sem `X-API-Key`. ' +
         '**Caso contrário:** enviar **`X-API-Key`** igual a `AEROBI_API_KEY`.',
     }),
-    ApiResponse({ status: 200, description: 'Resultado da sync' }),
+    ApiResponse({
+      status: 200,
+      description:
+        'Estado/execução da sincronização (skip por HEAD/hash ou import).',
+      type: SyncPublicAerodromesResponseDto,
+    }),
     ApiResponse({
       status: 401,
       description:

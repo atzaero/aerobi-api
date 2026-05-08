@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
+import type { Prisma } from '@/generated/prisma/client';
 import { resolvePaginationParams } from '@/common/utils/pagination-params.util';
 
 import { ListLandingRequestsQueryDTO } from '../dtos/list-landing-requests-query.dto';
@@ -17,13 +18,22 @@ export class ListLandingRequestsService {
     query: ListLandingRequestsQueryDTO,
   ): Promise<LandingRequestsPaginatedResponseDTO> {
     const { page, limit, skip } = resolvePaginationParams(query, MAX_LIMIT);
-    // TODO: construir filtros where a partir da query
-    const where = {};
+    const where: Prisma.LandingRequestWhereInput = {};
+    if (query.operationalAerodromeId !== undefined) {
+      where.operationalAerodromeId = query.operationalAerodromeId;
+    }
+    if (query.status !== undefined) {
+      where.status = query.status;
+    }
     const [items, total] = await Promise.all([
       this.repo.findMany(where, skip, limit),
       this.repo.count(where),
     ]);
-    const data = LandingRequestMapper.toApiRows(items);
-    return new LandingRequestsPaginatedResponseDTO(data, page, limit, total);
+    return new LandingRequestsPaginatedResponseDTO(
+      LandingRequestMapper.toApiRows(items),
+      page,
+      limit,
+      total,
+    );
   }
 }

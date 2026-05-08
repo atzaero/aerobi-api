@@ -1,9 +1,11 @@
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional, IsUUID } from 'class-validator';
+
 import { BasePaginationQueryDTO } from '@/common/dtos/base-pagination-query.dto';
 
-/**
- * Query params para GET /technical-visits.
- *
- * Extende BasePaginationQueryDTO (page/limit).
- * TODO: adicionar filtros específicos.
- */
-export class ListTechnicalVisitsQueryDTO extends BasePaginationQueryDTO {}
+export class ListTechnicalVisitsQueryDTO extends BasePaginationQueryDTO {
+  @ApiPropertyOptional({ format: 'uuid' })
+  @IsOptional()
+  @IsUUID('4')
+  operationalAerodromeId?: string;
+}

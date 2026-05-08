@@ -5,12 +5,15 @@ import { PrismaService } from '@/prisma/prisma.service';
 
 import type { IAerodromeGeojsonRepository } from './aerodrome-geojson.repository.interface';
 
+const activeWhere: Pick<Prisma.AerodromeGeojsonWhereInput, 'deletedAt'> = {
+  deletedAt: null,
+};
+
 @Injectable()
 export class AerodromeGeojsonRepository implements IAerodromeGeojsonRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   create(data: Prisma.AerodromeGeojsonCreateInput): Promise<AerodromeGeojson> {
-    // TODO: implementar
     return this.prisma.aerodromeGeojson.create({ data });
   }
 
@@ -18,13 +21,16 @@ export class AerodromeGeojsonRepository implements IAerodromeGeojsonRepository {
     id: string,
     data: Prisma.AerodromeGeojsonUpdateInput,
   ): Promise<AerodromeGeojson> {
-    // TODO: implementar
-    return this.prisma.aerodromeGeojson.update({ where: { id }, data });
+    return this.prisma.aerodromeGeojson.update({
+      where: { id, ...activeWhere },
+      data,
+    });
   }
 
   findById(id: string): Promise<AerodromeGeojson | null> {
-    // TODO: implementar (considerar filtrar deletedAt = null)
-    return this.prisma.aerodromeGeojson.findUnique({ where: { id } });
+    return this.prisma.aerodromeGeojson.findFirst({
+      where: { id, ...activeWhere },
+    });
   }
 
   findMany(
@@ -32,20 +38,32 @@ export class AerodromeGeojsonRepository implements IAerodromeGeojsonRepository {
     skip: number,
     take: number,
   ): Promise<AerodromeGeojson[]> {
-    // TODO: implementar (considerar filtrar deletedAt = null e ordenar)
-    return this.prisma.aerodromeGeojson.findMany({ where, skip, take });
+    return this.prisma.aerodromeGeojson.findMany({
+      where: {
+        AND: [{ ...where }, activeWhere],
+      },
+      skip,
+      take,
+      orderBy: { updatedAt: 'desc' },
+    });
   }
 
   count(where: Prisma.AerodromeGeojsonWhereInput): Promise<number> {
-    // TODO: implementar
-    return this.prisma.aerodromeGeojson.count({ where });
+    return this.prisma.aerodromeGeojson.count({
+      where: {
+        AND: [{ ...where }, activeWhere],
+      },
+    });
   }
 
   softDelete(id: string, deletedBy: string): Promise<AerodromeGeojson> {
-    // TODO: implementar (conferir se updatedBy também precisa ser atualizado)
     return this.prisma.aerodromeGeojson.update({
-      where: { id },
-      data: { deletedAt: new Date(), deletedBy },
+      where: { id, ...activeWhere },
+      data: {
+        deletedAt: new Date(),
+        deletedBy,
+        updatedBy: deletedBy,
+      },
     });
   }
 }

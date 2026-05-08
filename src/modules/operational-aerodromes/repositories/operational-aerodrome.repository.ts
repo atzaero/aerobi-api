@@ -5,6 +5,10 @@ import { PrismaService } from '@/prisma/prisma.service';
 
 import type { IOperationalAerodromeRepository } from './operational-aerodrome.repository.interface';
 
+const activeWhere: Pick<Prisma.OperationalAerodromeWhereInput, 'deletedAt'> = {
+  deletedAt: null,
+};
+
 @Injectable()
 export class OperationalAerodromeRepository implements IOperationalAerodromeRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -12,7 +16,6 @@ export class OperationalAerodromeRepository implements IOperationalAerodromeRepo
   create(
     data: Prisma.OperationalAerodromeCreateInput,
   ): Promise<OperationalAerodrome> {
-    // TODO: implementar
     return this.prisma.operationalAerodrome.create({ data });
   }
 
@@ -20,13 +23,16 @@ export class OperationalAerodromeRepository implements IOperationalAerodromeRepo
     id: string,
     data: Prisma.OperationalAerodromeUpdateInput,
   ): Promise<OperationalAerodrome> {
-    // TODO: implementar
-    return this.prisma.operationalAerodrome.update({ where: { id }, data });
+    return this.prisma.operationalAerodrome.update({
+      where: { id, ...activeWhere },
+      data,
+    });
   }
 
   findById(id: string): Promise<OperationalAerodrome | null> {
-    // TODO: implementar (considerar filtrar deletedAt = null)
-    return this.prisma.operationalAerodrome.findUnique({ where: { id } });
+    return this.prisma.operationalAerodrome.findFirst({
+      where: { id, ...activeWhere },
+    });
   }
 
   findMany(
@@ -34,20 +40,32 @@ export class OperationalAerodromeRepository implements IOperationalAerodromeRepo
     skip: number,
     take: number,
   ): Promise<OperationalAerodrome[]> {
-    // TODO: implementar (considerar filtrar deletedAt = null e ordenar)
-    return this.prisma.operationalAerodrome.findMany({ where, skip, take });
+    return this.prisma.operationalAerodrome.findMany({
+      where: {
+        AND: [{ ...where }, activeWhere],
+      },
+      skip,
+      take,
+      orderBy: [{ icao: 'asc' }],
+    });
   }
 
   count(where: Prisma.OperationalAerodromeWhereInput): Promise<number> {
-    // TODO: implementar
-    return this.prisma.operationalAerodrome.count({ where });
+    return this.prisma.operationalAerodrome.count({
+      where: {
+        AND: [{ ...where }, activeWhere],
+      },
+    });
   }
 
   softDelete(id: string, deletedBy: string): Promise<OperationalAerodrome> {
-    // TODO: implementar (conferir se updatedBy também precisa ser atualizado)
     return this.prisma.operationalAerodrome.update({
-      where: { id },
-      data: { deletedAt: new Date(), deletedBy },
+      where: { id, ...activeWhere },
+      data: {
+        deletedAt: new Date(),
+        deletedBy,
+        updatedBy: deletedBy,
+      },
     });
   }
 }

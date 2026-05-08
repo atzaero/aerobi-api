@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
+import type { Prisma } from '@/generated/prisma/client';
 import { resolvePaginationParams } from '@/common/utils/pagination-params.util';
 
 import { ListAerodromeGroupsQueryDTO } from '../dtos/list-aerodrome-groups-query.dto';
@@ -17,13 +18,19 @@ export class ListAerodromeGroupsService {
     query: ListAerodromeGroupsQueryDTO,
   ): Promise<AerodromeGroupsPaginatedResponseDTO> {
     const { page, limit, skip } = resolvePaginationParams(query, MAX_LIMIT);
-    // TODO: construir filtros where a partir da query
-    const where = {};
+    const where: Prisma.AerodromeGroupWhereInput = {};
+    if (query.uf !== undefined) {
+      where.uf = query.uf;
+    }
     const [items, total] = await Promise.all([
       this.repo.findMany(where, skip, limit),
       this.repo.count(where),
     ]);
-    const data = AerodromeGroupMapper.toApiRows(items);
-    return new AerodromeGroupsPaginatedResponseDTO(data, page, limit, total);
+    return new AerodromeGroupsPaginatedResponseDTO(
+      AerodromeGroupMapper.toApiRows(items),
+      page,
+      limit,
+      total,
+    );
   }
 }

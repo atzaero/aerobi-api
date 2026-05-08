@@ -1,9 +1,13 @@
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsEnum, IsOptional } from 'class-validator';
+
+import { Uf } from '@/generated/prisma/client';
+
 import { BasePaginationQueryDTO } from '@/common/dtos/base-pagination-query.dto';
 
-/**
- * Query params para GET /aerodrome-groups.
- *
- * Extende BasePaginationQueryDTO (page/limit).
- * TODO: adicionar filtros específicos.
- */
-export class ListAerodromeGroupsQueryDTO extends BasePaginationQueryDTO {}
+export class ListAerodromeGroupsQueryDTO extends BasePaginationQueryDTO {
+  @ApiPropertyOptional({ enum: Uf })
+  @IsOptional()
+  @IsEnum(Uf)
+  uf?: Uf;
+}

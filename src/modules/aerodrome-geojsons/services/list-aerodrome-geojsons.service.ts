@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
+import type { Prisma } from '@/generated/prisma/client';
 import { resolvePaginationParams } from '@/common/utils/pagination-params.util';
 
 import { ListAerodromeGeojsonsQueryDTO } from '../dtos/list-aerodrome-geojsons-query.dto';
@@ -17,13 +18,22 @@ export class ListAerodromeGeojsonsService {
     query: ListAerodromeGeojsonsQueryDTO,
   ): Promise<AerodromeGeojsonsPaginatedResponseDTO> {
     const { page, limit, skip } = resolvePaginationParams(query, MAX_LIMIT);
-    // TODO: construir filtros where a partir da query
-    const where = {};
+    const where: Prisma.AerodromeGeojsonWhereInput = {};
+    if (query.operationalAerodromeId !== undefined) {
+      where.operationalAerodromeId = query.operationalAerodromeId;
+    }
+    if (query.status !== undefined) {
+      where.status = query.status;
+    }
     const [items, total] = await Promise.all([
       this.repo.findMany(where, skip, limit),
       this.repo.count(where),
     ]);
-    const data = AerodromeGeojsonMapper.toApiRows(items);
-    return new AerodromeGeojsonsPaginatedResponseDTO(data, page, limit, total);
+    return new AerodromeGeojsonsPaginatedResponseDTO(
+      AerodromeGeojsonMapper.toApiRows(items),
+      page,
+      limit,
+      total,
+    );
   }
 }

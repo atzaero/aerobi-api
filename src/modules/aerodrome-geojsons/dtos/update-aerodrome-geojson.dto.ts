@@ -1,11 +1,7 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { OmitType, PartialType } from '@nestjs/swagger';
 
-/**
- * Body para PATCH /aerodrome-geojsons/:id.
- *
- * TODO: adicionar campos editáveis conforme schema.prisma do model AerodromeGeojson.
- */
-export class UpdateAerodromeGeojsonDTO {
-  @ApiPropertyOptional({ description: 'TODO: descrever campo' })
-  placeholder?: string;
-}
+import { CreateAerodromeGeojsonDTO } from './create-aerodrome-geojson.dto';
+
+export class UpdateAerodromeGeojsonDTO extends PartialType(
+  OmitType(CreateAerodromeGeojsonDTO, ['createdBy'] as const),
+) {}

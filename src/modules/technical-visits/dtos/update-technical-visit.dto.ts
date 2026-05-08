@@ -1,11 +1,7 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { OmitType, PartialType } from '@nestjs/swagger';
 
-/**
- * Body para PATCH /technical-visits/:id.
- *
- * TODO: adicionar campos editáveis conforme schema.prisma do model TechnicalVisit.
- */
-export class UpdateTechnicalVisitDTO {
-  @ApiPropertyOptional({ description: 'TODO: descrever campo' })
-  placeholder?: string;
-}
+import { CreateTechnicalVisitDTO } from './create-technical-visit.dto';
+
+export class UpdateTechnicalVisitDTO extends PartialType(
+  OmitType(CreateTechnicalVisitDTO, ['createdBy'] as const),
+) {}
