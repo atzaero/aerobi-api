@@ -1,6 +1,5 @@
 import type { PrivateAerodrome } from '@/generated/prisma/client';
 
-import { PrivateAerodromesFindAllQueryDTO } from '../dtos/private-aerodromes-find-all-query.dto';
 import { PrivateAerodromeRepository } from '../repositories/private-aerodrome.repository';
 
 import { PrivateAerodromesRowsService } from './private-aerodromes-rows.service';
@@ -56,9 +55,7 @@ describe('PrivateAerodromesRowsService', () => {
       findMany.mockResolvedValue(rows);
       count.mockResolvedValue(42);
 
-      const result = await service.execute(
-        {} as PrivateAerodromesFindAllQueryDTO,
-      );
+      const result = await service.execute({});
 
       expect(result.data).toEqual(rows);
       expect(result.meta).toMatchObject({
@@ -80,7 +77,7 @@ describe('PrivateAerodromesRowsService', () => {
       const result = await service.execute({
         page: 3,
         limit: 25,
-      } as PrivateAerodromesFindAllQueryDTO);
+      });
 
       expect(findMany).toHaveBeenCalledWith(expect.any(Object), 50, 25);
       expect(result.meta.currentPage).toBe(3);
@@ -94,7 +91,7 @@ describe('PrivateAerodromesRowsService', () => {
       await service.execute({
         page: 1,
         limit: 999,
-      } as PrivateAerodromesFindAllQueryDTO);
+      });
 
       expect(findMany).toHaveBeenCalledWith(expect.any(Object), 0, 200);
     });
@@ -103,7 +100,7 @@ describe('PrivateAerodromesRowsService', () => {
       await service.execute({
         page: 1,
         limit: 0,
-      } as PrivateAerodromesFindAllQueryDTO);
+      });
 
       expect(findMany).toHaveBeenCalledWith(expect.any(Object), 0, 1);
     });
@@ -113,7 +110,7 @@ describe('PrivateAerodromesRowsService', () => {
         ciad: 'SJ',
         uf: 'SP',
         municipio: 'São',
-      } as PrivateAerodromesFindAllQueryDTO);
+      });
 
       expect(findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -130,9 +127,7 @@ describe('PrivateAerodromesRowsService', () => {
       findMany.mockResolvedValue([]);
       count.mockResolvedValue(0);
 
-      const result = await service.execute(
-        {} as PrivateAerodromesFindAllQueryDTO,
-      );
+      const result = await service.execute({});
 
       expect(result.data).toEqual([]);
       expect(result.meta.totalItems).toBe(0);
@@ -146,18 +141,14 @@ describe('PrivateAerodromesRowsService', () => {
       findMany.mockRejectedValue(new Error('connection refused'));
       count.mockResolvedValue(0);
 
-      await expect(
-        service.execute({} as PrivateAerodromesFindAllQueryDTO),
-      ).rejects.toThrow('connection refused');
+      await expect(service.execute({})).rejects.toThrow('connection refused');
     });
 
     it('propaga rejeição de count', async () => {
       findMany.mockResolvedValue([]);
       count.mockRejectedValue(new Error('count timeout'));
 
-      await expect(
-        service.execute({} as PrivateAerodromesFindAllQueryDTO),
-      ).rejects.toThrow('count timeout');
+      await expect(service.execute({})).rejects.toThrow('count timeout');
     });
   });
 });

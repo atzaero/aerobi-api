@@ -12,5 +12,12 @@ export function unwrapCdata(value: unknown): string {
     return unwrapCdata((value as { '#text'?: unknown })['#text']);
   }
   if (typeof value === 'object') return '';
-  return String(value as string | number | boolean);
+  if (
+    typeof value === 'number' ||
+    typeof value === 'boolean' ||
+    typeof value === 'bigint'
+  ) {
+    return String(value);
+  }
+  return '';
 }

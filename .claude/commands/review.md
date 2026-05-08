@@ -22,6 +22,7 @@ padrões arquiteturais e boas práticas do projeto.
 4. **Reportar problemas** — listar issues encontrados com arquivo e linha
 5. **Sugerir correções** — propor solução para cada problema encontrado
 6. **Aguardar aprovação** — não prosseguir com commit/PR sem resolução dos problemas críticos
+7. **Revisão automatizada (opcional)** — para relatório estruturado 🔴/🟡/🔵 com `arquivo:linha`, invocar o subagente `code-reviewer` conforme [`.claude/agents/code-reviewer.md`](../agents/code-reviewer.md) (também referenciado por `/complete-flow`).
 
 Problemas são classificados em:
 
@@ -35,7 +36,6 @@ Quando o diff alterar persistência, Prisma, integrações HTTP ou comportamento
 
 ```bash
 docker compose -f docker-compose.dev.yml run --rm api npm run test
-docker compose -f docker-compose.dev.yml run --rm api npm run test:e2e
 ```
 
 Para inspeção manual: `docker compose -f docker-compose.dev.yml run --rm api bash`.
@@ -74,8 +74,6 @@ Para inspeção manual: `docker compose -f docker-compose.dev.yml run --rm api b
 ### Testes
 
 - [ ] Testes unitários cobrem branches críticos novos ou alterados
-- [ ] Testes e2e atualizados quando fluxos HTTP ou integrações mudarem
-- [ ] Preferir execução e2e via Docker quando depender de Postgres (ver secção acima)
 
 ### Segurança
 

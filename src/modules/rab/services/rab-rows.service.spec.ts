@@ -1,6 +1,5 @@
 import type { RabRow } from '@/generated/prisma/client';
 
-import { RabRowsFindAllQueryDTO } from '../dtos/rab-rows-find-all-query.dto';
 import { RabRowRepository } from '../repositories/rab-row.repository';
 
 import { AnacIndexService } from './anac-index.service';
@@ -72,7 +71,7 @@ describe('RabRowsService', () => {
 
       const result = await service.execute({
         period: '2026-03',
-      } as RabRowsFindAllQueryDTO);
+      });
 
       expect(result.data).toEqual(rows);
       expect(executeAnac).not.toHaveBeenCalled();
@@ -98,7 +97,7 @@ describe('RabRowsService', () => {
       findMany.mockResolvedValue([mockRabRow({ period: '2026-10' })]);
       count.mockResolvedValue(1);
 
-      await service.execute({} as RabRowsFindAllQueryDTO);
+      await service.execute({});
 
       expect(executeAnac).toHaveBeenCalledTimes(1);
       expect(findMany).toHaveBeenCalledWith(
@@ -116,7 +115,7 @@ describe('RabRowsService', () => {
         period: '2026-01',
         page: 3,
         limit: 25,
-      } as RabRowsFindAllQueryDTO);
+      });
 
       expect(findMany).toHaveBeenCalledWith(
         expect.objectContaining({ period: '2026-01' }),
@@ -135,7 +134,7 @@ describe('RabRowsService', () => {
         period: '2026-03',
         page: 1,
         limit: 999,
-      } as RabRowsFindAllQueryDTO);
+      });
 
       expect(findMany).toHaveBeenCalledWith(expect.any(Object), 0, 200);
     });
@@ -145,7 +144,7 @@ describe('RabRowsService', () => {
         period: '2026-03',
         page: 1,
         limit: 0,
-      } as RabRowsFindAllQueryDTO);
+      });
 
       expect(findMany).toHaveBeenCalledWith(expect.any(Object), 0, 1);
     });
@@ -155,7 +154,7 @@ describe('RabRowsService', () => {
         period: '2026-03',
         marcas: 'PP-',
         nrCertMatricula: 'cert',
-      } as RabRowsFindAllQueryDTO);
+      });
 
       expect(findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -174,7 +173,7 @@ describe('RabRowsService', () => {
 
       const result = await service.execute({
         period: '2026-03',
-      } as RabRowsFindAllQueryDTO);
+      });
 
       expect(result.data).toEqual([]);
       expect(result.meta.totalItems).toBe(0);
@@ -192,7 +191,7 @@ describe('RabRowsService', () => {
       await expect(
         service.execute({
           period: '2026-03',
-        } as RabRowsFindAllQueryDTO),
+        }),
       ).rejects.toThrow('connection refused');
     });
 
@@ -203,7 +202,7 @@ describe('RabRowsService', () => {
       await expect(
         service.execute({
           period: '2026-03',
-        } as RabRowsFindAllQueryDTO),
+        }),
       ).rejects.toThrow('count timeout');
     });
 
@@ -214,16 +213,14 @@ describe('RabRowsService', () => {
       await expect(
         service.execute({
           period: '2026-03',
-        } as RabRowsFindAllQueryDTO),
+        }),
       ).rejects.toThrow('read failed');
     });
 
     it('propagates when AnacIndexService fails and period is omitted', async () => {
       executeAnac.mockRejectedValue(new Error('index unreachable'));
 
-      await expect(
-        service.execute({} as RabRowsFindAllQueryDTO),
-      ).rejects.toThrow('index unreachable');
+      await expect(service.execute({})).rejects.toThrow('index unreachable');
       expect(findMany).not.toHaveBeenCalled();
     });
   });
