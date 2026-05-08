@@ -1,20 +1,24 @@
-import { ListAerodromeGeojsonsService } from '../services/list-aerodrome-geojsons.service';
+import { AerodromeGeojsonsPaginatedResponseDTO } from '../dtos/aerodrome-geojsons-paginated-response.dto';
+import type { ListAerodromeGeojsonsService } from '../services/list-aerodrome-geojsons.service';
+
 import { ListAerodromeGeojsonsController } from './list-aerodrome-geojsons.controller';
 
 describe('ListAerodromeGeojsonsController', () => {
   let controller: ListAerodromeGeojsonsController;
-  let service: jest.Mocked<Pick<ListAerodromeGeojsonsService, 'execute'>>;
+  let execute: jest.Mock;
 
   beforeEach(() => {
-    service = { execute: jest.fn() };
-    controller = new ListAerodromeGeojsonsController(
-      service as unknown as ListAerodromeGeojsonsService,
-    );
+    execute = jest.fn();
+    controller = new ListAerodromeGeojsonsController({
+      execute,
+    } as unknown as ListAerodromeGeojsonsService);
   });
 
-  it('is defined', () => {
-    expect(controller).toBeDefined();
+  it('delega', async () => {
+    const q = { limit: 25 };
+    const p = new AerodromeGeojsonsPaginatedResponseDTO([], 1, 25, 0);
+    execute.mockResolvedValue(p);
+    await expect(controller.handle(q)).resolves.toBe(p);
+    expect(execute).toHaveBeenCalledWith(q);
   });
-
-  // TODO: casos de sucesso e erro
 });

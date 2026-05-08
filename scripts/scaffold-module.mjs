@@ -191,30 +191,204 @@ export class Remove${n.pascalSingular}Controller {
 `;
 
 // =========================================================================
-// Controller specs
+// Controller specs — delegação a service.execute (alinhado a issue #81).
 // =========================================================================
-const specControllerSimple = (n, opName, ServiceClass, ControllerClass) => `import { ${ServiceClass} } from '../services/${opName}-${opName.startsWith('list-') ? n.pluralKebab : n.singularKebab}.service';
-import { ${ControllerClass} } from './${opName}-${opName.startsWith('list-') ? n.pluralKebab : n.singularKebab}.controller';
+
+const SPEC_UUID = `'00000000-0000-4000-8000-000000000001'`;
+
+const specControllerCreate = (
+  n,
+  fileBase,
+  ServiceClass,
+  ControllerClass,
+) => `import { Create${n.pascalSingular}DTO } from '../dtos/create-${n.singularKebab}.dto';
+import { ${n.pascalSingular}ResponseDTO } from '../dtos/${n.singularKebab}-response.dto';
+import { ${ServiceClass} } from '../services/${fileBase}.service';
+
+import { ${ControllerClass} } from './${fileBase}.controller';
 
 describe('${ControllerClass}', () => {
   let controller: ${ControllerClass};
-  let service: jest.Mocked<Pick<${ServiceClass}, 'execute'>>;
+  let execute: jest.Mock;
 
   beforeEach(() => {
-    service = { execute: jest.fn() };
-    controller = new ${ControllerClass}(service as unknown as ${ServiceClass});
+    execute = jest.fn();
+    controller = new ${ControllerClass}({
+      execute,
+    } as unknown as ${ServiceClass});
   });
 
-  it('is defined', () => {
-    expect(controller).toBeDefined();
-  });
+  it('delega ao service.execute com o body', async () => {
+    const dto = {} as Create${n.pascalSingular}DTO;
+    const row = new ${n.pascalSingular}ResponseDTO();
+    execute.mockResolvedValue(row);
 
-  // TODO: casos de sucesso e erro
+    await expect(controller.handle(dto)).resolves.toBe(row);
+
+    expect(execute).toHaveBeenCalledTimes(1);
+    expect(execute).toHaveBeenCalledWith(dto);
+  });
 });
 `;
 
-const specControllerWithOp = (n, fileBase, ServiceClass, ControllerClass) => `import { ${ServiceClass} } from '../services/${fileBase}.service';
+const specControllerUpdate = (
+  n,
+  fileBase,
+  ServiceClass,
+  ControllerClass,
+) => `import { Update${n.pascalSingular}DTO } from '../dtos/update-${n.singularKebab}.dto';
+import { ${n.pascalSingular}ResponseDTO } from '../dtos/${n.singularKebab}-response.dto';
+import { ${ServiceClass} } from '../services/${fileBase}.service';
+
 import { ${ControllerClass} } from './${fileBase}.controller';
+
+describe('${ControllerClass}', () => {
+  let controller: ${ControllerClass};
+  let execute: jest.Mock;
+
+  beforeEach(() => {
+    execute = jest.fn();
+    controller = new ${ControllerClass}({
+      execute,
+    } as unknown as ${ServiceClass});
+  });
+
+  it('delega PATCH ao service.execute com id e body', async () => {
+    const id = ${SPEC_UUID};
+    const body = {} as Update${n.pascalSingular}DTO;
+    const row = new ${n.pascalSingular}ResponseDTO();
+    execute.mockResolvedValue(row);
+
+    await expect(controller.handle(id, body)).resolves.toBe(row);
+
+    expect(execute).toHaveBeenCalledWith({ id, ...body });
+  });
+});
+`;
+
+const specControllerList = (
+  n,
+  fileBase,
+  ServiceClass,
+  ControllerClass,
+) => `import { ${n.pascalPlural}PaginatedResponseDTO } from '../dtos/${n.pluralKebab}-paginated-response.dto';
+import { List${n.pascalPlural}QueryDTO } from '../dtos/list-${n.pluralKebab}-query.dto';
+import { ${ServiceClass} } from '../services/${fileBase}.service';
+
+import { ${ControllerClass} } from './${fileBase}.controller';
+
+describe('${ControllerClass}', () => {
+  let controller: ${ControllerClass};
+  let execute: jest.Mock;
+
+  beforeEach(() => {
+    execute = jest.fn();
+    controller = new ${ControllerClass}({
+      execute,
+    } as unknown as ${ServiceClass});
+  });
+
+  it('delega lista ao service.execute com query', async () => {
+    const query = {} as List${n.pascalPlural}QueryDTO;
+    const page = new ${n.pascalPlural}PaginatedResponseDTO([], 1, 10, 0);
+    execute.mockResolvedValue(page);
+
+    await expect(controller.handle(query)).resolves.toBe(page);
+
+    expect(execute).toHaveBeenCalledTimes(1);
+    expect(execute).toHaveBeenCalledWith(query);
+  });
+});
+`;
+
+const specControllerFindById = (
+  n,
+  fileBase,
+  ServiceClass,
+  ControllerClass,
+) => `import { ${n.pascalSingular}ResponseDTO } from '../dtos/${n.singularKebab}-response.dto';
+import { ${ServiceClass} } from '../services/${fileBase}.service';
+
+import { ${ControllerClass} } from './${fileBase}.controller';
+
+describe('${ControllerClass}', () => {
+  let controller: ${ControllerClass};
+  let execute: jest.Mock;
+
+  beforeEach(() => {
+    execute = jest.fn();
+    controller = new ${ControllerClass}({
+      execute,
+    } as unknown as ${ServiceClass});
+  });
+
+  it('delega ao service.execute com id do path', async () => {
+    const id = ${SPEC_UUID};
+    const row = new ${n.pascalSingular}ResponseDTO();
+    execute.mockResolvedValue(row);
+
+    await expect(controller.handle(id)).resolves.toBe(row);
+
+    expect(execute).toHaveBeenCalledTimes(1);
+    expect(execute).toHaveBeenCalledWith({ id });
+  });
+});
+`;
+
+const specControllerRemove = (
+  n,
+  fileBase,
+  ServiceClass,
+  ControllerClass,
+) => `import { ${n.pascalSingular}ResponseDTO } from '../dtos/${n.singularKebab}-response.dto';
+import { ${ServiceClass} } from '../services/${fileBase}.service';
+
+import { ${ControllerClass} } from './${fileBase}.controller';
+
+describe('${ControllerClass}', () => {
+  let controller: ${ControllerClass};
+  let execute: jest.Mock;
+
+  beforeEach(() => {
+    execute = jest.fn();
+    controller = new ${ControllerClass}({
+      execute,
+    } as unknown as ${ServiceClass});
+  });
+
+  it('delega DELETE ao service com deletedBy até existir auth', async () => {
+    const id = ${SPEC_UUID};
+    const row = new ${n.pascalSingular}ResponseDTO();
+    execute.mockResolvedValue(row);
+
+    await expect(controller.handle(id)).resolves.toBe(row);
+
+    expect(execute).toHaveBeenCalledWith({ id, deletedBy: 'system' });
+  });
+});
+`;
+
+const specControllerWithOp = (n, fileBase, ServiceClass, ControllerClass) => {
+  if (fileBase === `create-${n.singularKebab}`) {
+    return specControllerCreate(n, fileBase, ServiceClass, ControllerClass);
+  }
+  if (fileBase === `update-${n.singularKebab}`) {
+    return specControllerUpdate(n, fileBase, ServiceClass, ControllerClass);
+  }
+  if (fileBase === `list-${n.pluralKebab}`) {
+    return specControllerList(n, fileBase, ServiceClass, ControllerClass);
+  }
+  if (fileBase === `find-${n.singularKebab}-by-id`) {
+    return specControllerFindById(n, fileBase, ServiceClass, ControllerClass);
+  }
+  if (fileBase === `remove-${n.singularKebab}`) {
+    return specControllerRemove(n, fileBase, ServiceClass, ControllerClass);
+  }
+  throw new Error(`specControllerWithOp: ficheiro base não reconhecido: ${fileBase}`);
+};
+
+const specControllerSimple = (n, opName, ServiceClass, ControllerClass) => `import { ${ServiceClass} } from '../services/${opName}-${opName.startsWith('list-') ? n.pluralKebab : n.singularKebab}.service';
+import { ${ControllerClass} } from './${opName}-${opName.startsWith('list-') ? n.pluralKebab : n.singularKebab}.controller';
 
 describe('${ControllerClass}', () => {
   let controller: ${ControllerClass};
@@ -407,25 +581,70 @@ describe('${ServiceClass}', () => {
 });
 `;
 
-// Spec mais direto usando só o singular kebab fornecido (evita gambiarra de regex).
-const specService = (n, fileBase, ServiceClass) => `import { ${n.pascalSingular}Repository } from '../repositories/${n.singularKebab}.repository';
+// Spec de service: smoke com mock de repositório — expandir filtros/404 como em issue #81.
+const specService = (n, fileBase, ServiceClass) => {
+  const repo = `${n.pascalSingular}Repository`;
+  const prismaModel = n.Model;
+  if (fileBase === `create-${n.singularKebab}`) {
+    return `import type { ${prismaModel} } from '@/generated/prisma/client';
+
+import { build${n.pascalSingular}CreateInput } from '../mappers/${n.singularKebab}.prisma.mapper';
+import { ${repo} } from '../repositories/${n.singularKebab}.repository';
+import { Create${n.pascalSingular}DTO } from '../dtos/create-${n.singularKebab}.dto';
+
+import { ${ServiceClass} } from './${fileBase}.service';
+
+describe('${ServiceClass}', () => {
+  let service: ${ServiceClass};
+  let create: jest.Mock;
+
+  beforeEach(() => {
+    create = jest.fn();
+    service = new ${ServiceClass}({ create } as unknown as ${repo});
+  });
+
+  it('delega repo.create ao output de build${n.pascalSingular}CreateInput', async () => {
+    const dto = {} as Create${n.pascalSingular}DTO;
+    const saved = { id: 'x' } as ${prismaModel};
+    create.mockResolvedValue(saved);
+
+    await service.execute(dto);
+
+    expect(create).toHaveBeenCalledWith(build${n.pascalSingular}CreateInput(dto));
+  });
+});
+`;
+  }
+
+  let repoMethods = '{}';
+  if (fileBase === `update-${n.singularKebab}`) {
+    repoMethods = '{ findById: jest.fn(), update: jest.fn() }';
+  } else if (fileBase === `list-${n.pluralKebab}`) {
+    repoMethods = '{ findMany: jest.fn(), count: jest.fn() }';
+  } else if (fileBase === `find-${n.singularKebab}-by-id`) {
+    repoMethods = '{ findById: jest.fn() }';
+  } else if (fileBase === `remove-${n.singularKebab}`) {
+    repoMethods = '{ findById: jest.fn(), softDelete: jest.fn() }';
+  }
+
+  return `import { ${repo} } from '../repositories/${n.singularKebab}.repository';
+
 import { ${ServiceClass} } from './${fileBase}.service';
 
 describe('${ServiceClass}', () => {
   let service: ${ServiceClass};
 
   beforeEach(() => {
-    const repo = {} as unknown as ${n.pascalSingular}Repository;
-    service = new ${ServiceClass}(repo);
+    const repoStub = ${repoMethods} as unknown as ${repo};
+    service = new ${ServiceClass}(repoStub);
   });
 
-  it('is defined', () => {
+  it('instancia com repositório mock', () => {
     expect(service).toBeDefined();
   });
-
-  // TODO: casos de sucesso e erro
 });
 `;
+};
 
 // =========================================================================
 // DTOs
