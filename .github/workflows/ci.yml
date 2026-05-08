@@ -29,7 +29,8 @@ jobs:
 
       # Lockfile foi regerado com npm 11; CI default em Node 22 ainda traz npm 10. Alinhar para evitar EUSAGE em `npm ci`.
       - name: Pin npm 11
-        run: npm install -g npm@11
+        # --force contorna MODULE_NOT_FOUND (promise-retry) no auto-upgrade npm 10→11
+        run: npm install -g npm@11 --force
 
       # Production deps only (--omit=dev): avoids dev-only transitive issues (e.g. npm CLI via semantic-release).
       # Lockfile-only; fails on high+ in the install tree that ships (tighten to moderate later if desired).
@@ -50,7 +51,8 @@ jobs:
           cache: npm
 
       - name: Pin npm 11
-        run: npm install -g npm@11
+        # --force contorna MODULE_NOT_FOUND (promise-retry) no auto-upgrade npm 10→11
+        run: npm install -g npm@11 --force
 
       - run: npm ci
 
@@ -98,7 +100,8 @@ jobs:
           cache: npm
 
       - name: Pin npm 11
-        run: npm install -g npm@11
+        # --force contorna MODULE_NOT_FOUND (promise-retry) no auto-upgrade npm 10→11
+        run: npm install -g npm@11 --force
 
       - run: npm ci
 

@@ -60,7 +60,8 @@ jobs:
           cache: npm
 
       - name: Pin npm 11
-        run: npm install -g npm@11
+        # --force contorna MODULE_NOT_FOUND (promise-retry) no auto-upgrade npm 10→11
+        run: npm install -g npm@11 --force
 
       - name: Install dependencies
         run: npm ci
