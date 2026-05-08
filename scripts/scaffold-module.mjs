@@ -236,11 +236,32 @@ describe('${ControllerClass}', () => {
 // =========================================================================
 // Services
 // =========================================================================
+const prismaMapperModule = (n) => `import type { Prisma } from '@/generated/prisma/client';
+
+import { Create${n.pascalSingular}DTO } from '../dtos/create-${n.singularKebab}.dto';
+import { Update${n.pascalSingular}DTO } from '../dtos/update-${n.singularKebab}.dto';
+
+export function build${n.pascalSingular}CreateInput(
+  dto: Create${n.pascalSingular}DTO,
+): Prisma.${n.Model}CreateInput {
+  // TODO: mapeamento explícito DTO → Prisma (campos escalares + relações connect/disconnect).
+  return dto as never;
+}
+
+export function patch${n.pascalSingular}ToPrisma(
+  dto: Update${n.pascalSingular}DTO,
+): Prisma.${n.Model}UpdateInput {
+  // TODO: só campos com !== undefined; relações via connect/disconnect.
+  return dto as never;
+}
+`;
+
 const serviceCreate = (n) => `import { Injectable } from '@nestjs/common';
 
 import { ${n.pascalSingular}ResponseDTO } from '../dtos/${n.singularKebab}-response.dto';
 import { Create${n.pascalSingular}DTO } from '../dtos/create-${n.singularKebab}.dto';
 import { ${n.pascalSingular}Mapper } from '../mappers/${n.singularKebab}.mapper';
+import { build${n.pascalSingular}CreateInput } from '../mappers/${n.singularKebab}.prisma.mapper';
 import { ${n.pascalSingular}Repository } from '../repositories/${n.singularKebab}.repository';
 
 @Injectable()
@@ -248,8 +269,7 @@ export class Create${n.pascalSingular}Service {
   constructor(private readonly repo: ${n.pascalSingular}Repository) {}
 
   async execute(dto: Create${n.pascalSingular}DTO): Promise<${n.pascalSingular}ResponseDTO> {
-    // TODO: implementar
-    const created = await this.repo.create(dto as never);
+    const created = await this.repo.create(build${n.pascalSingular}CreateInput(dto));
     return ${n.pascalSingular}Mapper.toApiRow(created);
   }
 }
@@ -260,6 +280,7 @@ const serviceUpdate = (n) => `import { Injectable, NotFoundException } from '@ne
 import { ${n.pascalSingular}ResponseDTO } from '../dtos/${n.singularKebab}-response.dto';
 import { Update${n.pascalSingular}DTO } from '../dtos/update-${n.singularKebab}.dto';
 import { ${n.pascalSingular}Mapper } from '../mappers/${n.singularKebab}.mapper';
+import { patch${n.pascalSingular}ToPrisma } from '../mappers/${n.singularKebab}.prisma.mapper';
 import { ${n.pascalSingular}Repository } from '../repositories/${n.singularKebab}.repository';
 
 export type Update${n.pascalSingular}ServiceInput = Update${n.pascalSingular}DTO & { id: string };
@@ -271,13 +292,12 @@ export class Update${n.pascalSingular}Service {
   async execute(
     input: Update${n.pascalSingular}ServiceInput,
   ): Promise<${n.pascalSingular}ResponseDTO> {
-    // TODO: implementar
-    const { id, ...data } = input;
+    const { id, ...dto } = input;
     const existing = await this.repo.findById(id);
     if (!existing) {
       throw new NotFoundException(\`${n.pascalSingular} \${id} not found\`);
     }
-    const updated = await this.repo.update(id, data as never);
+    const updated = await this.repo.update(id, patch${n.pascalSingular}ToPrisma(dto));
     return ${n.pascalSingular}Mapper.toApiRow(updated);
   }
 }
@@ -769,19 +789,17 @@ DTOs de entrada e saída, validados com \`class-validator\` e documentados com \
 
 const readmeMappers = (n) => `# mappers
 
-Converte entidades do Prisma (\`${n.Model}\`) em DTOs de resposta.
+Transformações puras: entidade Prisma → DTO HTTP, e DTO de entrada → \`Prisma.*CreateInput\` / \`UpdateInput\`.
 
-## Arquivo
+## Arquivos
 
-- \`${n.singularKebab}.mapper.ts\` — classe \`${n.pascalSingular}Mapper\` com:
-  - \`static toApiRow(entity)\` — 1 entidade → 1 DTO.
-  - \`static toApiRows(entities)\` — N entidades → N DTOs.
+- \`${n.singularKebab}.mapper.ts\` — \`${n.pascalSingular}Mapper\`: \`toApiRow\`, \`toApiRows\`.
+- \`${n.singularKebab}.prisma.mapper.ts\` — funções nomeadas (\`build${n.pascalSingular}CreateInput\`, \`patch${n.pascalSingular}ToPrisma\`) chamadas pelos services de create/update; testáveis com Jest em isolamento.
 
 ## Regras
 
-- Métodos estáticos (sem dependências injetáveis).
-- Nada de I/O. Só transformação pura.
-- Services chamam o mapper antes de retornar.
+- Sem I/O nem \`@Injectable()\`.
+- Services chamam o mapper HTTP antes de retornar; create/update também usam o prisma mapper antes do repository.
 `;
 
 const readmeRepositories = (n) => `# repositories
@@ -923,6 +941,10 @@ writeFile(`dtos/${names.pluralKebab}-paginated-response.dto.ts`, dtoPaginatedRes
 // Mappers
 writeFile('mappers/README.md', readmeMappers(names));
 writeFile(`mappers/${names.singularKebab}.mapper.ts`, mapper(names));
+writeFile(
+  `mappers/${names.singularKebab}.prisma.mapper.ts`,
+  prismaMapperModule(names),
+);
 
 // Repositories
 writeFile('repositories/README.md', readmeRepositories(names));

@@ -3,39 +3,16 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { ErrorCode } from '@/common/enums/error-code.enum';
-import type { Prisma } from '@/generated/prisma/client';
 
 import { PilotLandingResponseDTO } from '../dtos/pilot-landing-response.dto';
 import { UpdatePilotLandingDTO } from '../dtos/update-pilot-landing.dto';
 import { PilotLandingMapper } from '../mappers/pilot-landing.mapper';
+import { patchPilotLandingToPrisma } from '../mappers/pilot-landing.prisma.mapper';
 import { PilotLandingRepository } from '../repositories/pilot-landing.repository';
 
 export type UpdatePilotLandingServiceInput = UpdatePilotLandingDTO & {
   id: string;
 };
-
-function patchToPrisma(
-  dto: UpdatePilotLandingDTO,
-): Prisma.PilotLandingUpdateInput {
-  const data: Prisma.PilotLandingUpdateInput = {};
-
-  if (dto.registration !== undefined) data.registration = dto.registration;
-  if (dto.localName !== undefined) data.localName = dto.localName;
-  if (dto.localIcao !== undefined) data.localIcao = dto.localIcao;
-  if (dto.checked !== undefined) data.checked = dto.checked;
-  if (dto.imagesPath !== undefined) data.imagesPath = dto.imagesPath;
-  if (dto.landingAt !== undefined) data.landingAt = dto.landingAt;
-
-  if (dto.disconnectOperationalAerodrome) {
-    data.operationalAerodrome = { disconnect: true };
-  } else if (dto.operationalAerodromeId !== undefined) {
-    data.operationalAerodrome = {
-      connect: { id: dto.operationalAerodromeId },
-    };
-  }
-
-  return data;
-}
 
 @Injectable()
 export class UpdatePilotLandingService {
@@ -59,7 +36,7 @@ export class UpdatePilotLandingService {
         ErrorCode.RESOURCE_NOT_FOUND,
       );
     }
-    const data = patchToPrisma(raw);
+    const data = patchPilotLandingToPrisma(raw);
     const updated = await this.repo.update(id, data);
     return PilotLandingMapper.toApiRow(updated);
   }

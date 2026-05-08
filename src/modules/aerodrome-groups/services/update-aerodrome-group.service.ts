@@ -3,29 +3,16 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { ErrorCode } from '@/common/enums/error-code.enum';
-import type { Prisma } from '@/generated/prisma/client';
 
 import { AerodromeGroupResponseDTO } from '../dtos/aerodrome-group-response.dto';
 import { UpdateAerodromeGroupDTO } from '../dtos/update-aerodrome-group.dto';
 import { AerodromeGroupMapper } from '../mappers/aerodrome-group.mapper';
+import { patchAerodromeGroupToPrisma } from '../mappers/aerodrome-group.prisma.mapper';
 import { AerodromeGroupRepository } from '../repositories/aerodrome-group.repository';
 
 export type UpdateAerodromeGroupServiceInput = UpdateAerodromeGroupDTO & {
   id: string;
 };
-
-function patchToPrisma(
-  dto: UpdateAerodromeGroupDTO,
-): Prisma.AerodromeGroupUpdateInput {
-  const data: Prisma.AerodromeGroupUpdateInput = {};
-  if (dto.uf !== undefined) data.uf = dto.uf;
-  if (dto.groupName !== undefined) data.groupName = dto.groupName;
-  if (dto.ownerId !== undefined) data.ownerId = dto.ownerId;
-  if (dto.deletionRequested !== undefined) {
-    data.deletionRequested = dto.deletionRequested;
-  }
-  return data;
-}
 
 @Injectable()
 export class UpdateAerodromeGroupService {
@@ -49,7 +36,10 @@ export class UpdateAerodromeGroupService {
         ErrorCode.RESOURCE_NOT_FOUND,
       );
     }
-    const updated = await this.repo.update(id, patchToPrisma(dto));
+    const updated = await this.repo.update(
+      id,
+      patchAerodromeGroupToPrisma(dto),
+    );
     return AerodromeGroupMapper.toApiRow(updated);
   }
 }
