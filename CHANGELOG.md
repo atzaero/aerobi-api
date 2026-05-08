@@ -1,3 +1,33 @@
+# [2.5.0](https://github.com/atzaero/aerobi-api/compare/v2.4.0...v2.5.0) (2026-05-08)
+
+
+### Bug Fixes
+
+* **atualiza dependências:** sincroniza package.json com develop e adiciona dependências ANAC ([aade069](https://github.com/atzaero/aerobi-api/commit/aade0695c8f5832060337ea29946015df2bbb74d))
+* **ci:** lockfile pós npm audit e Prettier no módulo ANAC ([83d39e7](https://github.com/atzaero/aerobi-api/commit/83d39e7c36f4facb3cd6eda224927291c95fe973))
+* **ci:** regenerar package-lock.json para npm ci no GitHub Actions ([f1500a4](https://github.com/atzaero/aerobi-api/commit/f1500a41a7b97dbc5318445192956eb67b5ae0ef))
+* **dependências:** resolve conflitos com develop atualizada ([130c3f4](https://github.com/atzaero/aerobi-api/commit/130c3f449711c31384a20683d08f343d336c9b5e))
+* **dependências:** resolve conflitos e regenera package-lock.json ([b9417a6](https://github.com/atzaero/aerobi-api/commit/b9417a6b1aa2474f2cc988e07b1934e199541c3e))
+* **lint:** resolve ESLint issues for CI gate ([bbbfe69](https://github.com/atzaero/aerobi-api/commit/bbbfe69c2e3a600995878a2ae4a7448b40d7a103))
+* **test:** fake timers nos testes ANAC (rate limit + cache TTL) ([f1ab567](https://github.com/atzaero/aerobi-api/commit/f1ab567113c9a9912b18381cba865d18c8fdd534))
+* **tokens:** align token metadata type with Prisma InputJsonValue ([93beb13](https://github.com/atzaero/aerobi-api/commit/93beb132b43ba2a2adadb44494101e5f49f0b5a9))
+
+
+### Features
+
+* **anac:** módulo para consulta de licenças de piloto via ANAC ([b91f066](https://github.com/atzaero/aerobi-api/commit/b91f0664c794726d4e5a041d6fbf772e0248592e))
+* **common:** adiciona CustomHttpException com errorCode no payload ([6d23ba2](https://github.com/atzaero/aerobi-api/commit/6d23ba2df362bcb1432b8ce2516833683c38e92a)), closes [#42](https://github.com/atzaero/aerobi-api/issues/42)
+* **common:** adiciona EmailService com templates e Ethereal em dev ([5de503e](https://github.com/atzaero/aerobi-api/commit/5de503e4e994bbd9536fee01d0c0062c37178bdc))
+* **common:** adiciona EncryptionService (AES-256-GCM) ([213cc47](https://github.com/atzaero/aerobi-api/commit/213cc47641a80a7731691232985c9c462ae82279)), closes [#43](https://github.com/atzaero/aerobi-api/issues/43)
+* **common:** adiciona enum ErrorCode e centralizador de mensagens ([d047185](https://github.com/atzaero/aerobi-api/commit/d0471855b42b1dc0ce4984489b2a749b23b5f688)), closes [#42](https://github.com/atzaero/aerobi-api/issues/42)
+* **common:** estende AllExceptionsFilter para expor errorCode ([12764b8](https://github.com/atzaero/aerobi-api/commit/12764b8e33ec1986346baf2b0c30fbb6fecc7910)), closes [#42](https://github.com/atzaero/aerobi-api/issues/42)
+* **health:** retorna diagnósticos de DB, memória, uptime, env e versão ([06bb0c5](https://github.com/atzaero/aerobi-api/commit/06bb0c541510c4bf29da7578191671431dca36cb)), closes [#45](https://github.com/atzaero/aerobi-api/issues/45)
+* **tokens:** adiciona EmailVerificationTokenService e PasswordResetTokenService ([5da2978](https://github.com/atzaero/aerobi-api/commit/5da297834b7847d6dd35f84d2a595768a5773e2f))
+* **tokens:** adiciona TokenGenerationService (plain + bcrypt) ([ace3de6](https://github.com/atzaero/aerobi-api/commit/ace3de68061297396560f9ff3a61e63b035804d1))
+* **tokens:** adiciona TokenRepository com busca/invalidação/soft-delete ([ea8c92b](https://github.com/atzaero/aerobi-api/commit/ea8c92b850f8a90e4986af040003f1f3e3be34f6))
+* **tokens:** adiciona TokenValidationService com CustomHttpException ([bc57d10](https://github.com/atzaero/aerobi-api/commit/bc57d1096536b064778682f6c4259b999cb1e168))
+* **tokens:** registra TokensModule no AppModule ([2fec184](https://github.com/atzaero/aerobi-api/commit/2fec18463abab7abc489fc906673d0397d87ca4a))
+
 # [2.4.0](https://github.com/atzaero/aerobi-api/compare/v2.3.2...v2.4.0) (2026-04-20)
 
 
