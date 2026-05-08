@@ -1,20 +1,24 @@
-import { ListAerodromeFeedbacksService } from '../services/list-aerodrome-feedbacks.service';
+import { AerodromeFeedbacksPaginatedResponseDTO } from '../dtos/aerodrome-feedbacks-paginated-response.dto';
+import type { ListAerodromeFeedbacksService } from '../services/list-aerodrome-feedbacks.service';
+
 import { ListAerodromeFeedbacksController } from './list-aerodrome-feedbacks.controller';
 
 describe('ListAerodromeFeedbacksController', () => {
   let controller: ListAerodromeFeedbacksController;
-  let service: jest.Mocked<Pick<ListAerodromeFeedbacksService, 'execute'>>;
+  let execute: jest.Mock;
 
   beforeEach(() => {
-    service = { execute: jest.fn() };
-    controller = new ListAerodromeFeedbacksController(
-      service as unknown as ListAerodromeFeedbacksService,
-    );
+    execute = jest.fn();
+    controller = new ListAerodromeFeedbacksController({
+      execute,
+    } as unknown as ListAerodromeFeedbacksService);
   });
 
-  it('is defined', () => {
-    expect(controller).toBeDefined();
+  it('delega query', async () => {
+    const q = { limit: 5 };
+    const p = new AerodromeFeedbacksPaginatedResponseDTO([], 1, 5, 0);
+    execute.mockResolvedValue(p);
+    await expect(controller.handle(q)).resolves.toBe(p);
+    expect(execute).toHaveBeenCalledWith(q);
   });
-
-  // TODO: casos de sucesso e erro
 });

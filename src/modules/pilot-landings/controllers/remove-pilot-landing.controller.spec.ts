@@ -1,20 +1,31 @@
-import { RemovePilotLandingService } from '../services/remove-pilot-landing.service';
+import { PilotLandingResponseDTO } from '../dtos/pilot-landing-response.dto';
+import { PilotLandingParamDTO } from '../dtos/pilot-landing-param.dto';
+import type { RemovePilotLandingService } from '../services/remove-pilot-landing.service';
+
 import { RemovePilotLandingController } from './remove-pilot-landing.controller';
 
 describe('RemovePilotLandingController', () => {
   let controller: RemovePilotLandingController;
-  let service: jest.Mocked<Pick<RemovePilotLandingService, 'execute'>>;
+  let execute: jest.Mock;
 
   beforeEach(() => {
-    service = { execute: jest.fn() };
-    controller = new RemovePilotLandingController(
-      service as unknown as RemovePilotLandingService,
-    );
+    execute = jest.fn();
+    controller = new RemovePilotLandingController({
+      execute,
+    } as unknown as RemovePilotLandingService);
   });
 
-  it('is defined', () => {
-    expect(controller).toBeDefined();
-  });
+  it('usa deletedBy definido pelo controller até existir auth', async () => {
+    const params: PilotLandingParamDTO = {
+      pilotLandingId: '33333333-3333-4333-8333-333333333333',
+    };
+    const row = new PilotLandingResponseDTO();
+    execute.mockResolvedValue(row);
 
-  // TODO: casos de sucesso e erro
+    await expect(controller.handle(params)).resolves.toBe(row);
+    expect(execute).toHaveBeenCalledWith({
+      id: params.pilotLandingId,
+      deletedBy: 'system',
+    });
+  });
 });

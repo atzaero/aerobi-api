@@ -1,20 +1,27 @@
-import { FindAerodromeFeedbackByIdService } from '../services/find-aerodrome-feedback-by-id.service';
+import { AerodromeFeedbackParamDTO } from '../dtos/aerodrome-feedback-param.dto';
+import { AerodromeFeedbackResponseDTO } from '../dtos/aerodrome-feedback-response.dto';
+import type { FindAerodromeFeedbackByIdService } from '../services/find-aerodrome-feedback-by-id.service';
+
 import { FindAerodromeFeedbackByIdController } from './find-aerodrome-feedback-by-id.controller';
 
 describe('FindAerodromeFeedbackByIdController', () => {
   let controller: FindAerodromeFeedbackByIdController;
-  let service: jest.Mocked<Pick<FindAerodromeFeedbackByIdService, 'execute'>>;
+  let execute: jest.Mock;
 
   beforeEach(() => {
-    service = { execute: jest.fn() };
-    controller = new FindAerodromeFeedbackByIdController(
-      service as unknown as FindAerodromeFeedbackByIdService,
-    );
+    execute = jest.fn();
+    controller = new FindAerodromeFeedbackByIdController({
+      execute,
+    } as unknown as FindAerodromeFeedbackByIdService);
   });
 
-  it('is defined', () => {
-    expect(controller).toBeDefined();
+  it('id do param', async () => {
+    const params: AerodromeFeedbackParamDTO = {
+      aerodromeFeedbackId: '55555555-5555-4555-8555-555555555555',
+    };
+    const row = new AerodromeFeedbackResponseDTO();
+    execute.mockResolvedValue(row);
+    await expect(controller.handle(params)).resolves.toBe(row);
+    expect(execute).toHaveBeenCalledWith({ id: params.aerodromeFeedbackId });
   });
-
-  // TODO: casos de sucesso e erro
 });
