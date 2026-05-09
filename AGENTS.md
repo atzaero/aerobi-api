@@ -77,7 +77,7 @@ Rotas sensíveis usam comunmente **`@UseGuards(AerobiApiKeyGuard)`** e header **
 3. **Não‑CRUD** (proxy, sync, batch, cron): copiar padrão de módulos existentes (`plugfield/`, `rab/`, `private-aerodromes/`, `scheduler/`).
 4. Registar o módulo em [`src/app.module.ts`](src/app.module.ts) (`imports`; manter ordenação já usada pelo repo).
 5. Verificar antes de merge: **`npm run build`**, **`npm run lint:check`**, **`npm run format:check`**, **`npm run test`**.
-6. Git/PR: workflow em [`.claude/commands/`](.claude/commands/) (espelhado em [`.cursor/commands/`](.cursor/commands/)); ver [`.github/BRANCH_PROTECTION.md`](.github/BRANCH_PROTECTION.md) se aplicável.
+6. Git/PR: workflow em [`.claude/commands/`](.claude/commands/) (no Cursor, [`.cursor/commands/`](.cursor/commands/) apenas referencia esses ficheiros); ver [`.github/BRANCH_PROTECTION.md`](.github/BRANCH_PROTECTION.md) se aplicável.
 
 ## CI/CD (padrão NestJS)
 
