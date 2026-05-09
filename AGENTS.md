@@ -79,6 +79,12 @@ Rotas sensíveis usam comunmente **`@UseGuards(AerobiApiKeyGuard)`** e header **
 5. Verificar antes de merge: **`npm run build`**, **`npm run lint:check`**, **`npm run format:check`**, **`npm run test`**.
 6. Git/PR: workflow em [`.claude/commands/`](.claude/commands/) (espelhado em [`.cursor/commands/`](.cursor/commands/)); ver [`.github/BRANCH_PROTECTION.md`](.github/BRANCH_PROTECTION.md) se aplicável.
 
+## CI/CD (padrão NestJS)
+
+- **Integração**: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) — `develop` + PRs para `main`/`develop`; `concurrency` com cancelamento; `security:check` → quality (Prisma validate, `lint:check`, format, build) → test com Postgres e `prisma migrate deploy`.
+- **Produção**: [`.github/workflows/release.yml`](.github/workflows/release.yml) — `semantic-release` em `main`, imagem a partir da tag `vX.Y.Z`, deploy SSH. Atualizar `package-lock.json` com **npm 10.x** (Node 22 no CI) para evitar falhas de `npm ci` entre npm 10 e 11.
+- **Dependabot**: [`.github/dependabot.yml`](.github/dependabot.yml) npm semanal.
+
 ## Deploy (resumo)
 
 Produção: imagem no GHCR, Docker Compose prod, rede **`warpgate`** partilhada com Postgres noutro stack (ver README e `docker-compose.prod.yml`). Não documentar valores secretos aqui.
