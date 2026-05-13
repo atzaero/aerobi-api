@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
+import { maskEmail } from '@/common/utils/mask-email.util';
 import type { UserRole } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 
@@ -59,10 +60,8 @@ export class AuthLoginService {
     password,
     context,
   }: LoginInput): Promise<LoginResult> {
-    const normalizedEmail = email.trim().toLowerCase();
-
     const user = await this.prisma.user.findUnique({
-      where: { email: normalizedEmail },
+      where: { email },
       select: {
         id: true,
         email: true,
@@ -76,7 +75,7 @@ export class AuthLoginService {
 
     if (!user || user.deletedAt) {
       this.logger.debug(
-        `Login failed — user not found or deleted email=${normalizedEmail}`,
+        `Login failed — user not found or deleted email=${maskEmail(email)}`,
       );
       throw new CustomHttpException(
         this.errorMessageService.getMessage(ErrorCode.INVALID_CREDENTIALS),
@@ -131,7 +130,9 @@ export class AuthLoginService {
         );
       });
 
-    this.logger.log(`Login OK userId=${user.id} email=${user.email}`);
+    this.logger.log(
+      `Login OK userId=${user.id} email=${maskEmail(user.email)}`,
+    );
 
     return {
       ...pair,

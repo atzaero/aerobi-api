@@ -69,8 +69,9 @@ describe('AuthLoginService', () => {
   it('login bem-sucedido retorna par + user resumido', async () => {
     userFindUnique.mockResolvedValue(buildUserRow());
 
+    // ValidationPipe normaliza email via `@NormalizeEmail()` antes do service.
     const result = await service.execute({
-      email: 'User@Aerobi.local',
+      email: 'user@aerobi.local',
       password: 'right-password',
     });
 

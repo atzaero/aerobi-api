@@ -1,9 +1,6 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
-import {
-  REFRESH_TOKEN_REPOSITORY,
-  type IRefreshTokenRepository,
-} from '../repositories/refresh-token.repository.interface';
+import { RefreshTokenRepository } from '../repositories/refresh-token.repository';
 
 import { JwtVerifierService } from './jwt-verifier.service';
 
@@ -20,8 +17,8 @@ export class AuthLogoutService {
 
   constructor(
     private readonly jwtVerifier: JwtVerifierService,
-    @Inject(REFRESH_TOKEN_REPOSITORY)
-    private readonly refreshTokenRepository: IRefreshTokenRepository,
+
+    private readonly refreshTokenRepository: RefreshTokenRepository,
   ) {}
 
   async execute(refreshToken: string): Promise<void> {

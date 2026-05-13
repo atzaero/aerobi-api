@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
 
 import { ErrorMessageModule } from '@/common/error-messages/error-message.module';
@@ -20,12 +21,14 @@ import { RabModule } from '@/modules/rab/rab.module';
 import { SchedulerModule } from '@/modules/scheduler/scheduler.module';
 import { TechnicalVisitsModule } from '@/modules/technical-visits/technical-visits.module';
 import { TokensModule } from '@/modules/tokens/tokens.module';
+import { UsersModule } from '@/modules/users/users.module';
 import { PrismaModule } from '@/prisma/prisma.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     ScheduleModule.forRoot(),
+    EventEmitterModule.forRoot(),
     PrismaModule,
     ErrorMessageModule,
     HealthModule,
@@ -45,6 +48,7 @@ import { PrismaModule } from '@/prisma/prisma.module';
     PilotLandingsModule,
     TokensModule,
     AuthModule,
+    UsersModule,
   ],
 })
 export class AppModule {}
