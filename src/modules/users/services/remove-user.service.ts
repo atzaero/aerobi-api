@@ -1,17 +1,11 @@
-import { HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
+import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
-import {
-  REFRESH_TOKEN_REPOSITORY,
-  type IRefreshTokenRepository,
-} from '@/modules/auth/repositories/refresh-token.repository.interface';
+import { RefreshTokenRepository } from '@/modules/auth/repositories/refresh-token.repository';
 
-import {
-  USER_REPOSITORY,
-  type IUserRepository,
-} from '../repositories/user.repository.interface';
+import { UserRepository } from '../repositories/user.repository';
 
 /**
  * Soft-delete de User (`deletedAt`). Garante que todos os refresh
@@ -25,10 +19,9 @@ export class RemoveUserService {
   private readonly logger = new Logger(RemoveUserService.name);
 
   constructor(
-    @Inject(USER_REPOSITORY)
-    private readonly userRepository: IUserRepository,
-    @Inject(REFRESH_TOKEN_REPOSITORY)
-    private readonly refreshTokenRepository: IRefreshTokenRepository,
+    private readonly userRepository: UserRepository,
+
+    private readonly refreshTokenRepository: RefreshTokenRepository,
     private readonly errorMessageService: ErrorMessageService,
   ) {}
 

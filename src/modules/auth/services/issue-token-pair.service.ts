@@ -1,14 +1,11 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 import type {
   IssuedTokenPair,
   JwtSubject,
   SessionContext,
 } from '../interfaces/auth-token.types';
-import {
-  REFRESH_TOKEN_REPOSITORY,
-  type IRefreshTokenRepository,
-} from '../repositories/refresh-token.repository.interface';
+import { RefreshTokenRepository } from '../repositories/refresh-token.repository';
 import { hashRefreshToken } from '../utils/refresh-token-hash.util';
 
 import { JwtSignerService } from './jwt-signer.service';
@@ -28,8 +25,8 @@ export class IssueTokenPairService {
 
   constructor(
     private readonly signer: JwtSignerService,
-    @Inject(REFRESH_TOKEN_REPOSITORY)
-    private readonly refreshTokenRepository: IRefreshTokenRepository,
+
+    private readonly refreshTokenRepository: RefreshTokenRepository,
   ) {}
 
   async execute(

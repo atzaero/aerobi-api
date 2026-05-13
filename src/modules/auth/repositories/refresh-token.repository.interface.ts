@@ -55,6 +55,3 @@ export interface IRefreshTokenRepository {
    */
   revokeAllForUser(userId: string): Promise<number>;
 }
-
-/** Injection token para DI do Nest. */
-export const REFRESH_TOKEN_REPOSITORY = Symbol('IRefreshTokenRepository');

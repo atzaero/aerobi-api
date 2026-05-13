@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
 import { PasswordResetTokenService } from '@/modules/tokens/services/password-reset-token.service';
@@ -9,10 +9,7 @@ import {
   PASSWORD_RESET_TOKEN_SENT_EVENT,
   PasswordResetTokenSentEvent,
 } from '../events/password-reset-token-sent.event';
-import {
-  USER_REPOSITORY,
-  type IUserRepository,
-} from '../repositories/user.repository.interface';
+import { UserRepository } from '../repositories/user.repository';
 
 const GENERIC_MESSAGE =
   'Se o email estiver registrado, um link de redefinição foi enviado.';
@@ -34,8 +31,7 @@ export class RequestPasswordResetService {
   private readonly logger = new Logger(RequestPasswordResetService.name);
 
   constructor(
-    @Inject(USER_REPOSITORY)
-    private readonly userRepository: IUserRepository,
+    private readonly userRepository: UserRepository,
     private readonly passwordResetTokenService: PasswordResetTokenService,
     private readonly eventEmitter: EventEmitter2,
   ) {}

@@ -3,7 +3,7 @@ import { ErrorMessageService } from '@/common/error-messages/error-message.servi
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { UserRole } from '@/generated/prisma/client';
 
-import type { IUserRepository } from '../repositories/user.repository.interface';
+import type { UserRepository } from '../repositories/user.repository';
 
 import { UpdateUserService } from './update-user.service';
 
@@ -49,7 +49,7 @@ describe('UpdateUserService', () => {
       update,
       softDelete: jest.fn(),
       findManyPaginated: jest.fn(),
-    } as unknown as IUserRepository;
+    } as unknown as UserRepository;
 
     service = new UpdateUserService(userRepository, new ErrorMessageService());
   });

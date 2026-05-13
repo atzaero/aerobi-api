@@ -1,4 +1,4 @@
-import { HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
@@ -8,17 +8,13 @@ import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-
 
 import type { UserResponseDto } from '../dtos/user-response.dto';
 import { toUserResponse } from '../mappers/user.mapper';
-import {
-  USER_REPOSITORY,
-  type IUserRepository,
-} from '../repositories/user.repository.interface';
+import { UserRepository } from '../repositories/user.repository';
 import { assertSelfOrAdmin } from '../utils/user-access.util';
 
 @Injectable()
 export class FindUserByIdService {
   constructor(
-    @Inject(USER_REPOSITORY)
-    private readonly userRepository: IUserRepository,
+    private readonly userRepository: UserRepository,
     private readonly errorMessageService: ErrorMessageService,
   ) {}
 

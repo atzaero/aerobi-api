@@ -1,4 +1,4 @@
-import { HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
+import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
@@ -10,14 +10,8 @@ import { TokenValidationService } from '@/modules/tokens/services/token-validati
 import type { AcceptInviteRequestDto } from '../dtos/accept-invite-request.dto';
 import type { AcceptInviteResponseDto } from '../dtos/accept-invite-response.dto';
 import { toUserResponse } from '../mappers/user.mapper';
-import {
-  USER_REPOSITORY,
-  type IUserRepository,
-} from '../repositories/user.repository.interface';
-import {
-  assertPasswordPolicy,
-  hashPassword,
-} from '../utils/password-hash.util';
+import { UserRepository } from '../repositories/user.repository';
+import { hashPassword } from '../utils/password-hash.util';
 
 export interface AcceptInviteInput extends AcceptInviteRequestDto {
   userAgent?: string;
@@ -39,8 +33,7 @@ export class AcceptInviteService {
   private readonly logger = new Logger(AcceptInviteService.name);
 
   constructor(
-    @Inject(USER_REPOSITORY)
-    private readonly userRepository: IUserRepository,
+    private readonly userRepository: UserRepository,
     private readonly tokenValidation: TokenValidationService,
     private readonly issueTokenPair: IssueTokenPairService,
     private readonly errorMessageService: ErrorMessageService,
@@ -99,7 +92,6 @@ export class AcceptInviteService {
       throw err;
     }
 
-    assertPasswordPolicy(input.password, this.errorMessageService);
     const passwordHash = await hashPassword(input.password);
     const now = new Date();
 

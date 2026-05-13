@@ -4,10 +4,10 @@ import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { UserRole } from '@/generated/prisma/client';
-import type { IRefreshTokenRepository } from '@/modules/auth/repositories/refresh-token.repository.interface';
+import type { RefreshTokenRepository } from '@/modules/auth/repositories/refresh-token.repository';
 import { TokenValidationService } from '@/modules/tokens/services/token-validation.service';
 
-import type { IUserRepository } from '../repositories/user.repository.interface';
+import type { UserRepository } from '../repositories/user.repository';
 
 import { ConfirmPasswordResetService } from './confirm-password-reset.service';
 
@@ -61,7 +61,7 @@ describe('ConfirmPasswordResetService', () => {
       update,
       softDelete: jest.fn(),
       findManyPaginated: jest.fn(),
-    } as unknown as IUserRepository;
+    } as unknown as UserRepository;
 
     const tokenValidation = {
       validate,
@@ -74,7 +74,7 @@ describe('ConfirmPasswordResetService', () => {
       rotate: jest.fn(),
       revokeById: jest.fn(),
       revokeAllForUser,
-    } as unknown as IRefreshTokenRepository;
+    } as unknown as RefreshTokenRepository;
 
     const eventEmitter = { emit } as unknown as EventEmitter2;
 
@@ -149,21 +149,8 @@ describe('ConfirmPasswordResetService', () => {
     }
   });
 
-  it('senha fraca → WEAK_PASSWORD', async () => {
-    findByEmail.mockResolvedValue(buildUser());
-    validate.mockResolvedValue({ id: 'tok-1' });
-
-    try {
-      await service.execute({
-        email: 'u@x',
-        token: 't',
-        newPassword: 'fraca',
-      });
-      fail('should have thrown');
-    } catch (e) {
-      expect((e as CustomHttpException).getErrorCode()).toBe(
-        ErrorCode.WEAK_PASSWORD,
-      );
-    }
-  });
+  // A validação de força de senha foi movida para o DTO via
+  // `@IsStrongPassword()` — o `ValidationPipe` rejeita antes de chegar
+  // no service. Cobertura específica em
+  // `src/common/validators/is-strong-password.validator.spec.ts`.
 });

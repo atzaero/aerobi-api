@@ -1,4 +1,4 @@
-import { HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
+import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
 import { ErrorCode } from '@/common/enums/error-code.enum';
@@ -13,10 +13,7 @@ import {
   UserInvitedEvent,
 } from '../events/user-invited.event';
 import { toUserResponse } from '../mappers/user.mapper';
-import {
-  USER_REPOSITORY,
-  type IUserRepository,
-} from '../repositories/user.repository.interface';
+import { UserRepository } from '../repositories/user.repository';
 
 export interface CreateUserInput extends CreateUserRequestDto {
   /** ADMIN que está criando (vem do `@CurrentUser`). */
@@ -38,8 +35,7 @@ export class CreateUserService {
   private readonly logger = new Logger(CreateUserService.name);
 
   constructor(
-    @Inject(USER_REPOSITORY)
-    private readonly userRepository: IUserRepository,
+    private readonly userRepository: UserRepository,
     private readonly inviteTokenService: InviteTokenService,
     private readonly eventEmitter: EventEmitter2,
     private readonly errorMessageService: ErrorMessageService,

@@ -1,4 +1,4 @@
-import { HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
+import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
@@ -10,10 +10,7 @@ import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-
 import type { UpdateUserRequestDto } from '../dtos/update-user-request.dto';
 import type { UserResponseDto } from '../dtos/user-response.dto';
 import { toUserResponse } from '../mappers/user.mapper';
-import {
-  USER_REPOSITORY,
-  type IUserRepository,
-} from '../repositories/user.repository.interface';
+import { UserRepository } from '../repositories/user.repository';
 import { assertSelfOrAdmin } from '../utils/user-access.util';
 
 @Injectable()
@@ -21,8 +18,7 @@ export class UpdateUserService {
   private readonly logger = new Logger(UpdateUserService.name);
 
   constructor(
-    @Inject(USER_REPOSITORY)
-    private readonly userRepository: IUserRepository,
+    private readonly userRepository: UserRepository,
     private readonly errorMessageService: ErrorMessageService,
   ) {}
 

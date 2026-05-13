@@ -1,4 +1,4 @@
-import { HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
@@ -7,10 +7,7 @@ import { TokenType } from '@/generated/prisma/enums';
 import { TokenValidationService } from '@/modules/tokens/services/token-validation.service';
 
 import type { VerifyPasswordResetTokenDto } from '../dtos/verify-password-reset-token.dto';
-import {
-  USER_REPOSITORY,
-  type IUserRepository,
-} from '../repositories/user.repository.interface';
+import { UserRepository } from '../repositories/user.repository';
 
 /**
  * Valida o token de reset SEM consumi-lo — útil para que o frontend
@@ -22,8 +19,7 @@ import {
 @Injectable()
 export class VerifyPasswordResetTokenService {
   constructor(
-    @Inject(USER_REPOSITORY)
-    private readonly userRepository: IUserRepository,
+    private readonly userRepository: UserRepository,
     private readonly tokenValidation: TokenValidationService,
     private readonly errorMessageService: ErrorMessageService,
   ) {}

@@ -1,6 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsString, MaxLength, MinLength } from 'class-validator';
 
+import { IsStrongPassword } from '@/common/validators/is-strong-password.validator';
+
 export class ConfirmPasswordResetDto {
   @ApiProperty({ format: 'email' })
   @IsEmail()
@@ -14,8 +16,6 @@ export class ConfirmPasswordResetDto {
   token!: string;
 
   @ApiProperty({ description: 'Nova senha (≥8 chars, letras + números).' })
-  @IsString()
-  @MinLength(8)
-  @MaxLength(256)
+  @IsStrongPassword()
   newPassword!: string;
 }

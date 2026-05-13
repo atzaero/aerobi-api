@@ -1,6 +1,6 @@
 import { UserRole } from '@/generated/prisma/client';
 
-import type { IRefreshTokenRepository } from '../repositories/refresh-token.repository.interface';
+import type { RefreshTokenRepository } from '../repositories/refresh-token.repository';
 import { hashRefreshToken } from '../utils/refresh-token-hash.util';
 
 import { IssueTokenPairService } from './issue-token-pair.service';
@@ -41,7 +41,7 @@ describe('IssueTokenPairService', () => {
       rotate: jest.fn(),
       revokeById: jest.fn(),
       revokeAllForUser: jest.fn(),
-    } as unknown as IRefreshTokenRepository;
+    } as unknown as RefreshTokenRepository;
 
     service = new IssueTokenPairService(signer, repo);
   });

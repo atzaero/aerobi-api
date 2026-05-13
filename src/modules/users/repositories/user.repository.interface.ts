@@ -64,6 +64,3 @@ export interface IUserRepository {
 
   findManyPaginated(params: ListUsersParams): Promise<ListUsersResult>;
 }
-
-/** Injection token para DI do Nest. */
-export const USER_REPOSITORY = Symbol('IUserRepository');

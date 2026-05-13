@@ -9,7 +9,6 @@ import { MeController } from './controllers/me.controller';
 import { RefreshSessionController } from './controllers/refresh-session.controller';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
-import { REFRESH_TOKEN_REPOSITORY } from './repositories/refresh-token.repository.interface';
 import { RefreshTokenRepository } from './repositories/refresh-token.repository';
 import { AuthLoginService } from './services/auth-login.service';
 import { AuthLogoutService } from './services/auth-logout.service';
@@ -66,11 +65,16 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     AuthRefreshSessionService,
     AuthLogoutService,
     AuthResponseMapperService,
-    {
-      provide: REFRESH_TOKEN_REPOSITORY,
-      useClass: RefreshTokenRepository,
-    },
+    RefreshTokenRepository,
   ],
-  exports: [JwtAuthGuard, RolesGuard, IssueTokenPairService],
+  // `RefreshTokenRepository` é exportado para que o `UsersModule` revogue
+  // sessões em delete/password-reset. `IssueTokenPairService` para emitir
+  // par no aceite de convite.
+  exports: [
+    JwtAuthGuard,
+    RolesGuard,
+    IssueTokenPairService,
+    RefreshTokenRepository,
+  ],
 })
 export class AuthModule {}

@@ -7,6 +7,8 @@ import {
   MinLength,
 } from 'class-validator';
 
+import { IsStrongPassword } from '@/common/validators/is-strong-password.validator';
+
 export class AcceptInviteRequestDto {
   @ApiProperty({
     description: 'Email do convidado (presente no link de convite enviado).',
@@ -26,9 +28,7 @@ export class AcceptInviteRequestDto {
     description:
       'Nova senha definida pelo convidado. Mínimo 8 chars, letras + números.',
   })
-  @IsString()
-  @MinLength(8)
-  @MaxLength(256)
+  @IsStrongPassword()
   password!: string;
 
   @ApiPropertyOptional({ description: 'Sobrescreve o nome se informado.' })

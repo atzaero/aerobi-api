@@ -4,7 +4,7 @@ import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { UserRole } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 
-import type { IRefreshTokenRepository } from '../repositories/refresh-token.repository.interface';
+import type { RefreshTokenRepository } from '../repositories/refresh-token.repository';
 import { hashRefreshToken } from '../utils/refresh-token-hash.util';
 
 import { AuthRefreshSessionService } from './auth-refresh-session.service';
@@ -74,7 +74,7 @@ describe('AuthRefreshSessionService', () => {
       rotate,
       revokeById,
       revokeAllForUser,
-    } as unknown as IRefreshTokenRepository;
+    } as unknown as RefreshTokenRepository;
 
     service = new AuthRefreshSessionService(
       jwtVerifier,

@@ -6,7 +6,7 @@ import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { UserRole } from '@/generated/prisma/client';
 import { InviteTokenService } from '@/modules/tokens/services/invite-token.service';
 
-import type { IUserRepository } from '../repositories/user.repository.interface';
+import type { UserRepository } from '../repositories/user.repository';
 
 import { CreateUserService } from './create-user.service';
 
@@ -47,7 +47,7 @@ describe('CreateUserService', () => {
       update,
       softDelete,
       findManyPaginated,
-    } as unknown as IUserRepository;
+    } as unknown as UserRepository;
 
     const inviteTokenService = {
       createInviteToken,

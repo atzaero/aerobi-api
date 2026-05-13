@@ -1,4 +1,4 @@
-import { HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
+import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
@@ -10,10 +10,7 @@ import type {
   IssuedTokenPair,
   SessionContext,
 } from '../interfaces/auth-token.types';
-import {
-  REFRESH_TOKEN_REPOSITORY,
-  type IRefreshTokenRepository,
-} from '../repositories/refresh-token.repository.interface';
+import { RefreshTokenRepository } from '../repositories/refresh-token.repository';
 import { hashRefreshToken } from '../utils/refresh-token-hash.util';
 
 import { JwtVerifierService } from './jwt-verifier.service';
@@ -50,8 +47,8 @@ export class AuthRefreshSessionService {
     private readonly rotateTokenPair: RotateTokenPairService,
     private readonly prisma: PrismaService,
     private readonly errorMessageService: ErrorMessageService,
-    @Inject(REFRESH_TOKEN_REPOSITORY)
-    private readonly refreshTokenRepository: IRefreshTokenRepository,
+
+    private readonly refreshTokenRepository: RefreshTokenRepository,
   ) {}
 
   async execute({

@@ -1,14 +1,11 @@
-import { HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
+import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { TokenType } from '@/generated/prisma/enums';
-import {
-  REFRESH_TOKEN_REPOSITORY,
-  type IRefreshTokenRepository,
-} from '@/modules/auth/repositories/refresh-token.repository.interface';
+import { RefreshTokenRepository } from '@/modules/auth/repositories/refresh-token.repository';
 import { TokenValidationService } from '@/modules/tokens/services/token-validation.service';
 
 import type { ConfirmPasswordResetDto } from '../dtos/confirm-password-reset.dto';
@@ -17,14 +14,8 @@ import {
   PASSWORD_RESET_SUCCEEDED_EVENT,
   PasswordResetSucceededEvent,
 } from '../events/password-reset-succeeded.event';
-import {
-  USER_REPOSITORY,
-  type IUserRepository,
-} from '../repositories/user.repository.interface';
-import {
-  assertPasswordPolicy,
-  hashPassword,
-} from '../utils/password-hash.util';
+import { UserRepository } from '../repositories/user.repository';
+import { hashPassword } from '../utils/password-hash.util';
 
 /**
  * Confirma o reset de senha:
@@ -41,11 +32,10 @@ export class ConfirmPasswordResetService {
   private readonly logger = new Logger(ConfirmPasswordResetService.name);
 
   constructor(
-    @Inject(USER_REPOSITORY)
-    private readonly userRepository: IUserRepository,
+    private readonly userRepository: UserRepository,
     private readonly tokenValidation: TokenValidationService,
-    @Inject(REFRESH_TOKEN_REPOSITORY)
-    private readonly refreshTokenRepository: IRefreshTokenRepository,
+
+    private readonly refreshTokenRepository: RefreshTokenRepository,
     private readonly eventEmitter: EventEmitter2,
     private readonly errorMessageService: ErrorMessageService,
   ) {}
@@ -70,7 +60,6 @@ export class ConfirmPasswordResetService {
       throw this.invalid();
     }
 
-    assertPasswordPolicy(dto.newPassword, this.errorMessageService);
     const passwordHash = await hashPassword(dto.newPassword);
 
     await this.userRepository.update(user.id, {

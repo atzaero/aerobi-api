@@ -7,7 +7,7 @@ import { UserRole } from '@/generated/prisma/client';
 import { IssueTokenPairService } from '@/modules/auth/services/issue-token-pair.service';
 import { TokenValidationService } from '@/modules/tokens/services/token-validation.service';
 
-import type { IUserRepository } from '../repositories/user.repository.interface';
+import type { UserRepository } from '../repositories/user.repository';
 
 import { AcceptInviteService } from './accept-invite.service';
 
@@ -59,7 +59,7 @@ describe('AcceptInviteService', () => {
       update,
       softDelete: jest.fn(),
       findManyPaginated: jest.fn(),
-    } as unknown as IUserRepository;
+    } as unknown as UserRepository;
 
     const tokenValidation = {
       validate,
@@ -175,21 +175,8 @@ describe('AcceptInviteService', () => {
     }
   });
 
-  it('senha fraca → WEAK_PASSWORD', async () => {
-    findByEmail.mockResolvedValue(buildPendingUser());
-    validate.mockResolvedValue({ id: 'tok-1' });
-
-    try {
-      await service.execute({
-        email: 'piloto@aerobi.local',
-        token: 't',
-        password: 'fraca',
-      });
-      fail('should have thrown');
-    } catch (e) {
-      expect((e as CustomHttpException).getErrorCode()).toBe(
-        ErrorCode.WEAK_PASSWORD,
-      );
-    }
-  });
+  // A validação de força de senha foi movida para o DTO via
+  // `@IsStrongPassword()` — o `ValidationPipe` rejeita antes de chegar
+  // no service. Cobertura específica em
+  // `src/common/validators/is-strong-password.validator.spec.ts`.
 });

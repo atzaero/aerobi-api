@@ -15,7 +15,6 @@ import { UpdateUserController } from './controllers/update-user.controller';
 import { VerifyPasswordResetTokenController } from './controllers/verify-password-reset-token.controller';
 import { InviteEmailListener } from './listeners/invite-email.listener';
 import { PasswordResetEmailListener } from './listeners/password-reset-email.listener';
-import { USER_REPOSITORY } from './repositories/user.repository.interface';
 import { UserRepository } from './repositories/user.repository';
 import { AcceptInviteService } from './services/accept-invite.service';
 import { ConfirmPasswordResetService } from './services/confirm-password-reset.service';
@@ -32,8 +31,8 @@ import { VerifyPasswordResetTokenService } from './services/verify-password-rese
  * (consome `InviteTokenService` do `TokensModule` e `IssueTokenPairService`
  * do `AuthModule`) e redefinição de senha.
  *
- * `IUserRepository` é exportado para que outros módulos (ex: futuro
- * refactor de `AuthLoginService`) possam ler `User` sem acoplar ao Prisma.
+ * Exporta `UserRepository` para outros módulos que precisem ler `User`
+ * sem acoplar ao Prisma diretamente.
  */
 @Module({
   imports: [AuthModule, TokensModule, EmailModule],
@@ -60,8 +59,8 @@ import { VerifyPasswordResetTokenService } from './services/verify-password-rese
     ConfirmPasswordResetService,
     InviteEmailListener,
     PasswordResetEmailListener,
-    { provide: USER_REPOSITORY, useClass: UserRepository },
+    UserRepository,
   ],
-  exports: [USER_REPOSITORY],
+  exports: [UserRepository],
 })
 export class UsersModule {}
