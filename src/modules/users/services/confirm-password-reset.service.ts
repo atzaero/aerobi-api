@@ -43,8 +43,7 @@ export class ConfirmPasswordResetService {
   async execute(
     dto: ConfirmPasswordResetDto,
   ): Promise<PasswordResetResponseDto> {
-    const email = dto.email.trim().toLowerCase();
-    const user = await this.userRepository.findByEmail(email);
+    const user = await this.userRepository.findByEmail(dto.email);
     if (!user || user.deletedAt) {
       throw this.invalid();
     }

@@ -11,6 +11,7 @@ import { FindUserByIdController } from './controllers/find-user-by-id.controller
 import { ListUsersController } from './controllers/list-users.controller';
 import { RemoveUserController } from './controllers/remove-user.controller';
 import { RequestPasswordResetController } from './controllers/request-password-reset.controller';
+import { ResendInviteController } from './controllers/resend-invite.controller';
 import { UpdateUserController } from './controllers/update-user.controller';
 import { VerifyPasswordResetTokenController } from './controllers/verify-password-reset-token.controller';
 import { InviteEmailListener } from './listeners/invite-email.listener';
@@ -23,6 +24,7 @@ import { FindUserByIdService } from './services/find-user-by-id.service';
 import { ListUsersService } from './services/list-users.service';
 import { RemoveUserService } from './services/remove-user.service';
 import { RequestPasswordResetService } from './services/request-password-reset.service';
+import { ResendInviteService } from './services/resend-invite.service';
 import { UpdateUserService } from './services/update-user.service';
 import { VerifyPasswordResetTokenService } from './services/verify-password-reset-token.service';
 
@@ -43,6 +45,7 @@ import { VerifyPasswordResetTokenService } from './services/verify-password-rese
     UpdateUserController,
     RemoveUserController,
     AcceptInviteController,
+    ResendInviteController,
     RequestPasswordResetController,
     VerifyPasswordResetTokenController,
     ConfirmPasswordResetController,
@@ -54,6 +57,7 @@ import { VerifyPasswordResetTokenService } from './services/verify-password-rese
     UpdateUserService,
     RemoveUserService,
     AcceptInviteService,
+    ResendInviteService,
     RequestPasswordResetService,
     VerifyPasswordResetTokenService,
     ConfirmPasswordResetService,

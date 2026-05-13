@@ -49,9 +49,9 @@ export class UpdateUserService {
     }
 
     const updated = await this.userRepository.update(id, {
-      ...(dto.name !== undefined && { name: dto.name.trim() }),
-      ...(dto.phone !== undefined && { phone: dto.phone.trim() }),
-      ...(dto.timezone !== undefined && { timezone: dto.timezone.trim() }),
+      ...(dto.name !== undefined && { name: dto.name }),
+      ...(dto.phone !== undefined && { phone: dto.phone }),
+      ...(dto.timezone !== undefined && { timezone: dto.timezone }),
       ...(dto.role !== undefined && { role: dto.role }),
       updatedBy: actor.id,
     });

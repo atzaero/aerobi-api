@@ -6,7 +6,7 @@ import { ConfirmPasswordResetDto } from '../dtos/confirm-password-reset.dto';
 import { PasswordResetResponseDto } from '../dtos/password-reset-response.dto';
 import { ConfirmPasswordResetService } from '../services/confirm-password-reset.service';
 
-@ApiTags('Users')
+@ApiTags('Password Reset')
 @Controller('users')
 export class ConfirmPasswordResetController {
   constructor(private readonly service: ConfirmPasswordResetService) {}

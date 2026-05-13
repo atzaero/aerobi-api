@@ -5,7 +5,7 @@ import { VerifyPasswordResetTokenDocs } from '../docs/verify-password-reset-toke
 import { VerifyPasswordResetTokenDto } from '../dtos/verify-password-reset-token.dto';
 import { VerifyPasswordResetTokenService } from '../services/verify-password-reset-token.service';
 
-@ApiTags('Users')
+@ApiTags('Password Reset')
 @Controller('users')
 export class VerifyPasswordResetTokenController {
   constructor(private readonly service: VerifyPasswordResetTokenService) {}

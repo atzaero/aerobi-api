@@ -39,12 +39,11 @@ export class RequestPasswordResetService {
   async execute(
     input: RequestPasswordResetInput,
   ): Promise<PasswordResetResponseDto> {
-    const email = input.email.trim().toLowerCase();
-    const user = await this.userRepository.findByEmail(email);
+    const user = await this.userRepository.findByEmail(input.email);
 
     if (!user || user.deletedAt || !user.acceptedInviteAt) {
       this.logger.debug(
-        `Password reset solicitado para email não elegível email=${email}`,
+        `Password reset solicitado para email não elegível email=${input.email}`,
       );
       return { message: GENERIC_MESSAGE };
     }

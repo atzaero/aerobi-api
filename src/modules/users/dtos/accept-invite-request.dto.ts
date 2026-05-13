@@ -8,17 +8,20 @@ import {
 } from 'class-validator';
 
 import { IsStrongPassword } from '@/common/validators/is-strong-password.validator';
+import { NormalizeEmail, TrimString } from '@/common/validators/transformers';
 
 export class AcceptInviteRequestDto {
   @ApiProperty({
     description: 'Email do convidado (presente no link de convite enviado).',
     format: 'email',
   })
+  @NormalizeEmail()
   @IsEmail()
   @MaxLength(320)
   email!: string;
 
   @ApiProperty({ description: 'Plain token recebido pelo link de convite.' })
+  @TrimString()
   @IsString()
   @MinLength(1)
   @MaxLength(512)
@@ -33,6 +36,7 @@ export class AcceptInviteRequestDto {
 
   @ApiPropertyOptional({ description: 'Sobrescreve o nome se informado.' })
   @IsOptional()
+  @TrimString()
   @IsString()
   @MinLength(1)
   @MaxLength(255)

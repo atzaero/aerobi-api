@@ -59,10 +59,8 @@ export class AuthLoginService {
     password,
     context,
   }: LoginInput): Promise<LoginResult> {
-    const normalizedEmail = email.trim().toLowerCase();
-
     const user = await this.prisma.user.findUnique({
-      where: { email: normalizedEmail },
+      where: { email },
       select: {
         id: true,
         email: true,
@@ -76,7 +74,7 @@ export class AuthLoginService {
 
     if (!user || user.deletedAt) {
       this.logger.debug(
-        `Login failed — user not found or deleted email=${normalizedEmail}`,
+        `Login failed — user not found or deleted email=${email}`,
       );
       throw new CustomHttpException(
         this.errorMessageService.getMessage(ErrorCode.INVALID_CREDENTIALS),

@@ -25,8 +25,7 @@ export class VerifyPasswordResetTokenService {
   ) {}
 
   async execute(dto: VerifyPasswordResetTokenDto): Promise<{ valid: boolean }> {
-    const email = dto.email.trim().toLowerCase();
-    const user = await this.userRepository.findByEmail(email);
+    const user = await this.userRepository.findByEmail(dto.email);
     if (!user || user.deletedAt) {
       throw this.invalid();
     }

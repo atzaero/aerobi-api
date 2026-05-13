@@ -88,8 +88,9 @@ describe('CreateUserService', () => {
       },
     });
 
+    // ValidationPipe normaliza email via `@NormalizeEmail()` antes do service.
     const result = await service.execute({
-      email: 'Piloto@Aerobi.local',
+      email: 'piloto@aerobi.local',
       name: 'Piloto',
       role: UserRole.OPERATOR,
       actorId: 'admin-1',

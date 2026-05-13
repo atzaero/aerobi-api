@@ -40,8 +40,7 @@ export class AcceptInviteService {
   ) {}
 
   async execute(input: AcceptInviteInput): Promise<AcceptInviteResponseDto> {
-    const email = input.email.trim().toLowerCase();
-    const user = await this.userRepository.findByEmail(email);
+    const user = await this.userRepository.findByEmail(input.email);
 
     if (!user || user.deletedAt) {
       throw new CustomHttpException(
@@ -99,7 +98,7 @@ export class AcceptInviteService {
       password: passwordHash,
       emailVerified: true,
       acceptedInviteAt: now,
-      ...(input.name !== undefined && { name: input.name.trim() }),
+      ...(input.name !== undefined && { name: input.name }),
       updatedBy: user.id,
     });
 

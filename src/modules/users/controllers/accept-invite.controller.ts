@@ -9,7 +9,7 @@ import { AcceptInviteRequestDto } from '../dtos/accept-invite-request.dto';
 import { AcceptInviteResponseDto } from '../dtos/accept-invite-response.dto';
 import { AcceptInviteService } from '../services/accept-invite.service';
 
-@ApiTags('Users')
+@ApiTags('Invites')
 @Controller('users')
 export class AcceptInviteController {
   constructor(private readonly service: AcceptInviteService) {}

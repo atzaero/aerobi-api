@@ -9,7 +9,7 @@ import { PasswordResetResponseDto } from '../dtos/password-reset-response.dto';
 import { RequestPasswordResetDto } from '../dtos/request-password-reset.dto';
 import { RequestPasswordResetService } from '../services/request-password-reset.service';
 
-@ApiTags('Users')
+@ApiTags('Password Reset')
 @Controller('users')
 export class RequestPasswordResetController {
   constructor(private readonly service: RequestPasswordResetService) {}
