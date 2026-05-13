@@ -19,6 +19,7 @@ function buildTokenRecord(overrides: Partial<Token> = {}): Token {
     used: false,
     metadata: null,
     subjectId: 'subject-id',
+    userId: null,
     createdAt: now,
     createdBy: null,
     updatedAt: now,

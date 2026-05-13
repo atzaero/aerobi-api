@@ -339,7 +339,7 @@ model LandingRequest {
 
   /// Momento em que o coordenador revisou e aprovou ou rejeitou (Firestore legado: `responseDate`).
   reviewedAt DateTime? @map("reviewed_at") @db.Timestamptz(3)
-  /// Firebase Auth uid de quem revisou (legado: `responseby.uid`). Nome/e-mail ficam no Firestore até existir tabela `users`.
+  /// Firebase Auth uid de quem revisou (legado: `responseby.uid`). Migração desse campo para FK ao `users.id` fica em PR separado.
   reviewedBy String?   @map("reviewed_by")
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
@@ -389,7 +389,7 @@ model TechnicalVisit {
   extraObservation                  String?  @map("extra_observation") @db.Text
 
   visitAt DateTime @map("visit_at") @db.Timestamptz(3)
-  /// Firebase Auth uid de quem realizou a visita. Nome em `users` (futuro). Legado Firestore: `VISITORNAME` até cutover; import pode deixar null.
+  /// Firebase Auth uid de quem realizou a visita. Migração desse campo para FK ao `users.id` fica em PR separado. Legado Firestore: `VISITORNAME` até cutover; import pode deixar null.
   visitBy String?  @map("visit_by")
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
@@ -469,13 +469,16 @@ model AerodromeFeedback {
 }
 
 /// Tipos de token genérico usados pelo módulo `tokens` (email verification,
-/// password reset, OTP, etc). Modelagem é genérica via `subject_id: String`
-/// — sem FK a `users` por enquanto, já que a tabela não existe.
+/// password reset, OTP, convite de novo usuário, etc).
+/// Modelagem genérica via `subject_id: String`; quando o token é emitido
+/// no contexto de um usuário (INVITE, EMAIL_VERIFICATION, PASSWORD_RESET)
+/// também é populada a FK opcional `user_id` para integridade referencial.
 enum TokenType {
   EMAIL_VERIFICATION
   PASSWORD_RESET
   OTP
   GENERIC
+  INVITE
 }
 
 /// Token de uso único (one-shot) com hash bcrypt no campo `token_hash`.
@@ -490,6 +493,11 @@ model Token {
   metadata  Json?
   subjectId String    @map("subject_id")
 
+  /// FK opcional ao usuário dono do token (INVITE/EMAIL_VERIFICATION/PASSWORD_RESET).
+  /// Para OTP/GENERIC permanece null — `subject_id` cobre escopos não-User.
+  userId String? @map("user_id") @db.Uuid
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   createdBy String?   @map("created_by")
   updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
@@ -500,6 +508,7 @@ model Token {
   @@index([type])
   @@index([tokenHash])
   @@index([subjectId, type])
+  @@index([userId, type])
   @@index([deletedAt])
   @@map("tokens")
 }
@@ -528,4 +537,90 @@ model PilotLanding {
   @@index([operationalAerodromeId])
   @@index([registration])
   @@map("pilot_landings")
+}
+
+// =============================================================================
+// Autenticação e usuários (Aerobi). Espelha o conjunto de roles usado no
+// `aerobi-web` (admin/coordinator/operator/technical) em UPPERCASE. Senha
+// nullable até o convite ser aceito; criação pública não existe — apenas
+// ADMIN convida via fluxo Token tipo INVITE (módulo `tokens`).
+// =============================================================================
+
+/// Papéis de usuário (espelha as roles já gateadas pelo `aerobi-web`).
+enum UserRole {
+  ADMIN
+  COORDINATOR
+  OPERATOR
+  TECHNICAL
+}
+
+/// Usuário humano da Aerobi (convidado por ADMIN; não há signup público).
+model User {
+  id String @id @default(uuid()) @db.Uuid
+
+  email         String    @unique
+  name          String
+  phone         String?
+  /// Hash bcrypt — null enquanto o convite não foi aceito.
+  password      String?
+  role          UserRole  @default(OPERATOR)
+  emailVerified Boolean   @default(false) @map("email_verified")
+  timezone      String?   @db.VarChar(64)
+  lastLoginAt   DateTime? @map("last_login_at") @db.Timestamptz(3)
+
+  /// ADMIN que originou o convite (self-relation).
+  invitedById      String?   @map("invited_by_id") @db.Uuid
+  invitedBy        User?     @relation("UserInvites", fields: [invitedById], references: [id], onDelete: SetNull)
+  invitees         User[]    @relation("UserInvites")
+  invitedAt        DateTime? @map("invited_at") @db.Timestamptz(3)
+  acceptedInviteAt DateTime? @map("accepted_invite_at") @db.Timestamptz(3)
+
+  refreshTokens RefreshToken[]
+  tokens        Token[]
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdBy String?   @map("created_by")
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedBy String?   @map("updated_by")
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+  deletedBy String?   @map("deleted_by")
+
+  @@index([email])
+  @@index([role])
+  @@index([deletedAt])
+  @@map("users")
+}
+
+/// Refresh token persistido (hash SHA-256 do plain). `jti` único permite
+/// rotação encadeada — quando rotacionado, `replacedById` aponta ao sucessor
+/// e o registro antigo fica `revoked=true`. Reuso de refresh já revogado
+/// detecta sequestro e revoga toda a família via service.
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  jti       String    @unique
+  tokenHash String    @map("token_hash")
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(3)
+  revoked   Boolean   @default(false)
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz(3)
+
+  /// Próximo refresh emitido a partir deste (rotação encadeada).
+  replacedById String? @map("replaced_by_id") @db.Uuid
+
+  userAgent String? @map("user_agent")
+  ipAddress String? @map("ip_address")
+
+  userId String @map("user_id") @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdBy String?   @map("created_by")
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedBy String?   @map("updated_by")
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+  deletedBy String?   @map("deleted_by")
+
+  @@index([userId])
+  @@index([jti])
+  @@index([deletedAt])
+  @@map("refresh_tokens")
 }

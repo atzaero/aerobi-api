@@ -50,4 +50,63 @@ export const messages: Record<ErrorCode, { message: string }> = {
   [ErrorCode.TOKEN_ALREADY_USED]: {
     message: 'Token já foi utilizado e não pode ser reaproveitado.',
   },
+
+  // ---------------------------------------------------------------------------
+  // Autenticação / usuários
+  // ---------------------------------------------------------------------------
+  [ErrorCode.USER_NOT_FOUND]: {
+    message: 'Usuário [ID] não encontrado.',
+  },
+  [ErrorCode.EMAIL_ALREADY_REGISTERED]: {
+    message: 'O email [EMAIL] já está registrado.',
+  },
+  [ErrorCode.INVALID_CREDENTIALS]: {
+    message: 'Email ou senha inválidos.',
+  },
+  [ErrorCode.ACCOUNT_NOT_VERIFIED]: {
+    message: 'Conta ainda não verificada. Confira seu email.',
+  },
+  [ErrorCode.ACCOUNT_NOT_ACTIVATED]: {
+    message:
+      'Conta ainda não ativada. Conclua o cadastro pelo link de convite enviado por email.',
+  },
+  [ErrorCode.ACCOUNT_DELETED]: {
+    message: 'Esta conta foi removida e não pode ser usada.',
+  },
+  [ErrorCode.REFRESH_TOKEN_INVALID]: {
+    message: 'Refresh token inválido. Faça login novamente.',
+  },
+  [ErrorCode.REFRESH_TOKEN_EXPIRED]: {
+    message: 'Refresh token expirado. Faça login novamente.',
+  },
+  [ErrorCode.REFRESH_TOKEN_REVOKED]: {
+    message: 'Refresh token revogado. Faça login novamente.',
+  },
+  [ErrorCode.REFRESH_TOKEN_REUSE_DETECTED]: {
+    message:
+      'Reuso de refresh token detectado. Por segurança, todas as sessões foram encerradas — faça login novamente.',
+  },
+  [ErrorCode.INVITE_TOKEN_INVALID]: {
+    message: 'Link de convite inválido.',
+  },
+  [ErrorCode.INVITE_TOKEN_EXPIRED]: {
+    message:
+      'Link de convite expirado. Solicite ao administrador um novo convite.',
+  },
+  [ErrorCode.INVITE_ALREADY_ACCEPTED]: {
+    message: 'Este convite já foi aceito anteriormente.',
+  },
+  [ErrorCode.PASSWORD_RESET_TOKEN_INVALID]: {
+    message: 'Link de redefinição de senha inválido ou expirado.',
+  },
+  [ErrorCode.WEAK_PASSWORD]: {
+    message:
+      'A senha deve ter pelo menos 8 caracteres e conter letras e números.',
+  },
+  [ErrorCode.OWNERSHIP_VIOLATION]: {
+    message: 'Você não tem permissão para acessar este recurso.',
+  },
+  [ErrorCode.ROLE_CHANGE_FORBIDDEN]: {
+    message: 'Apenas administradores podem alterar a role de um usuário.',
+  },
 } as const;

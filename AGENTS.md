@@ -70,6 +70,17 @@ Lançar **`CustomHttpException`** com **`ErrorCode`** estável (`src/common/enum
 
 Rotas sensíveis usam comunmente **`@UseGuards(AerobiApiKeyGuard)`** e header **`X-API-Key`** (= `AEROBI_API_KEY`). Em **`NODE_ENV=development`**, há bypass salvo quando **`AEROBI_REQUIRE_AUTH=true`**. Produção obriga API key onde o guard estiver aplicado. Detalhes: README + Swagger + JSDoc do guard.
 
+## Usuários e autenticação interna (Aerobi)
+
+Camada de autenticação **humana** (login de usuário no painel) — convive com o `AerobiApiKeyGuard` (que continua para clientes externos por header `X-API-Key`).
+
+- **Schema (Prisma)**: models `User`, `RefreshToken` e enum `UserRole` em `prisma/schema.prisma` (final do ficheiro). `Token` ganhou FK opcional `user_id` (usada por INVITE/EMAIL_VERIFICATION/PASSWORD_RESET; `subject_id` continua para OTP/GENERIC).
+- **Roles** (`UserRole`): `ADMIN | COORDINATOR | OPERATOR | TECHNICAL` — espelha exatamente as roles já gateadas pelo `aerobi-web`. ADMIN é o único que pode criar/remover usuários e alterar roles.
+- **Onboarding por convite (sem signup público)**: ADMIN cria `User` com `password=null` + Token tipo `INVITE` (módulo `tokens`); o convidado recebe email com link `${FRONTEND_URL}/accept-invite?token=...`, define a própria senha e o email é marcado como verificado automaticamente. Não existe rota pública de signup.
+- **Bootstrap do primeiro ADMIN**: sem signup, o único caminho para destravar o sistema é o script idempotente `npm run seed:admin` — lê `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED_ADMIN_NAME` do `.env` e faz upsert por email. Rodar **após** `npm run prisma:deploy`. Remover os secrets `SEED_ADMIN_*` do servidor depois do primeiro deploy.
+- **Módulos `auth/` e `users/`** (login/refresh/CRUD/convite): chegam em PRs seguintes — esta etapa entrega só fundação (schema + ErrorCodes + templates de email + seed).
+- **Campos legados com Firebase uid** (`LandingRequest.reviewed_by`, `TechnicalVisit.visit_by`, auditoria `created_by`/`updated_by`/`deleted_by`, `Token.subject_id`): permanecem como `String` por ora. Migração para FK ao `users.id` ficará em PR/issue separada.
+
 ## Novos recursos (checklist)
 
 1. **Modelo de dados**: se precisar de persistência nova, actualizar `prisma/schema.prisma` e migrações; `prisma generate` em dev/CI.
