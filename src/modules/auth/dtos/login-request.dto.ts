@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsString, MaxLength, MinLength } from 'class-validator';
 
-import { NormalizeEmail } from '@/common/validators/transformers';
+import { NormalizeEmail } from '@/common/transform';
 
 export class LoginRequestDto {
   @ApiProperty({ example: 'admin@aerobi.local', format: 'email' })

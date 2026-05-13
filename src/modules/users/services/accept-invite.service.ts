@@ -3,6 +3,7 @@ import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
+import { maskEmail } from '@/common/utils/mask-email.util';
 import { TokenType } from '@/generated/prisma/enums';
 import { IssueTokenPairService } from '@/modules/auth/services/issue-token-pair.service';
 import { TokenValidationService } from '@/modules/tokens/services/token-validation.service';
@@ -113,7 +114,7 @@ export class AcceptInviteService {
     );
 
     this.logger.log(
-      `Invite accepted userId=${updated.id} email=${updated.email}`,
+      `Invite accepted userId=${updated.id} email=${maskEmail(updated.email)}`,
     );
 
     const response = toUserResponse(updated);

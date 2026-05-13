@@ -9,12 +9,12 @@ import {
 
 import { UserRole } from '@/generated/prisma/client';
 
-import { TrimString } from '@/common/validators/transformers';
+import { TrimOptionalString } from '@/common/transform';
 
 export class UpdateUserRequestDto {
   @ApiPropertyOptional()
   @IsOptional()
-  @TrimString()
+  @TrimOptionalString()
   @IsString()
   @MinLength(1)
   @MaxLength(255)
@@ -22,14 +22,14 @@ export class UpdateUserRequestDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @TrimString()
+  @TrimOptionalString()
   @IsString()
   @MaxLength(32)
   phone?: string;
 
   @ApiPropertyOptional({ example: 'America/Sao_Paulo' })
   @IsOptional()
-  @TrimString()
+  @TrimOptionalString()
   @IsString()
   @MaxLength(64)
   timezone?: string;

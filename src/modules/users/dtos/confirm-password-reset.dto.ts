@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsString, MaxLength, MinLength } from 'class-validator';
 
 import { IsStrongPassword } from '@/common/validators/is-strong-password.validator';
-import { NormalizeEmail, TrimString } from '@/common/validators/transformers';
+import { NormalizeEmail, TrimString } from '@/common/transform';
 
 export class ConfirmPasswordResetDto {
   @ApiProperty({ format: 'email' })

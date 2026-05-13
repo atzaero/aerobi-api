@@ -4,6 +4,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
+import { maskEmail } from '@/common/utils/mask-email.util';
 import { InviteTokenService } from '@/modules/tokens/services/invite-token.service';
 
 import type { CreateUserRequestDto } from '../dtos/create-user-request.dto';
@@ -83,7 +84,7 @@ export class CreateUserService {
     );
 
     this.logger.log(
-      `User invited userId=${user.id} email=${user.email} role=${user.role} invitedBy=${input.actorId}`,
+      `User invited userId=${user.id} email=${maskEmail(user.email)} role=${user.role} invitedBy=${input.actorId}`,
     );
 
     return toUserResponse(user);

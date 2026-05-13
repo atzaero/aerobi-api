@@ -8,7 +8,11 @@ import {
 } from 'class-validator';
 
 import { IsStrongPassword } from '@/common/validators/is-strong-password.validator';
-import { NormalizeEmail, TrimString } from '@/common/validators/transformers';
+import {
+  NormalizeEmail,
+  TrimOptionalString,
+  TrimString,
+} from '@/common/transform';
 
 export class AcceptInviteRequestDto {
   @ApiProperty({
@@ -36,7 +40,7 @@ export class AcceptInviteRequestDto {
 
   @ApiPropertyOptional({ description: 'Sobrescreve o nome se informado.' })
   @IsOptional()
-  @TrimString()
+  @TrimOptionalString()
   @IsString()
   @MinLength(1)
   @MaxLength(255)

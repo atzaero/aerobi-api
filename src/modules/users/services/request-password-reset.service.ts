@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
+import { maskEmail } from '@/common/utils/mask-email.util';
 import { PasswordResetTokenService } from '@/modules/tokens/services/password-reset-token.service';
 
 import type { PasswordResetResponseDto } from '../dtos/password-reset-response.dto';
@@ -43,7 +44,7 @@ export class RequestPasswordResetService {
 
     if (!user || user.deletedAt || !user.acceptedInviteAt) {
       this.logger.debug(
-        `Password reset solicitado para email não elegível email=${input.email}`,
+        `Password reset solicitado para email não elegível email=${maskEmail(input.email)}`,
       );
       return { message: GENERIC_MESSAGE };
     }

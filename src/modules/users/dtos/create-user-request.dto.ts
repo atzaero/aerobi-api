@@ -10,7 +10,11 @@ import {
 
 import { UserRole } from '@/generated/prisma/client';
 
-import { NormalizeEmail, TrimString } from '@/common/validators/transformers';
+import {
+  NormalizeEmail,
+  TrimOptionalString,
+  TrimString,
+} from '@/common/transform';
 
 export class CreateUserRequestDto {
   @ApiProperty({ format: 'email', example: 'piloto@aerobi.local' })
@@ -32,7 +36,7 @@ export class CreateUserRequestDto {
 
   @ApiPropertyOptional({ example: '+55 11 99999-0000' })
   @IsOptional()
-  @TrimString()
+  @TrimOptionalString()
   @IsString()
   @MaxLength(32)
   phone?: string;
