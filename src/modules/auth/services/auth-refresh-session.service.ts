@@ -6,16 +6,18 @@ import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import type { UserRole } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 
+import type {
+  IssuedTokenPair,
+  SessionContext,
+} from '../interfaces/auth-token.types';
 import {
   REFRESH_TOKEN_REPOSITORY,
   type IRefreshTokenRepository,
 } from '../repositories/refresh-token.repository.interface';
+import { hashRefreshToken } from '../utils/refresh-token-hash.util';
 
-import {
-  AuthTokenService,
-  type IssuedTokenPair,
-  type SessionContext,
-} from './auth-token.service';
+import { JwtVerifierService } from './jwt-verifier.service';
+import { RotateTokenPairService } from './rotate-token-pair.service';
 
 export interface RefreshSessionInput {
   refreshToken: string;
@@ -44,7 +46,8 @@ export class AuthRefreshSessionService {
   private readonly logger = new Logger(AuthRefreshSessionService.name);
 
   constructor(
-    private readonly authTokenService: AuthTokenService,
+    private readonly jwtVerifier: JwtVerifierService,
+    private readonly rotateTokenPair: RotateTokenPairService,
     private readonly prisma: PrismaService,
     private readonly errorMessageService: ErrorMessageService,
     @Inject(REFRESH_TOKEN_REPOSITORY)
@@ -55,7 +58,7 @@ export class AuthRefreshSessionService {
     refreshToken,
     context,
   }: RefreshSessionInput): Promise<RefreshSessionResult> {
-    const payload = this.authTokenService.verifyRefreshToken(refreshToken);
+    const payload = this.jwtVerifier.verifyRefreshToken(refreshToken);
 
     const record = await this.refreshTokenRepository.findByJti(payload.jti);
     if (!record) {
@@ -63,7 +66,7 @@ export class AuthRefreshSessionService {
       throw this.fail(ErrorCode.REFRESH_TOKEN_INVALID);
     }
 
-    const expectedHash = this.authTokenService.hashRefresh(refreshToken);
+    const expectedHash = hashRefreshToken(refreshToken);
     if (record.tokenHash !== expectedHash) {
       this.logger.warn(
         `Refresh failed — hash mismatch jti=${payload.jti} userId=${record.userId}`,
@@ -108,7 +111,7 @@ export class AuthRefreshSessionService {
       throw this.fail(ErrorCode.REFRESH_TOKEN_INVALID);
     }
 
-    const pair = await this.authTokenService.rotatePair(
+    const pair = await this.rotateTokenPair.execute(
       record.id,
       { id: user.id, email: user.email, role: user.role },
       context,

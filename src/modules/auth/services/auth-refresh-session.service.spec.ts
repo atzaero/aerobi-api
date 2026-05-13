@@ -5,15 +5,20 @@ import { UserRole } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 
 import type { IRefreshTokenRepository } from '../repositories/refresh-token.repository.interface';
+import { hashRefreshToken } from '../utils/refresh-token-hash.util';
 
 import { AuthRefreshSessionService } from './auth-refresh-session.service';
-import { AuthTokenService } from './auth-token.service';
+import { JwtVerifierService } from './jwt-verifier.service';
+import { RotateTokenPairService } from './rotate-token-pair.service';
+
+const REFRESH_PLAIN = 'plain.refresh.jwt';
+const REFRESH_HASH = hashRefreshToken(REFRESH_PLAIN);
 
 function buildRefreshRecord(overrides: Partial<Record<string, unknown>> = {}) {
   return {
     id: 'rt-1',
     jti: 'jti-1',
-    tokenHash: 'expected-hash',
+    tokenHash: REFRESH_HASH,
     userId: 'user-1',
     expiresAt: new Date(Date.now() + 60 * 60_000),
     revoked: false,
@@ -37,11 +42,8 @@ describe('AuthRefreshSessionService', () => {
   let service: AuthRefreshSessionService;
 
   let verifyRefreshToken: jest.Mock;
-  let hashRefresh: jest.Mock;
-  let rotatePair: jest.Mock;
-
+  let rotateExecute: jest.Mock;
   let userFindUnique: jest.Mock;
-
   let findByJti: jest.Mock;
   let create: jest.Mock;
   let rotate: jest.Mock;
@@ -50,8 +52,7 @@ describe('AuthRefreshSessionService', () => {
 
   beforeEach(() => {
     verifyRefreshToken = jest.fn();
-    hashRefresh = jest.fn();
-    rotatePair = jest.fn();
+    rotateExecute = jest.fn();
     userFindUnique = jest.fn();
 
     findByJti = jest.fn();
@@ -60,16 +61,13 @@ describe('AuthRefreshSessionService', () => {
     revokeById = jest.fn();
     revokeAllForUser = jest.fn();
 
-    const authTokenService = {
-      verifyRefreshToken,
-      hashRefresh,
-      rotatePair,
-    } as unknown as AuthTokenService;
-
+    const jwtVerifier = { verifyRefreshToken } as unknown as JwtVerifierService;
+    const rotateTokenPair = {
+      execute: rotateExecute,
+    } as unknown as RotateTokenPairService;
     const prisma = {
       user: { findUnique: userFindUnique },
     } as unknown as PrismaService;
-
     const refreshTokenRepository = {
       create,
       findByJti,
@@ -79,7 +77,8 @@ describe('AuthRefreshSessionService', () => {
     } as unknown as IRefreshTokenRepository;
 
     service = new AuthRefreshSessionService(
-      authTokenService,
+      jwtVerifier,
+      rotateTokenPair,
       prisma,
       new ErrorMessageService(),
       refreshTokenRepository,
@@ -95,9 +94,8 @@ describe('AuthRefreshSessionService', () => {
       jti: 'jti-1',
     });
     findByJti.mockResolvedValue(buildRefreshRecord());
-    hashRefresh.mockReturnValue('expected-hash');
     userFindUnique.mockResolvedValue(buildUserRow());
-    rotatePair.mockResolvedValue({
+    rotateExecute.mockResolvedValue({
       accessToken: 'a2',
       refreshToken: 'r2',
       accessExpiresAt: new Date(),
@@ -105,10 +103,10 @@ describe('AuthRefreshSessionService', () => {
       refreshTokenId: 'rt-2',
     });
 
-    const result = await service.execute({ refreshToken: 'plain' });
+    const result = await service.execute({ refreshToken: REFRESH_PLAIN });
 
     expect(findByJti).toHaveBeenCalledWith('jti-1');
-    expect(rotatePair).toHaveBeenCalledWith(
+    expect(rotateExecute).toHaveBeenCalledWith(
       'rt-1',
       expect.objectContaining({ id: 'user-1' }),
       undefined,
@@ -127,7 +125,7 @@ describe('AuthRefreshSessionService', () => {
     findByJti.mockResolvedValue(null);
 
     try {
-      await service.execute({ refreshToken: 'plain' });
+      await service.execute({ refreshToken: REFRESH_PLAIN });
       fail('should have thrown');
     } catch (e) {
       expect((e as CustomHttpException).getErrorCode()).toBe(
@@ -145,12 +143,11 @@ describe('AuthRefreshSessionService', () => {
       jti: 'jti-1',
     });
     findByJti.mockResolvedValue(
-      buildRefreshRecord({ tokenHash: 'other-hash' }),
+      buildRefreshRecord({ tokenHash: 'hash-de-outro-token' }),
     );
-    hashRefresh.mockReturnValue('expected-hash');
 
     try {
-      await service.execute({ refreshToken: 'plain' });
+      await service.execute({ refreshToken: REFRESH_PLAIN });
       fail('should have thrown');
     } catch (e) {
       expect((e as CustomHttpException).getErrorCode()).toBe(
@@ -168,11 +165,10 @@ describe('AuthRefreshSessionService', () => {
       jti: 'jti-1',
     });
     findByJti.mockResolvedValue(buildRefreshRecord({ revoked: true }));
-    hashRefresh.mockReturnValue('expected-hash');
     revokeAllForUser.mockResolvedValue(3);
 
     try {
-      await service.execute({ refreshToken: 'plain' });
+      await service.execute({ refreshToken: REFRESH_PLAIN });
       fail('should have thrown');
     } catch (e) {
       expect((e as CustomHttpException).getErrorCode()).toBe(
@@ -193,10 +189,9 @@ describe('AuthRefreshSessionService', () => {
     findByJti.mockResolvedValue(
       buildRefreshRecord({ expiresAt: new Date(Date.now() - 1000) }),
     );
-    hashRefresh.mockReturnValue('expected-hash');
 
     try {
-      await service.execute({ refreshToken: 'plain' });
+      await service.execute({ refreshToken: REFRESH_PLAIN });
       fail('should have thrown');
     } catch (e) {
       expect((e as CustomHttpException).getErrorCode()).toBe(
@@ -214,11 +209,10 @@ describe('AuthRefreshSessionService', () => {
       jti: 'jti-1',
     });
     findByJti.mockResolvedValue(buildRefreshRecord());
-    hashRefresh.mockReturnValue('expected-hash');
     userFindUnique.mockResolvedValue(buildUserRow({ deletedAt: new Date() }));
 
     try {
-      await service.execute({ refreshToken: 'plain' });
+      await service.execute({ refreshToken: REFRESH_PLAIN });
       fail('should have thrown');
     } catch (e) {
       expect((e as CustomHttpException).getErrorCode()).toBe(

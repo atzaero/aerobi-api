@@ -15,19 +15,25 @@ import { AuthLoginService } from './services/auth-login.service';
 import { AuthLogoutService } from './services/auth-logout.service';
 import { AuthRefreshSessionService } from './services/auth-refresh-session.service';
 import { AuthResponseMapperService } from './services/auth-response-mapper.service';
-import { AuthTokenService } from './services/auth-token.service';
+import { IssueTokenPairService } from './services/issue-token-pair.service';
+import { JwtSignerService } from './services/jwt-signer.service';
+import { JwtVerifierService } from './services/jwt-verifier.service';
+import { RotateTokenPairService } from './services/rotate-token-pair.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 
 /**
  * Módulo de autenticação interna (JWT RS256 com refresh rotacionado).
  *
- * - `JwtAuthGuard` e `RolesGuard` são exportados para que outros módulos
- *   apliquem via `@UseGuards(JwtAuthGuard, RolesGuard)`. Não estão
- *   registrados globalmente nesta PR — adoção é opt-in.
- * - `JwtModule.registerAsync` evita ler `JWT_SECRET_*` no momento da
- *   importação (importante para testes que mockam env via `ConfigModule`).
- * - `PassportModule.register({ defaultStrategy: 'jwt' })` torna o
- *   `AuthGuard('jwt')` (usado por `JwtAuthGuard`) válido sem prefixo.
+ * Responsabilidades dos providers (cada um com responsabilidade única):
+ * - `JwtSignerService` — posse da private key (RS256), assina access/refresh.
+ * - `JwtVerifierService` — posse da public key, valida refresh (access usa Passport).
+ * - `IssueTokenPairService` — emite par fresco + persiste refresh (login / accept-invite).
+ * - `RotateTokenPairService` — rotação atômica (refresh-session).
+ * - `AuthLoginService` / `AuthRefreshSessionService` / `AuthLogoutService` —
+ *   casos de uso que orquestram os primitivos acima.
+ *
+ * Exporta `JwtAuthGuard`, `RolesGuard` (para `@UseGuards` em outros módulos)
+ * e `IssueTokenPairService` (para que o PR 3 emita par no aceite de convite).
  */
 @Module({
   imports: [
@@ -36,8 +42,8 @@ import { JwtStrategy } from './strategies/jwt.strategy';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: () => ({
-        // Chaves e TTLs reais são passados em cada `sign`/`verify` no
-        // `AuthTokenService` — aqui só registramos o módulo.
+        // Chaves e TTLs reais são passados em cada `sign`/`verify` nos
+        // services especializados — aqui só registramos o módulo.
         signOptions: {},
       }),
     }),
@@ -52,7 +58,10 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     JwtStrategy,
     JwtAuthGuard,
     RolesGuard,
-    AuthTokenService,
+    JwtSignerService,
+    JwtVerifierService,
+    IssueTokenPairService,
+    RotateTokenPairService,
     AuthLoginService,
     AuthRefreshSessionService,
     AuthLogoutService,
@@ -62,6 +71,6 @@ import { JwtStrategy } from './strategies/jwt.strategy';
       useClass: RefreshTokenRepository,
     },
   ],
-  exports: [JwtAuthGuard, RolesGuard, AuthTokenService],
+  exports: [JwtAuthGuard, RolesGuard, IssueTokenPairService],
 })
 export class AuthModule {}
