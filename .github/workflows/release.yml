@@ -23,6 +23,11 @@ run-name: Release from ${{ github.ref_name }} by @${{ github.actor }}
 #
 # Agendamento RAB (opcional):
 #   RAB_SYNC_CRON, RAB_SYNC_CRON_DISABLED
+#
+# Auth interno (módulo `auth` — login/refresh JWT RS256):
+#   JWT_SECRET_PUBLIC_KEY, JWT_SECRET_PRIVATE_KEY — PEM em base64; obrigatórios
+#   JWT_ACCESS_TTL, JWT_REFRESH_TTL — opcionais (default 15m / 7d)
+#   FRONTEND_URL — opcional (default http://localhost:3000), usado em emails de convite/reset
 
 on:
   push:
@@ -172,6 +177,12 @@ jobs:
           if [ -n "${{ secrets.AISWEB_HTTP_TIMEOUT_MS }}" ]; then echo "AISWEB_HTTP_TIMEOUT_MS=${{ secrets.AISWEB_HTTP_TIMEOUT_MS }}" >> .env; fi
           if [ -n "${{ secrets.RAB_SYNC_CRON }}" ]; then echo "RAB_SYNC_CRON=${{ secrets.RAB_SYNC_CRON }}" >> .env; fi
           if [ -n "${{ secrets.RAB_SYNC_CRON_DISABLED }}" ]; then echo "RAB_SYNC_CRON_DISABLED=${{ secrets.RAB_SYNC_CRON_DISABLED }}" >> .env; fi
+          # Auth interno (JWT RS256)
+          if [ -n "${{ secrets.JWT_SECRET_PUBLIC_KEY }}" ]; then echo "JWT_SECRET_PUBLIC_KEY=${{ secrets.JWT_SECRET_PUBLIC_KEY }}" >> .env; fi
+          if [ -n "${{ secrets.JWT_SECRET_PRIVATE_KEY }}" ]; then echo "JWT_SECRET_PRIVATE_KEY=${{ secrets.JWT_SECRET_PRIVATE_KEY }}" >> .env; fi
+          if [ -n "${{ secrets.JWT_ACCESS_TTL }}" ]; then echo "JWT_ACCESS_TTL=${{ secrets.JWT_ACCESS_TTL }}" >> .env; fi
+          if [ -n "${{ secrets.JWT_REFRESH_TTL }}" ]; then echo "JWT_REFRESH_TTL=${{ secrets.JWT_REFRESH_TTL }}" >> .env; fi
+          if [ -n "${{ secrets.FRONTEND_URL }}" ]; then echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" >> .env; fi
           scp -i ~/.ssh/deploy_key -P ${{ secrets.REMOTE_PORT }} \
             docker-compose.prod.yml .env \
             ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}:${{ secrets.REMOTE_TARGET }}
