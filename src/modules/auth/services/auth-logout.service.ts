@@ -5,7 +5,7 @@ import {
   type IRefreshTokenRepository,
 } from '../repositories/refresh-token.repository.interface';
 
-import { AuthTokenService } from './auth-token.service';
+import { JwtVerifierService } from './jwt-verifier.service';
 
 /**
  * Caso de uso: revoga o refresh apresentado no logout.
@@ -19,7 +19,7 @@ export class AuthLogoutService {
   private readonly logger = new Logger(AuthLogoutService.name);
 
   constructor(
-    private readonly authTokenService: AuthTokenService,
+    private readonly jwtVerifier: JwtVerifierService,
     @Inject(REFRESH_TOKEN_REPOSITORY)
     private readonly refreshTokenRepository: IRefreshTokenRepository,
   ) {}
@@ -28,7 +28,7 @@ export class AuthLogoutService {
     let jti: string;
 
     try {
-      const payload = this.authTokenService.verifyRefreshToken(refreshToken);
+      const payload = this.jwtVerifier.verifyRefreshToken(refreshToken);
       jti = payload.jti;
     } catch {
       this.logger.debug('Logout chamado com refresh inválido — ignorando');

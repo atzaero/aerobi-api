@@ -7,11 +7,12 @@ import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import type { UserRole } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 
-import {
-  AuthTokenService,
-  type IssuedTokenPair,
-  type SessionContext,
-} from './auth-token.service';
+import type {
+  IssuedTokenPair,
+  SessionContext,
+} from '../interfaces/auth-token.types';
+
+import { IssueTokenPairService } from './issue-token-pair.service';
 
 export interface LoginInput {
   email: string;
@@ -49,7 +50,7 @@ export class AuthLoginService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly authTokenService: AuthTokenService,
+    private readonly issueTokenPair: IssueTokenPairService,
     private readonly errorMessageService: ErrorMessageService,
   ) {}
 
@@ -110,7 +111,7 @@ export class AuthLoginService {
       );
     }
 
-    const pair = await this.authTokenService.issuePair(
+    const pair = await this.issueTokenPair.execute(
       { id: user.id, email: user.email, role: user.role },
       context,
     );

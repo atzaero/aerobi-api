@@ -7,7 +7,7 @@ import { UserRole } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 
 import { AuthLoginService } from './auth-login.service';
-import { AuthTokenService } from './auth-token.service';
+import { IssueTokenPairService } from './issue-token-pair.service';
 
 function buildUserRow(overrides: Partial<Record<string, unknown>> = {}) {
   return {
@@ -27,13 +27,13 @@ describe('AuthLoginService', () => {
 
   let userFindUnique: jest.Mock;
   let userUpdate: jest.Mock;
-  let issuePair: jest.Mock;
+  let issuePairExecute: jest.Mock;
   let bcryptCompare: jest.Mock<Promise<boolean>, [string, string]>;
 
   beforeEach(() => {
     userFindUnique = jest.fn();
     userUpdate = jest.fn().mockResolvedValue({ id: 'user-1' });
-    issuePair = jest.fn().mockResolvedValue({
+    issuePairExecute = jest.fn().mockResolvedValue({
       accessToken: 'access',
       refreshToken: 'refresh',
       accessExpiresAt: new Date(),
@@ -45,11 +45,13 @@ describe('AuthLoginService', () => {
       user: { findUnique: userFindUnique, update: userUpdate },
     } as unknown as PrismaService;
 
-    const authTokenService = { issuePair } as unknown as AuthTokenService;
+    const issueTokenPair = {
+      execute: issuePairExecute,
+    } as unknown as IssueTokenPairService;
 
     service = new AuthLoginService(
       prisma,
-      authTokenService,
+      issueTokenPair,
       new ErrorMessageService(),
     );
 
@@ -75,12 +77,12 @@ describe('AuthLoginService', () => {
     expect(userFindUnique).toHaveBeenCalledWith(
       expect.objectContaining({ where: { email: 'user@aerobi.local' } }),
     );
-    expect(issuePair).toHaveBeenCalledTimes(1);
+    expect(issuePairExecute).toHaveBeenCalledTimes(1);
     expect(result.user.id).toBe('user-1');
     expect(result.accessToken).toBe('access');
   });
 
-  it('email não encontrado → INVALID_CREDENTIALS (sem user enumeration)', async () => {
+  it('email não encontrado → INVALID_CREDENTIALS', async () => {
     userFindUnique.mockResolvedValue(null);
 
     try {

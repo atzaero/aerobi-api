@@ -1,20 +1,10 @@
-import {
-  Body,
-  Controller,
-  HttpCode,
-  HttpStatus,
-  Post,
-  Req,
-} from '@nestjs/common';
-import {
-  ApiBody,
-  ApiOperation,
-  ApiResponse,
-  ApiTags,
-  ApiUnauthorizedResponse,
-} from '@nestjs/swagger';
+import { Body, Controller, Req } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
 
+import { extractIpAddress } from '@/common/utils/extract-ip-address.util';
+
+import { RefreshSessionDocs } from '../docs/refresh-session.docs';
 import { RefreshRequestDto } from '../dtos/refresh-request.dto';
 import { RefreshResponseDto } from '../dtos/refresh-response.dto';
 import { AuthRefreshSessionService } from '../services/auth-refresh-session.service';
@@ -28,19 +18,7 @@ export class RefreshSessionController {
     private readonly mapper: AuthResponseMapperService,
   ) {}
 
-  @Post('refresh')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Rotaciona refresh token e emite par novo',
-    description:
-      'Rotação encadeada com `jti` único. Apresentar um refresh já ' +
-      'revogado dispara revogação de toda a família (proteção contra reuso).',
-  })
-  @ApiBody({ type: RefreshRequestDto })
-  @ApiResponse({ status: HttpStatus.OK, type: RefreshResponseDto })
-  @ApiUnauthorizedResponse({
-    description: 'Refresh inválido / expirado / revogado / reuso detectado.',
-  })
+  @RefreshSessionDocs()
   async handle(
     @Body() dto: RefreshRequestDto,
     @Req() request: Request,
@@ -54,12 +32,4 @@ export class RefreshSessionController {
     });
     return this.mapper.toRefreshResponse(result);
   }
-}
-
-function extractIpAddress(request: Request): string | undefined {
-  const forwarded = request.headers['x-forwarded-for'];
-  if (typeof forwarded === 'string' && forwarded.length > 0) {
-    return forwarded.split(',')[0]?.trim();
-  }
-  return request.ip;
 }
