@@ -3,23 +3,16 @@ import bcrypt from 'bcryptjs';
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
-import { UserRole } from '@/generated/prisma/client';
+import type { User } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
+import { buildUserFixture } from '@/modules/users/testing/user.fixtures';
 
 import { AuthLoginService } from './auth-login.service';
 import { IssueTokenPairService } from './issue-token-pair.service';
 
-function buildUserRow(overrides: Partial<Record<string, unknown>> = {}) {
-  return {
-    id: 'user-1',
-    email: 'user@aerobi.local',
-    name: 'User',
-    password: 'hashed',
-    role: UserRole.OPERATOR,
-    emailVerified: true,
-    deletedAt: null,
-    ...overrides,
-  };
+/** Wrapper local — só ajusta defaults usados por estes specs. */
+function buildUserRow(overrides: Partial<User> = {}): User {
+  return buildUserFixture(overrides);
 }
 
 describe('AuthLoginService', () => {

@@ -7,6 +7,7 @@ import { UserRole } from '@/generated/prisma/client';
 import { InviteTokenService } from '@/modules/tokens/services/invite-token.service';
 
 import type { UserRepository } from '../repositories/user.repository';
+import { buildPendingUserFixture } from '../testing/user.fixtures';
 
 import { CreateUserService } from './create-user.service';
 
@@ -65,21 +66,7 @@ describe('CreateUserService', () => {
 
   it('cria User pendente + emite Token INVITE + dispara user.invited', async () => {
     existsByEmail.mockResolvedValue(false);
-    create.mockResolvedValue({
-      id: 'user-1',
-      email: 'piloto@aerobi.local',
-      name: 'Piloto',
-      phone: null,
-      role: UserRole.OPERATOR,
-      emailVerified: false,
-      timezone: null,
-      lastLoginAt: null,
-      invitedById: 'admin-1',
-      invitedAt: new Date(),
-      acceptedInviteAt: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    create.mockResolvedValue(buildPendingUserFixture());
     createInviteToken.mockResolvedValue({
       token: 'plain-invite',
       tokenRecord: {

@@ -1,34 +1,17 @@
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
+import type { User } from '@/generated/prisma/client';
 import { UserRole } from '@/generated/prisma/client';
 
 import type { UserRepository } from '../repositories/user.repository';
+import { buildUserFixture } from '../testing/user.fixtures';
 
 import { UpdateUserService } from './update-user.service';
 
-function buildUser(overrides: Partial<Record<string, unknown>> = {}) {
-  return {
-    id: 'user-1',
-    email: 'u@x',
-    name: 'Old',
-    phone: null,
-    password: 'hashed',
-    role: UserRole.OPERATOR,
-    emailVerified: true,
-    timezone: null,
-    lastLoginAt: null,
-    invitedById: null,
-    invitedAt: null,
-    acceptedInviteAt: new Date(),
-    deletedAt: null,
-    deletedBy: null,
-    createdAt: new Date(),
-    createdBy: null,
-    updatedAt: new Date(),
-    updatedBy: null,
-    ...overrides,
-  };
+/** Wrapper local com o email/name esperado por estes specs. */
+function buildUser(overrides: Partial<User> = {}): User {
+  return buildUserFixture({ email: 'u@x', name: 'Old', ...overrides });
 }
 
 describe('UpdateUserService', () => {

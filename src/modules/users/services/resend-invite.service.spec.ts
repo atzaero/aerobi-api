@@ -7,31 +7,9 @@ import { UserRole } from '@/generated/prisma/client';
 import { InviteTokenService } from '@/modules/tokens/services/invite-token.service';
 
 import type { UserRepository } from '../repositories/user.repository';
+import { buildPendingUserFixture } from '../testing/user.fixtures';
 
 import { ResendInviteService } from './resend-invite.service';
-
-function buildPendingUser() {
-  return {
-    id: 'user-1',
-    email: 'piloto@aerobi.local',
-    name: 'Piloto',
-    phone: null,
-    password: null,
-    role: UserRole.OPERATOR,
-    emailVerified: false,
-    timezone: null,
-    lastLoginAt: null,
-    invitedById: 'admin-1',
-    invitedAt: new Date('2026-05-01T00:00:00Z'),
-    acceptedInviteAt: null,
-    deletedAt: null,
-    deletedBy: null,
-    createdAt: new Date(),
-    createdBy: null,
-    updatedAt: new Date(),
-    updatedBy: null,
-  };
-}
 
 describe('ResendInviteService', () => {
   let service: ResendInviteService;
@@ -71,7 +49,7 @@ describe('ResendInviteService', () => {
   });
 
   it('reemite Token INVITE + dispara user.invited', async () => {
-    findActiveById.mockResolvedValue(buildPendingUser());
+    findActiveById.mockResolvedValue(buildPendingUserFixture());
     createInviteToken.mockResolvedValue({
       token: 'new-plain-invite',
       tokenRecord: {
@@ -115,7 +93,7 @@ describe('ResendInviteService', () => {
 
   it('convite já aceito → INVITE_ALREADY_ACCEPTED', async () => {
     findActiveById.mockResolvedValue({
-      ...buildPendingUser(),
+      ...buildPendingUserFixture(),
       acceptedInviteAt: new Date(),
     });
 
