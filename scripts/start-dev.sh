@@ -6,11 +6,14 @@ npx prisma generate
 echo "Prisma migrate deploy..."
 npx prisma migrate deploy
 
-if [ "${RUN_SEEDS_ON_BOOT:-false}" = "true" ]; then
-  echo "Running seeds (RUN_SEEDS_ON_BOOT=true)..."
+# Em dev, seed roda por default — o próprio orquestrador é idempotente e
+# faz skip silencioso quando não há `SEED_USER_*` configurado. Setar
+# `RUN_SEEDS_ON_BOOT=false` em `.env` desliga explicitamente.
+if [ "${RUN_SEEDS_ON_BOOT:-true}" = "true" ]; then
+  echo "Running seeds (RUN_SEEDS_ON_BOOT=true; default em dev)..."
   npm run seed
 else
-  echo "Skipping seeds (RUN_SEEDS_ON_BOOT not 'true')."
+  echo "Skipping seeds (RUN_SEEDS_ON_BOOT explicitamente 'false')."
 fi
 
 echo "Starting Nest (watch)..."
