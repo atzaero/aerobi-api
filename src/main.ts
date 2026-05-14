@@ -1,63 +1,28 @@
-import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
 import { AppModule } from '@/app.module';
-import { AllExceptionsFilter } from '@/common/filters/all-exceptions.filter';
+import { applyCors } from '@/bootstrap/cors/apply-cors';
+import { isDevelopmentEnvironment } from '@/bootstrap/environment/is-development-environment';
+import { applyGlobalExceptionFilter } from '@/bootstrap/http-pipeline/apply-global-exception-filter';
+import { applyGlobalValidationPipe } from '@/bootstrap/http-pipeline/apply-global-validation-pipe';
+import { resolveHttpPort } from '@/bootstrap/port/resolve-http-port';
+import { applyShutdownHooks } from '@/bootstrap/shutdown/apply-shutdown-hooks';
+import { setupSwagger } from '@/bootstrap/swagger/setup-swagger';
 
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+async function bootstrap(): Promise<void> {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const configService = app.get(ConfigService);
 
-  const isDev =
-    configService.get<string>('NODE_ENV', 'development') === 'development';
-  const corsOrigins = configService
-    .get<string>('CORS_ORIGINS', 'http://localhost:3000')
-    .split(',')
-    .map((o) => o.trim());
+  const isDevelopment = isDevelopmentEnvironment(configService);
+  applyCors(app, configService, isDevelopment);
+  applyGlobalExceptionFilter(app);
+  applyGlobalValidationPipe(app);
+  setupSwagger(app);
+  applyShutdownHooks(app);
 
-  app.enableCors({
-    origin: isDev ? true : corsOrigins,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: [
-      'Origin',
-      'X-Requested-With',
-      'Content-Type',
-      'Accept',
-      'Authorization',
-      'X-API-Key',
-    ],
-    credentials: true,
-  });
-
-  app.useGlobalFilters(new AllExceptionsFilter());
-  app.useGlobalPipes(
-    new ValidationPipe({
-      transform: true,
-      whitelist: true,
-    }),
-  );
-
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle('Aerobi API')
-    .setDescription(
-      'API Nest para sincronização do RAB (ANAC), aeródromos privados, proxy Plugfield e consulta de licenças de piloto. ' +
-        '**Rotas `/rab/*`, `/private-aerodromes/*`, `/plugfield/*` e `/anac/*`** exigem header **`X-API-Key`** igual a **`AEROBI_API_KEY`**, ' +
-        'exceto em **`NODE_ENV=development`** sem `AEROBI_REQUIRE_AUTH` (bypass para DX local). ' +
-        'Com `AEROBI_REQUIRE_AUTH=true`, o bypass é desativado também em development. ' +
-        'Ver JSDoc: `AerobiApiKeyGuard`. ' +
-        'Credenciais Plugfield (`PLUGFIELD_API_KEY`, `PLUGFIELD_TOKEN`) ficam só no servidor; o cliente não as envia.',
-    )
-    .setVersion('1.0')
-    .addApiKey({ type: 'apiKey', name: 'X-API-Key', in: 'header' })
-    .build();
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('api/docs', app, document);
-
-  app.enableShutdownHooks();
-
-  const port = configService.get<number>('PORT', 3333);
+  const port = resolveHttpPort(configService);
   await app.listen(port);
 }
 
