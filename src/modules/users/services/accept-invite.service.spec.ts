@@ -3,36 +3,13 @@ import { HttpStatus } from '@nestjs/common';
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
-import { UserRole } from '@/generated/prisma/client';
 import { IssueTokenPairService } from '@/modules/auth/services/issue-token-pair.service';
 import { TokenValidationService } from '@/modules/tokens/services/token-validation.service';
 
 import type { UserRepository } from '../repositories/user.repository';
+import { buildPendingUserFixture } from '../testing/user.fixtures';
 
 import { AcceptInviteService } from './accept-invite.service';
-
-function buildPendingUser() {
-  return {
-    id: 'user-1',
-    email: 'piloto@aerobi.local',
-    name: 'Piloto',
-    phone: null,
-    password: null,
-    role: UserRole.OPERATOR,
-    emailVerified: false,
-    timezone: null,
-    lastLoginAt: null,
-    invitedById: 'admin-1',
-    invitedAt: new Date(),
-    acceptedInviteAt: null,
-    deletedAt: null,
-    deletedBy: null,
-    createdAt: new Date(),
-    createdBy: null,
-    updatedAt: new Date(),
-    updatedBy: null,
-  };
-}
 
 describe('AcceptInviteService', () => {
   let service: AcceptInviteService;
@@ -79,7 +56,7 @@ describe('AcceptInviteService', () => {
   });
 
   it('aceita convite, atualiza user e emite par JWT', async () => {
-    const pending = buildPendingUser();
+    const pending = buildPendingUserFixture();
     findByEmail.mockResolvedValue(pending);
     validate.mockResolvedValue({ id: 'tok-1' });
     update.mockResolvedValue({
@@ -133,7 +110,7 @@ describe('AcceptInviteService', () => {
 
   it('convite já aceito → INVITE_ALREADY_ACCEPTED', async () => {
     findByEmail.mockResolvedValue({
-      ...buildPendingUser(),
+      ...buildPendingUserFixture(),
       acceptedInviteAt: new Date(),
     });
 
@@ -152,7 +129,7 @@ describe('AcceptInviteService', () => {
   });
 
   it('token expirado vira INVITE_TOKEN_EXPIRED', async () => {
-    findByEmail.mockResolvedValue(buildPendingUser());
+    findByEmail.mockResolvedValue(buildPendingUserFixture());
     validate.mockRejectedValue(
       new CustomHttpException(
         'Token expirado em ...',

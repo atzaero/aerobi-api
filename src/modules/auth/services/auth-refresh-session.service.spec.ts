@@ -1,10 +1,13 @@
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
+import type { RefreshToken, User } from '@/generated/prisma/client';
 import { UserRole } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
+import { buildUserFixture } from '@/modules/users/testing/user.fixtures';
 
 import type { RefreshTokenRepository } from '../repositories/refresh-token.repository';
+import { buildRefreshTokenFixture } from '../testing/refresh-token.fixtures';
 import { hashRefreshToken } from '../utils/refresh-token-hash.util';
 
 import { AuthRefreshSessionService } from './auth-refresh-session.service';
@@ -14,28 +17,15 @@ import { RotateTokenPairService } from './rotate-token-pair.service';
 const REFRESH_PLAIN = 'plain.refresh.jwt';
 const REFRESH_HASH = hashRefreshToken(REFRESH_PLAIN);
 
-function buildRefreshRecord(overrides: Partial<Record<string, unknown>> = {}) {
-  return {
-    id: 'rt-1',
-    jti: 'jti-1',
-    tokenHash: REFRESH_HASH,
-    userId: 'user-1',
-    expiresAt: new Date(Date.now() + 60 * 60_000),
-    revoked: false,
-    deletedAt: null,
-    ...overrides,
-  };
+/** Wrapper local — hash do plain conhecido + defaults do spec. */
+function buildRefreshRecord(
+  overrides: Partial<RefreshToken> = {},
+): RefreshToken {
+  return buildRefreshTokenFixture({ tokenHash: REFRESH_HASH, ...overrides });
 }
 
-function buildUserRow(overrides: Partial<Record<string, unknown>> = {}) {
-  return {
-    id: 'user-1',
-    email: 'user@aerobi.local',
-    name: 'User',
-    role: UserRole.OPERATOR,
-    deletedAt: null,
-    ...overrides,
-  };
+function buildUserRow(overrides: Partial<User> = {}): User {
+  return buildUserFixture(overrides);
 }
 
 describe('AuthRefreshSessionService', () => {

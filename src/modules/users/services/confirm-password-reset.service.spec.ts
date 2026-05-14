@@ -3,35 +3,17 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
-import { UserRole } from '@/generated/prisma/client';
 import type { RefreshTokenRepository } from '@/modules/auth/repositories/refresh-token.repository';
 import { TokenValidationService } from '@/modules/tokens/services/token-validation.service';
 
 import type { UserRepository } from '../repositories/user.repository';
+import { buildUserFixture } from '../testing/user.fixtures';
 
 import { ConfirmPasswordResetService } from './confirm-password-reset.service';
 
+/** Local helper — só ajusta o email para o que o spec usa. */
 function buildUser() {
-  return {
-    id: 'user-1',
-    email: 'u@x',
-    name: 'User',
-    phone: null,
-    password: 'old-hash',
-    role: UserRole.OPERATOR,
-    emailVerified: true,
-    timezone: null,
-    lastLoginAt: null,
-    invitedById: null,
-    invitedAt: null,
-    acceptedInviteAt: new Date(),
-    deletedAt: null,
-    deletedBy: null,
-    createdAt: new Date(),
-    createdBy: null,
-    updatedAt: new Date(),
-    updatedBy: null,
-  };
+  return buildUserFixture({ email: 'u@x' });
 }
 
 describe('ConfirmPasswordResetService', () => {
