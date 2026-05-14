@@ -47,10 +47,20 @@ async function bootstrap() {
         'exceto em **`NODE_ENV=development`** sem `AEROBI_REQUIRE_AUTH` (bypass para DX local). ' +
         'Com `AEROBI_REQUIRE_AUTH=true`, o bypass é desativado também em development. ' +
         'Ver JSDoc: `AerobiApiKeyGuard`. ' +
-        'Credenciais Plugfield (`PLUGFIELD_API_KEY`, `PLUGFIELD_TOKEN`) ficam só no servidor; o cliente não as envia.',
+        'Credenciais Plugfield (`PLUGFIELD_API_KEY`, `PLUGFIELD_TOKEN`) ficam só no servidor; o cliente não as envia. ' +
+        '**Rotas autenticadas por usuário** (`/auth/me`, `/users/*` exceto `/users/invite/accept` e `/users/password-reset/*`) ' +
+        'exigem header **`Authorization: Bearer <accessToken>`** — obter via `POST /auth/login`. ' +
+        'Use o botão **Authorize** abaixo, cole apenas o JWT (sem prefixo `Bearer`).',
     )
     .setVersion('1.0')
     .addApiKey({ type: 'apiKey', name: 'X-API-Key', in: 'header' })
+    .addBearerAuth({
+      type: 'http',
+      scheme: 'bearer',
+      bearerFormat: 'JWT',
+      description:
+        'JWT access token RS256 emitido por `POST /auth/login`. Expira em ~15min (configurável via `JWT_ACCESS_TTL`); use `POST /auth/refresh` para rotacionar.',
+    })
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api/docs', app, document);
