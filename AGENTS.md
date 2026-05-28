@@ -11,7 +11,7 @@ Operação (`X-API-Key`, variáveis `PLUGFIELD_*`, `AISWEB_*`, Docker, cron RAB)
 ## Stack canónica
 
 - **Framework**: NestJS 11
-- **Runtime**: Node 22 (CI em `ubuntu-latest`; ver `.github/workflows/ci.yml`)
+- **Runtime**: Node 22 (CI em `ubuntu-latest`; ver [`.github/workflows/ci.yml`](.github/workflows/ci.yml))
 - **Package manager**: npm (`package-lock.json` é fonte de verdade)
 - **ORM / DB**: Prisma 7 (`@prisma/adapter-pg`) + PostgreSQL — schema em `prisma/schema.prisma`, cliente gerado sob `src/generated/prisma/` (via `postinstall` / `prisma generate`)
 - **Validação / transformação**: class-validator + class-transformer nos DTOs de entrada quando aplicável (`ValidationPipe` global com `transform` + `whitelist` em `src/main.ts`)
