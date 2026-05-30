@@ -29,10 +29,19 @@ run-name: Release from ${{ github.ref_name }} by @${{ github.actor }}
 #   JWT_ACCESS_TTL, JWT_REFRESH_TTL — opcionais (default 15m / 7d)
 #   FRONTEND_URL — opcional (default http://localhost:3000), usado em emails de convite/reset
 
+# =============================================================================
+# TEMPORÁRIO (issue #154): trigger automático em `main` desativado até reabilitar
+#
+# Motivo: limite de minutos do GitHub Actions atingido neste ciclo de
+# faturamento. Mantemos apenas `workflow_dispatch` (release/deploy manual sob
+# demanda). REVERTER quando os minutos forem renovados: restaurar o trigger
+# `push` em `main` abaixo.
+# =============================================================================
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
+  # push:
+  #   branches:
+  #     - main
 
 permissions:
   contents: write
