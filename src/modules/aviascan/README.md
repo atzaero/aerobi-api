@@ -27,6 +27,17 @@ A resposta é o envelope `{ data, meta }` devolvido pelo upstream — a `meta`
 (`currentPage`, `itemsPerPage`, `totalItems`, `totalPages`, `hasNextPage`,
 `hasPreviousPage`) já segue o mesmo formato de paginação usado pela Aerobi.
 
+## Cache
+
+As respostas são cacheadas **in-memory** via `@nestjs/cache-manager` (cache
+nativo do NestJS). O cache é **manual no service**: a chave é derivada da query
+(`page`, `limit`, `registration`, `aerodrome`, `start_date`, `end_date` — ver
+`utils/build-aviascan-cache-key.util.ts`), aplicando os mesmos defaults da rota.
+
+- **Hit:** devolve a página cacheada sem chamar o upstream.
+- **Miss:** busca no upstream, mapeia (`image_path` absoluto) e grava no cache.
+- **TTL:** configurável via `AVIASCAN_CACHE_TTL_MS` (ms); default `60000` (60s).
+
 ## Saídas (tipagens)
 
 O proxy encaminha a página tal como o upstream a devolve, após validar que o
