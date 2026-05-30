@@ -1,4 +1,5 @@
 import { HttpModule } from '@nestjs/axios';
+import { CacheModule } from '@nestjs/cache-manager';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
@@ -16,6 +17,7 @@ import { AviascanReadingsService } from './services/aviascan-readings.service';
  * **Aerobi → AviaScan (servidor):**
  * - `AVIASCAN_API_BASE_URL` — base URL da AviaScan.
  * - `AVIASCAN_HTTP_TIMEOUT_MS` — timeout HTTP (default `8000`).
+ * - `AVIASCAN_CACHE_TTL_MS` — TTL do cache in-memory das leituras (default `60000`).
  */
 @Module({
   imports: [
@@ -41,6 +43,7 @@ import { AviascanReadingsService } from './services/aviascan-readings.service';
         };
       },
     }),
+    CacheModule.register(),
   ],
   controllers: [AviascanReadingsController],
   providers: [AerobiApiKeyGuard, AviascanHttpService, AviascanReadingsService],

@@ -22,7 +22,7 @@ run-name: Release from ${{ github.ref_name }} by @${{ github.actor }}
 #   AISWEB_HTTP_TIMEOUT_MS — opcional
 #
 # Proxy AviaScan (Aerobi → AviaScan, só no servidor):
-#   AVIASCAN_API_BASE_URL, AVIASCAN_HTTP_TIMEOUT_MS — opcionais (têm defaults)
+#   AVIASCAN_API_BASE_URL, AVIASCAN_HTTP_TIMEOUT_MS, AVIASCAN_CACHE_TTL_MS — opcionais (têm defaults)
 #
 # Agendamento RAB (opcional):
 #   RAB_SYNC_CRON, RAB_SYNC_CRON_DISABLED
@@ -189,6 +189,7 @@ jobs:
           if [ -n "${{ secrets.AISWEB_HTTP_TIMEOUT_MS }}" ]; then echo "AISWEB_HTTP_TIMEOUT_MS=${{ secrets.AISWEB_HTTP_TIMEOUT_MS }}" >> .env; fi
           if [ -n "${{ secrets.AVIASCAN_API_BASE_URL }}" ]; then echo "AVIASCAN_API_BASE_URL=${{ secrets.AVIASCAN_API_BASE_URL }}" >> .env; fi
           if [ -n "${{ secrets.AVIASCAN_HTTP_TIMEOUT_MS }}" ]; then echo "AVIASCAN_HTTP_TIMEOUT_MS=${{ secrets.AVIASCAN_HTTP_TIMEOUT_MS }}" >> .env; fi
+          if [ -n "${{ secrets.AVIASCAN_CACHE_TTL_MS }}" ]; then echo "AVIASCAN_CACHE_TTL_MS=${{ secrets.AVIASCAN_CACHE_TTL_MS }}" >> .env; fi
           if [ -n "${{ secrets.RAB_SYNC_CRON }}" ]; then echo "RAB_SYNC_CRON=${{ secrets.RAB_SYNC_CRON }}" >> .env; fi
           if [ -n "${{ secrets.RAB_SYNC_CRON_DISABLED }}" ]; then echo "RAB_SYNC_CRON_DISABLED=${{ secrets.RAB_SYNC_CRON_DISABLED }}" >> .env; fi
           # Auth interno (JWT RS256)
