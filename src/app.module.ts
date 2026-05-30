@@ -10,6 +10,7 @@ import { AerodromeGeojsonsModule } from '@/modules/aerodrome-geojsons/aerodrome-
 import { AerodromeGroupsModule } from '@/modules/aerodrome-groups/aerodrome-groups.module';
 import { AiswebModule } from '@/modules/aisweb/aisweb.module';
 import { AnacModule } from '@/modules/anac/anac.module';
+import { AviascanModule } from '@/modules/aviascan/aviascan.module';
 import { HealthModule } from '@/modules/health/health.module';
 import { LandingRequestsModule } from '@/modules/landing-requests/landing-requests.module';
 import { OperationalAerodromesModule } from '@/modules/operational-aerodromes/operational-aerodromes.module';
@@ -36,6 +37,7 @@ import { PrismaModule } from '@/prisma/prisma.module';
     RabModule,
     PlugfieldModule,
     AiswebModule,
+    AviascanModule,
     PrivateAerodromesModule,
     PublicAerodromesModule,
     SchedulerModule,
