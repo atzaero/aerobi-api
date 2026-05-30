@@ -21,6 +21,9 @@ run-name: Release from ${{ github.ref_name }} by @${{ github.actor }}
 #   AISWEB_API_KEY, AISWEB_API_PASS — necessários para rotas /aisweb/*
 #   AISWEB_HTTP_TIMEOUT_MS — opcional
 #
+# Proxy AviaScan (Aerobi → AviaScan, só no servidor):
+#   AVIASCAN_API_BASE_URL, AVIASCAN_HTTP_TIMEOUT_MS — opcionais (têm defaults)
+#
 # Agendamento RAB (opcional):
 #   RAB_SYNC_CRON, RAB_SYNC_CRON_DISABLED
 #
@@ -29,10 +32,19 @@ run-name: Release from ${{ github.ref_name }} by @${{ github.actor }}
 #   JWT_ACCESS_TTL, JWT_REFRESH_TTL — opcionais (default 15m / 7d)
 #   FRONTEND_URL — opcional (default http://localhost:3000), usado em emails de convite/reset
 
+# =============================================================================
+# TEMPORÁRIO (issue #154): trigger automático em `main` desativado até reabilitar
+#
+# Motivo: limite de minutos do GitHub Actions atingido neste ciclo de
+# faturamento. Mantemos apenas `workflow_dispatch` (release/deploy manual sob
+# demanda). REVERTER quando os minutos forem renovados: restaurar o trigger
+# `push` em `main` abaixo.
+# =============================================================================
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
+  # push:
+  #   branches:
+  #     - main
 
 permissions:
   contents: write
@@ -175,6 +187,8 @@ jobs:
           if [ -n "${{ secrets.AISWEB_API_KEY }}" ]; then echo "AISWEB_API_KEY=${{ secrets.AISWEB_API_KEY }}" >> .env; fi
           if [ -n "${{ secrets.AISWEB_API_PASS }}" ]; then echo "AISWEB_API_PASS=${{ secrets.AISWEB_API_PASS }}" >> .env; fi
           if [ -n "${{ secrets.AISWEB_HTTP_TIMEOUT_MS }}" ]; then echo "AISWEB_HTTP_TIMEOUT_MS=${{ secrets.AISWEB_HTTP_TIMEOUT_MS }}" >> .env; fi
+          if [ -n "${{ secrets.AVIASCAN_API_BASE_URL }}" ]; then echo "AVIASCAN_API_BASE_URL=${{ secrets.AVIASCAN_API_BASE_URL }}" >> .env; fi
+          if [ -n "${{ secrets.AVIASCAN_HTTP_TIMEOUT_MS }}" ]; then echo "AVIASCAN_HTTP_TIMEOUT_MS=${{ secrets.AVIASCAN_HTTP_TIMEOUT_MS }}" >> .env; fi
           if [ -n "${{ secrets.RAB_SYNC_CRON }}" ]; then echo "RAB_SYNC_CRON=${{ secrets.RAB_SYNC_CRON }}" >> .env; fi
           if [ -n "${{ secrets.RAB_SYNC_CRON_DISABLED }}" ]; then echo "RAB_SYNC_CRON_DISABLED=${{ secrets.RAB_SYNC_CRON_DISABLED }}" >> .env; fi
           # Auth interno (JWT RS256)
