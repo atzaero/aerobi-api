@@ -101,7 +101,13 @@
   },
   "overrides": {
     "@hono/node-server": "1.19.13",
-    "fast-uri": "3.1.2"
+    "fast-uri": "3.1.2",
+    "preview-email": {
+      "uuid": "^11.1.1"
+    },
+    "npm": {
+      "brace-expansion": "^5.0.6"
+    }
   },
   "jest": {
     "moduleFileExtensions": [
