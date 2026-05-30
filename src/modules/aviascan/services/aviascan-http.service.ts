@@ -25,7 +25,6 @@ export type AviascanHttpRequestOptions = {
  *
  * **Environment**
  * - `AVIASCAN_API_BASE_URL` — default `https://aviascanapi.lmpierin.com.br`.
- * - `AVIASCAN_API_KEY` — optional; when set, sent as `x-api-key` header.
  * - `AVIASCAN_HTTP_TIMEOUT_MS` — HTTP timeout (default `8000`, configured in the module).
  */
 @Injectable()
@@ -58,11 +57,6 @@ export class AviascanHttpService {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
-
-    const apiKey = this.config.get<string>('AVIASCAN_API_KEY', '')?.trim();
-    if (apiKey) {
-      headers['x-api-key'] = apiKey;
-    }
 
     const params = this.buildAxiosParams(options.query);
 

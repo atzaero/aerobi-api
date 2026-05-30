@@ -15,7 +15,6 @@ import { AviascanReadingsService } from './services/aviascan-readings.service';
  *
  * **Aerobi → AviaScan (servidor):**
  * - `AVIASCAN_API_BASE_URL` — base URL da AviaScan.
- * - `AVIASCAN_API_KEY` — opcional; quando definido, enviado como header `x-api-key`.
  * - `AVIASCAN_HTTP_TIMEOUT_MS` — timeout HTTP (default `8000`).
  */
 @Module({

@@ -2,7 +2,7 @@
 
 Proxy HTTP para a API [AviaScan](https://aviascanapi.lmpierin.com.br). Variáveis e rotas: ver comentários em `aviascan.module.ts` e README raiz do repositório.
 
-**Autenticação:** o cliente envia apenas **`X-API-Key`** = **`AEROBI_API_KEY`** (guard partilhado com RAB, Plugfield e aeródromos privados). A `AVIASCAN_API_KEY` (opcional) existe só no backend e é enviada como header `x-api-key` para o upstream quando definida — o cliente nunca a envia.
+**Autenticação:** o cliente envia apenas **`X-API-Key`** = **`AEROBI_API_KEY`** (guard partilhado com RAB, Plugfield e aeródromos privados). O upstream AviaScan é público — a Aerobi não envia credencial adicional para ele.
 
 ## Rota
 

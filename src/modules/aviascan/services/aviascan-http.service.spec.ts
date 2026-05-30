@@ -61,23 +61,6 @@ describe('AviascanHttpService', () => {
     expect(req.params).toEqual({ page: '1', limit: '10' });
   });
 
-  it('sends x-api-key header when AVIASCAN_API_KEY is set', async () => {
-    const http = { request: httpRequest } as unknown as HttpService;
-    const svc = new AviascanHttpService(
-      http,
-      makeConfig({ AVIASCAN_API_KEY: 'secret-key' }),
-      makeErrorMessages(),
-    );
-    httpRequest.mockReturnValue(of({ status: 200, data: {} }));
-
-    await svc.requestJson({ method: 'GET', path: '/api/readings/paginated' });
-
-    const calls = httpRequest.mock.calls as unknown as Array<
-      [{ headers: Record<string, string | undefined> }]
-    >;
-    expect(calls[0][0].headers['x-api-key']).toBe('secret-key');
-  });
-
   it('honours AVIASCAN_API_BASE_URL and strips trailing slash', async () => {
     const http = { request: httpRequest } as unknown as HttpService;
     const svc = new AviascanHttpService(
