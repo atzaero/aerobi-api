@@ -105,9 +105,7 @@
     "preview-email": {
       "uuid": "^11.1.1"
     },
-    "npm": {
-      "brace-expansion": "^5.0.6"
-    }
+    "npm": "^11.16.0"
   },
   "jest": {
     "moduleFileExtensions": [
