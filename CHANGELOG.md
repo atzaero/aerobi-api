@@ -1,3 +1,25 @@
+# [2.6.0-beta.1](https://github.com/atzaero/aerobi-api/compare/v2.5.0...v2.6.0-beta.1) (2026-06-01)
+
+
+### Bug Fixes
+
+* **deps:** lockfile compatível com npm 10 (CI) e override fast-uri ([13e88ff](https://github.com/atzaero/aerobi-api/commit/13e88ff52377798a02bba6e4003a2da4102f0db9)), closes [#96](https://github.com/atzaero/aerobi-api/issues/96)
+* **deps:** remover override npm do package.json ([#97](https://github.com/atzaero/aerobi-api/issues/97)) ([0d75112](https://github.com/atzaero/aerobi-api/commit/0d75112f033de483e38157c86cd077276a231012))
+* **seeds:** RUN_SEEDS_ON_BOOT default true em dev / false em prod ([#121](https://github.com/atzaero/aerobi-api/issues/121)) ([ddd4631](https://github.com/atzaero/aerobi-api/commit/ddd4631dc5cc6a0b1cc6f2ccbbe7b5092fb346e9))
+* **swagger:** reescreve descrição evitando bold+inline-code adjacente ([f80a6ff](https://github.com/atzaero/aerobi-api/commit/f80a6ff14660d13b75175555afb0f0dbd5f6f780)), closes [#124](https://github.com/atzaero/aerobi-api/issues/124)
+* **swagger:** registrar Bearer JWT no DocumentBuilder ([#124](https://github.com/atzaero/aerobi-api/issues/124)) ([113a8ff](https://github.com/atzaero/aerobi-api/commit/113a8ffc011198d55f1a41665d7be12f2b460387))
+* **users,auth:** DI por classe direta + validator IsStrongPassword decorator ([08934ec](https://github.com/atzaero/aerobi-api/commit/08934eccd096baa34d26b5e8c2aa8428a53b41af)), closes [#117](https://github.com/atzaero/aerobi-api/issues/117)
+
+
+### Features
+
+* **auth:** módulo auth com JWT RS256 + refresh token rotacionado ([#113](https://github.com/atzaero/aerobi-api/issues/113)) ([a02b02c](https://github.com/atzaero/aerobi-api/commit/a02b02c0460f094a9254e6640704c4645e031391))
+* **aviascan:** adiciona proxy paginado de leituras de matrículas ([e7da543](https://github.com/atzaero/aerobi-api/commit/e7da5439097a3f7e3d34e219ac1089734e1616ee)), closes [#154](https://github.com/atzaero/aerobi-api/issues/154)
+* **aviascan:** cache in-memory das leituras paginadas ([ad6dc18](https://github.com/atzaero/aerobi-api/commit/ad6dc188e59cd46b67d026fc1d24bc9994cd2239)), closes [#156](https://github.com/atzaero/aerobi-api/issues/156)
+* **ci:** adiciona caminho de deploy staging via semantic-release prerelease ([6f76fc3](https://github.com/atzaero/aerobi-api/commit/6f76fc39a0286bd2c10b3605773ba3f645d43fd6))
+* **users,auth:** tabela users + RefreshToken + TokenType.INVITE + seed bootstrap ([#111](https://github.com/atzaero/aerobi-api/issues/111)) ([75b951f](https://github.com/atzaero/aerobi-api/commit/75b951f5b0e89b853bf110d6edb41374d7c6b314))
+* **users:** módulo users com CRUD + invite/accept + password-reset ([#117](https://github.com/atzaero/aerobi-api/issues/117)) ([5426d4c](https://github.com/atzaero/aerobi-api/commit/5426d4cc3748302b1c81f9e76d72d9303ef2bace)), closes [#111](https://github.com/atzaero/aerobi-api/issues/111) [#114](https://github.com/atzaero/aerobi-api/issues/114) [#116](https://github.com/atzaero/aerobi-api/issues/116)
+
 # [2.5.0](https://github.com/atzaero/aerobi-api/compare/v2.4.0...v2.5.0) (2026-05-08)
 
 
