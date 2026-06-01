@@ -6,30 +6,13 @@ run-name: Release from ${{ github.ref_name }} by @${{ github.actor }}
 #   push develop → semantic-release prerelease (vX.Y.Z-beta.N) → deploy STAGING
 #   push main    → semantic-release estável     (vX.Y.Z)        → deploy PRODUÇÃO
 #
-# Sequência garantida: release → docker (build/push GHCR) → deploy (sem race).
-# O roteamento staging vs produção é decidido por `is_prerelease` (a versão
-# gerada conter `-beta.N`), calculado no job `release`.
+# Sequência: release → docker (build/push GHCR) → deploy (job reutilizável
+# deploy.yml, parametrizado por ambiente). O roteamento staging vs produção é
+# decidido por `is_prerelease` (a versão gerada conter `-beta.N`).
 #
-# -----------------------------------------------------------------------------
-# Secrets / variables por GitHub Environment ('production' e 'staging')
-# -----------------------------------------------------------------------------
-# Conexão SSH é a MESMA VPS nos dois ambientes → repo-level:
-#   GH_TOKEN, SSH_PRIVATE_KEY, REMOTE_HOST, REMOTE_PORT, REMOTE_USER
-#
-# Diferem por ambiente (Environment secrets — produção mantém repo-level por ora):
-#   DATABASE_URL, CORS_ORIGINS, FRONTEND_URL, AEROBI_API_KEY, ...
-# Diferem por ambiente (Environment variables, não sensível):
-#   REMOTE_TARGET (path do compose na VPS), HOST_PORT (bind de host)
-#
-# ⚠️  Porta de host vem da FONTE DA VERDADE do Ansible (não inventar):
-#     aerobi-ansible/inventory/prod/group_vars/all/ports.yml → app_ports
-#       prod    aerobi-api = 3333
-#       staging aerobi-api = 3433   (= 3333 + 100)
-#     prod usa secrets.APP_PORT (fallback 3333); staging usa vars.HOST_PORT (3433).
-#
-# Demais secrets (opcionais) continuam iguais aos de antes — ver lista no bloco
-# "Create .env" de cada deploy. Documentação completa: docs/DEPLOY_STAGING.md.
-# -----------------------------------------------------------------------------
+# Secrets/variables: conexão SSH é repo-level (mesma VPS); config de aplicação
+# vem do GitHub Environment ('production' / 'staging'). Detalhes e checklist:
+# docs/DEPLOY_STAGING.md.
 
 on:
   workflow_dispatch:
@@ -43,10 +26,6 @@ permissions:
   issues: write
   pull-requests: write
   packages: write
-
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   release:
@@ -78,8 +57,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           npx semantic-release 2>&1 | tee release-output.log
-          # Captura a versão COMPLETA, incluindo sufixo de prerelease (-beta.N).
-          VERSION=$(grep -oP 'Published release \K[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?' release-output.log | head -n1 || echo "")
+          # Remove escapes ANSI antes de extrair (robusto a FORCE_COLOR/TTY) e
+          # captura a versão COMPLETA, incluindo sufixo de prerelease (-beta.N).
+          VERSION=$(sed -r 's/\x1b\[[0-9;]*[A-Za-z]//g' release-output.log \
+            | grep -oP 'Published release \K[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?' \
+            | head -n1 || echo "")
           if [ -n "$VERSION" ]; then
             echo "new_release_published=true" >> $GITHUB_OUTPUT
             echo "new_release_version=$VERSION" >> $GITHUB_OUTPUT
@@ -113,7 +95,7 @@ jobs:
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
@@ -121,8 +103,9 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          # `latest` só em release estável; prerelease recebe a tag móvel `beta`.
+          images: ghcr.io/${{ github.repository }}
+          # `latest` só em release estável; prerelease recebe a tag móvel `beta`
+          # (beta NUNCA sobrescreve `latest`, que é o que produção segue).
           tags: |
             type=raw,value=${{ needs.release.outputs.new_release_version }}
             type=raw,value=latest,enable=${{ needs.release.outputs.is_prerelease == 'false' }}
@@ -140,247 +123,32 @@ jobs:
           cache-to: type=gha,mode=max
 
   deploy-production:
-    name: Deploy to Production
-    runs-on: ubuntu-latest
+    name: Production
     needs: [release, docker]
     if: needs.release.outputs.new_release_published == 'true' && needs.release.outputs.is_prerelease == 'false'
-    # Environment 'production' (Environment secrets vazio → repo-level continua
-    # valendo; comportamento de produção inalterado).
-    environment:
-      name: production
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: production
+      compose_file: docker-compose.prod.yml
+      env_file: .env
+      node_env: production
+      image_tag: ${{ needs.release.outputs.new_release_version }}
       url: https://api.aerobi.com.br
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          ref: v${{ needs.release.outputs.new_release_version }}
-
-      - name: Create SSH key
-        run: |
-          mkdir -p ~/.ssh/
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ secrets.REMOTE_HOST }} >> ~/.ssh/known_hosts || true
-
-      - name: Check and Create Target Directory
-        run: |
-          ssh -i ~/.ssh/deploy_key -p ${{ secrets.REMOTE_PORT }} ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} "
-            if [ ! -d \"${{ secrets.REMOTE_TARGET }}\" ]; then
-              mkdir -p ${{ secrets.REMOTE_TARGET }} && echo 'Directory created.';
-            else
-              echo 'Target directory exists.';
-            fi
-          "
-
-      - name: Create .env and transfer files
-        run: |
-          set -e
-          : > .env
-          echo "REGISTRY=${{ env.REGISTRY }}" >> .env
-          echo "IMAGE_NAME=${{ env.IMAGE_NAME }}" >> .env
-          echo "TAG=${{ needs.release.outputs.new_release_version }}" >> .env
-          echo "NODE_ENV=production" >> .env
-          if [ -n "${{ secrets.APP_PORT }}" ]; then echo "PORT=${{ secrets.APP_PORT }}" >> .env; else echo "PORT=3333" >> .env; fi
-          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
-          echo "CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}" >> .env
-          if [ -n "${{ secrets.ANAC_RAB_INDEX_URL }}" ]; then echo "ANAC_RAB_INDEX_URL=${{ secrets.ANAC_RAB_INDEX_URL }}" >> .env; fi
-          if [ -n "${{ secrets.HTTP_USER_AGENT }}" ]; then echo "HTTP_USER_AGENT=${{ secrets.HTTP_USER_AGENT }}" >> .env; fi
-          if [ -n "${{ secrets.AEROBI_API_KEY }}" ]; then echo "AEROBI_API_KEY=${{ secrets.AEROBI_API_KEY }}" >> .env; fi
-          if [ -n "${{ secrets.AEROBI_REQUIRE_AUTH }}" ]; then echo "AEROBI_REQUIRE_AUTH=${{ secrets.AEROBI_REQUIRE_AUTH }}" >> .env; fi
-          if [ -n "${{ secrets.PLUGFIELD_API_KEY }}" ]; then echo "PLUGFIELD_API_KEY=${{ secrets.PLUGFIELD_API_KEY }}" >> .env; fi
-          if [ -n "${{ secrets.PLUGFIELD_TOKEN }}" ]; then echo "PLUGFIELD_TOKEN=${{ secrets.PLUGFIELD_TOKEN }}" >> .env; fi
-          if [ -n "${{ secrets.PLUGFIELD_API_BASE_URL }}" ]; then echo "PLUGFIELD_API_BASE_URL=${{ secrets.PLUGFIELD_API_BASE_URL }}" >> .env; fi
-          if [ -n "${{ secrets.PLUGFIELD_HTTP_TIMEOUT_MS }}" ]; then echo "PLUGFIELD_HTTP_TIMEOUT_MS=${{ secrets.PLUGFIELD_HTTP_TIMEOUT_MS }}" >> .env; fi
-          if [ -n "${{ secrets.AISWEB_API_KEY }}" ]; then echo "AISWEB_API_KEY=${{ secrets.AISWEB_API_KEY }}" >> .env; fi
-          if [ -n "${{ secrets.AISWEB_API_PASS }}" ]; then echo "AISWEB_API_PASS=${{ secrets.AISWEB_API_PASS }}" >> .env; fi
-          if [ -n "${{ secrets.AISWEB_HTTP_TIMEOUT_MS }}" ]; then echo "AISWEB_HTTP_TIMEOUT_MS=${{ secrets.AISWEB_HTTP_TIMEOUT_MS }}" >> .env; fi
-          if [ -n "${{ secrets.AVIASCAN_API_BASE_URL }}" ]; then echo "AVIASCAN_API_BASE_URL=${{ secrets.AVIASCAN_API_BASE_URL }}" >> .env; fi
-          if [ -n "${{ secrets.AVIASCAN_HTTP_TIMEOUT_MS }}" ]; then echo "AVIASCAN_HTTP_TIMEOUT_MS=${{ secrets.AVIASCAN_HTTP_TIMEOUT_MS }}" >> .env; fi
-          if [ -n "${{ secrets.AVIASCAN_CACHE_TTL_MS }}" ]; then echo "AVIASCAN_CACHE_TTL_MS=${{ secrets.AVIASCAN_CACHE_TTL_MS }}" >> .env; fi
-          if [ -n "${{ secrets.RAB_SYNC_CRON }}" ]; then echo "RAB_SYNC_CRON=${{ secrets.RAB_SYNC_CRON }}" >> .env; fi
-          if [ -n "${{ secrets.RAB_SYNC_CRON_DISABLED }}" ]; then echo "RAB_SYNC_CRON_DISABLED=${{ secrets.RAB_SYNC_CRON_DISABLED }}" >> .env; fi
-          # Auth interno (JWT RS256)
-          if [ -n "${{ secrets.JWT_SECRET_PUBLIC_KEY }}" ]; then echo "JWT_SECRET_PUBLIC_KEY=${{ secrets.JWT_SECRET_PUBLIC_KEY }}" >> .env; fi
-          if [ -n "${{ secrets.JWT_SECRET_PRIVATE_KEY }}" ]; then echo "JWT_SECRET_PRIVATE_KEY=${{ secrets.JWT_SECRET_PRIVATE_KEY }}" >> .env; fi
-          if [ -n "${{ secrets.JWT_ACCESS_TTL }}" ]; then echo "JWT_ACCESS_TTL=${{ secrets.JWT_ACCESS_TTL }}" >> .env; fi
-          if [ -n "${{ secrets.JWT_REFRESH_TTL }}" ]; then echo "JWT_REFRESH_TTL=${{ secrets.JWT_REFRESH_TTL }}" >> .env; fi
-          if [ -n "${{ secrets.FRONTEND_URL }}" ]; then echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" >> .env; fi
-          scp -i ~/.ssh/deploy_key -P ${{ secrets.REMOTE_PORT }} \
-            docker-compose.prod.yml .env \
-            ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}:${{ secrets.REMOTE_TARGET }}
-
-      - name: Login to GitHub Container Registry on Remote Server
-        run: |
-          TOKEN="${{ secrets.GH_TOKEN }}"
-          if [ -z "$TOKEN" ]; then
-            echo "ERRO: GH_TOKEN nao disponivel"
-            exit 1
-          fi
-          echo "$TOKEN" | ssh -i ~/.ssh/deploy_key -p ${{ secrets.REMOTE_PORT }} ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} \
-            "docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin"
-
-      - name: Ensure Docker network warpgate exists
-        run: |
-          NETWORK_NAME="warpgate"
-          ssh -i ~/.ssh/deploy_key -p ${{ secrets.REMOTE_PORT }} ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} "
-            if ! docker network inspect \"$NETWORK_NAME\" >/dev/null 2>&1; then
-              docker network create \"$NETWORK_NAME\"
-            fi
-            docker network inspect \"$NETWORK_NAME\" >/dev/null
-          "
-
-      - name: Deploy to Server via SSH
-        run: |
-          ssh -i ~/.ssh/deploy_key -p ${{ secrets.REMOTE_PORT }} \
-            -o ServerAliveInterval=60 \
-            -o ServerAliveCountMax=3 \
-            -o ConnectTimeout=30 \
-            ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} "
-            cd ${{ secrets.REMOTE_TARGET }} && \
-            RETRY=0
-            while [ \$RETRY -lt 3 ]; do
-              if docker compose -f docker-compose.prod.yml --env-file .env pull --quiet; then break; fi
-              RETRY=\$((RETRY + 1))
-              sleep 10
-            done
-            docker compose -f docker-compose.prod.yml down --remove-orphans || true && \
-            docker compose -f docker-compose.prod.yml --env-file .env up -d --force-recreate && \
-            echo 'aerobi-api v${{ needs.release.outputs.new_release_version }} deployed'
-          "
-
-      - name: Cleanup
-        if: always()
-        run: rm -f ~/.ssh/deploy_key
+      # project_name vazio = projeto default (comportamento de produção inalterado)
+    secrets: inherit
 
   deploy-staging:
-    name: Deploy to Staging
-    runs-on: ubuntu-latest
+    name: Staging
     needs: [release, docker]
     if: needs.release.outputs.new_release_published == 'true' && needs.release.outputs.is_prerelease == 'true'
-    # Environment 'staging' — secrets/variables próprios (DB aerobi_staging etc.).
-    environment:
-      name: staging
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: staging
+      compose_file: docker-compose.staging.yml
+      env_file: .env.staging
+      node_env: staging
+      image_tag: ${{ needs.release.outputs.new_release_version }}
       url: https://api.staging.aerobi.com.br
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          ref: v${{ needs.release.outputs.new_release_version }}
-
-      # Trava de segurança: como staging e produção compartilham nomes de secrets
-      # ("mesmas chaves"), um secret NÃO configurado no Environment 'staging' faria
-      # fallback para o valor repo-level (de produção). Abortamos se o DATABASE_URL
-      # não apontar para o banco de staging (aerobi_staging). grep -q não imprime o
-      # segredo nos logs.
-      - name: Guard — Environment 'staging' configurado
-        run: |
-          if [ -z "${{ vars.REMOTE_TARGET }}" ] || [ -z "${{ vars.HOST_PORT }}" ]; then
-            echo "::error::vars.REMOTE_TARGET / vars.HOST_PORT ausentes no Environment 'staging'. Configure antes do deploy."
-            exit 1
-          fi
-          if ! printf '%s' "${{ secrets.DATABASE_URL }}" | grep -q 'aerobi_staging'; then
-            echo "::error::DATABASE_URL não aponta para 'aerobi_staging' — secret do Environment 'staging' provavelmente não configurado (fallback para produção). Abortando deploy."
-            exit 1
-          fi
-
-      - name: Create SSH key
-        run: |
-          mkdir -p ~/.ssh/
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ secrets.REMOTE_HOST }} >> ~/.ssh/known_hosts || true
-
-      - name: Check and Create Target Directory
-        run: |
-          ssh -i ~/.ssh/deploy_key -p ${{ secrets.REMOTE_PORT }} ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} "
-            if [ ! -d \"${{ vars.REMOTE_TARGET }}\" ]; then
-              mkdir -p ${{ vars.REMOTE_TARGET }} && echo 'Directory created.';
-            else
-              echo 'Target directory exists.';
-            fi
-          "
-
-      - name: Create .env.staging and transfer files
-        run: |
-          set -e
-          : > .env.staging
-          echo "REGISTRY=${{ env.REGISTRY }}" >> .env.staging
-          echo "IMAGE_NAME=${{ env.IMAGE_NAME }}" >> .env.staging
-          echo "TAG=${{ needs.release.outputs.new_release_version }}" >> .env.staging
-          echo "NODE_ENV=staging" >> .env.staging
-          # PORT = porta interna do container (fixa 3333). HOST_PORT = bind de host
-          # (3433, fonte da verdade no Ansible), usado pelo docker-compose.staging.yml.
-          echo "PORT=3333" >> .env.staging
-          echo "HOST_PORT=${{ vars.HOST_PORT }}" >> .env.staging
-          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env.staging
-          echo "CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}" >> .env.staging
-          if [ -n "${{ secrets.ANAC_RAB_INDEX_URL }}" ]; then echo "ANAC_RAB_INDEX_URL=${{ secrets.ANAC_RAB_INDEX_URL }}" >> .env.staging; fi
-          if [ -n "${{ secrets.HTTP_USER_AGENT }}" ]; then echo "HTTP_USER_AGENT=${{ secrets.HTTP_USER_AGENT }}" >> .env.staging; fi
-          if [ -n "${{ secrets.AEROBI_API_KEY }}" ]; then echo "AEROBI_API_KEY=${{ secrets.AEROBI_API_KEY }}" >> .env.staging; fi
-          if [ -n "${{ secrets.AEROBI_REQUIRE_AUTH }}" ]; then echo "AEROBI_REQUIRE_AUTH=${{ secrets.AEROBI_REQUIRE_AUTH }}" >> .env.staging; fi
-          if [ -n "${{ secrets.PLUGFIELD_API_KEY }}" ]; then echo "PLUGFIELD_API_KEY=${{ secrets.PLUGFIELD_API_KEY }}" >> .env.staging; fi
-          if [ -n "${{ secrets.PLUGFIELD_TOKEN }}" ]; then echo "PLUGFIELD_TOKEN=${{ secrets.PLUGFIELD_TOKEN }}" >> .env.staging; fi
-          if [ -n "${{ secrets.PLUGFIELD_API_BASE_URL }}" ]; then echo "PLUGFIELD_API_BASE_URL=${{ secrets.PLUGFIELD_API_BASE_URL }}" >> .env.staging; fi
-          if [ -n "${{ secrets.PLUGFIELD_HTTP_TIMEOUT_MS }}" ]; then echo "PLUGFIELD_HTTP_TIMEOUT_MS=${{ secrets.PLUGFIELD_HTTP_TIMEOUT_MS }}" >> .env.staging; fi
-          if [ -n "${{ secrets.AISWEB_API_KEY }}" ]; then echo "AISWEB_API_KEY=${{ secrets.AISWEB_API_KEY }}" >> .env.staging; fi
-          if [ -n "${{ secrets.AISWEB_API_PASS }}" ]; then echo "AISWEB_API_PASS=${{ secrets.AISWEB_API_PASS }}" >> .env.staging; fi
-          if [ -n "${{ secrets.AISWEB_HTTP_TIMEOUT_MS }}" ]; then echo "AISWEB_HTTP_TIMEOUT_MS=${{ secrets.AISWEB_HTTP_TIMEOUT_MS }}" >> .env.staging; fi
-          if [ -n "${{ secrets.AVIASCAN_API_BASE_URL }}" ]; then echo "AVIASCAN_API_BASE_URL=${{ secrets.AVIASCAN_API_BASE_URL }}" >> .env.staging; fi
-          if [ -n "${{ secrets.AVIASCAN_HTTP_TIMEOUT_MS }}" ]; then echo "AVIASCAN_HTTP_TIMEOUT_MS=${{ secrets.AVIASCAN_HTTP_TIMEOUT_MS }}" >> .env.staging; fi
-          if [ -n "${{ secrets.AVIASCAN_CACHE_TTL_MS }}" ]; then echo "AVIASCAN_CACHE_TTL_MS=${{ secrets.AVIASCAN_CACHE_TTL_MS }}" >> .env.staging; fi
-          if [ -n "${{ secrets.RAB_SYNC_CRON }}" ]; then echo "RAB_SYNC_CRON=${{ secrets.RAB_SYNC_CRON }}" >> .env.staging; fi
-          if [ -n "${{ secrets.RAB_SYNC_CRON_DISABLED }}" ]; then echo "RAB_SYNC_CRON_DISABLED=${{ secrets.RAB_SYNC_CRON_DISABLED }}" >> .env.staging; fi
-          # Auth interno (JWT RS256)
-          if [ -n "${{ secrets.JWT_SECRET_PUBLIC_KEY }}" ]; then echo "JWT_SECRET_PUBLIC_KEY=${{ secrets.JWT_SECRET_PUBLIC_KEY }}" >> .env.staging; fi
-          if [ -n "${{ secrets.JWT_SECRET_PRIVATE_KEY }}" ]; then echo "JWT_SECRET_PRIVATE_KEY=${{ secrets.JWT_SECRET_PRIVATE_KEY }}" >> .env.staging; fi
-          if [ -n "${{ secrets.JWT_ACCESS_TTL }}" ]; then echo "JWT_ACCESS_TTL=${{ secrets.JWT_ACCESS_TTL }}" >> .env.staging; fi
-          if [ -n "${{ secrets.JWT_REFRESH_TTL }}" ]; then echo "JWT_REFRESH_TTL=${{ secrets.JWT_REFRESH_TTL }}" >> .env.staging; fi
-          if [ -n "${{ secrets.FRONTEND_URL }}" ]; then echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" >> .env.staging; fi
-          scp -i ~/.ssh/deploy_key -P ${{ secrets.REMOTE_PORT }} \
-            docker-compose.staging.yml .env.staging \
-            ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}:${{ vars.REMOTE_TARGET }}
-
-      - name: Login to GitHub Container Registry on Remote Server
-        run: |
-          TOKEN="${{ secrets.GH_TOKEN }}"
-          if [ -z "$TOKEN" ]; then
-            echo "ERRO: GH_TOKEN nao disponivel"
-            exit 1
-          fi
-          echo "$TOKEN" | ssh -i ~/.ssh/deploy_key -p ${{ secrets.REMOTE_PORT }} ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} \
-            "docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin"
-
-      - name: Ensure Docker network warpgate exists
-        run: |
-          NETWORK_NAME="warpgate"
-          ssh -i ~/.ssh/deploy_key -p ${{ secrets.REMOTE_PORT }} ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} "
-            if ! docker network inspect \"$NETWORK_NAME\" >/dev/null 2>&1; then
-              docker network create \"$NETWORK_NAME\"
-            fi
-            docker network inspect \"$NETWORK_NAME\" >/dev/null
-          "
-
-      # Project name separado (-p staging) → staging coexiste com produção na
-      # mesma VPS sem colidir containers/redes. MESMA imagem GHCR, só a env muda.
-      - name: Deploy Staging to Server via SSH
-        run: |
-          ssh -i ~/.ssh/deploy_key -p ${{ secrets.REMOTE_PORT }} \
-            -o ServerAliveInterval=60 \
-            -o ServerAliveCountMax=3 \
-            -o ConnectTimeout=30 \
-            ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} "
-            cd ${{ vars.REMOTE_TARGET }} && \
-            RETRY=0
-            while [ \$RETRY -lt 3 ]; do
-              if docker compose -p staging -f docker-compose.staging.yml --env-file .env.staging pull --quiet; then break; fi
-              RETRY=\$((RETRY + 1))
-              sleep 10
-            done
-            docker compose -p staging -f docker-compose.staging.yml down --remove-orphans || true && \
-            docker compose -p staging -f docker-compose.staging.yml --env-file .env.staging up -d --force-recreate && \
-            echo 'aerobi-api-staging v${{ needs.release.outputs.new_release_version }} deployed'
-          "
-
-      - name: Cleanup
-        if: always()
-        run: rm -f ~/.ssh/deploy_key
+      project_name: staging
+      db_name_guard: aerobi_staging
+    secrets: inherit
