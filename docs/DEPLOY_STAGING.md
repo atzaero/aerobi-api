@@ -11,7 +11,9 @@ produção existente.
 | `main` | estável | `vX.Y.Z` | automático | **produção** (inalterado) |
 
 - Config: [`.releaserc.json`](../.releaserc.json) → `"branches": ["main", { "name": "develop", "prerelease": "beta" }]`.
-- Workflow: [`.github/workflows/release.yml`](../.github/workflows/release.yml) — um job `release` decide `is_prerelease` (a versão conter `-beta.N`) e roteia para `deploy-staging` ou `deploy-production`.
+- Workflows:
+  - [`.github/workflows/release.yml`](../.github/workflows/release.yml) — `release` (semantic-release, decide `is_prerelease`) → `docker` (build/push GHCR) → `deploy-production` **ou** `deploy-staging`.
+  - [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml) — **workflow reutilizável** (`workflow_call`) que faz o deploy SSH, parametrizado por ambiente (compose, env_file, `project_name`, guard). Os dois jobs de deploy do `release.yml` apenas o invocam com `secrets: inherit`, eliminando duplicação.
 - **Mesma imagem GHCR** roda nos dois ambientes; só muda a env de runtime (NestJS lê config em runtime). Staging usa `docker compose -p staging -f docker-compose.staging.yml`.
 
 ## Portas — fonte da verdade no Ansible
@@ -33,74 +35,69 @@ Infra de staging já provisionada pelo projeto Ansible (`playbooks/setup_staging
 
 ## GitHub Environments
 
-Dois Environments: **`production`** e **`staging`**. Conexão SSH é a MESMA VPS →
-fica repo-level; o que difere por ambiente fica no Environment.
+Dois Environments: **`production`** e **`staging`**, cada um com **as suas
+próprias** variables e secrets. Conexão SSH é a MESMA VPS → fica repo-level.
 
-### Repo-level secrets (compartilhados — já existem)
+### Repo-level secrets (conexão SSH, compartilhados)
 
 `GH_TOKEN`, `SSH_PRIVATE_KEY`, `REMOTE_HOST`, `REMOTE_PORT`, `REMOTE_USER`.
 
-> Produção também mantém `DATABASE_URL`, `CORS_ORIGINS`, `AEROBI_API_KEY`, etc.
-> em repo-level (comportamento atual preservado). O Environment `production` está
-> vazio de secrets — repo-level continua valendo (Environment vazio não sobrepõe).
+> Os secrets de **aplicação** repo-level (`DATABASE_URL`, `AEROBI_API_KEY`, …)
+> tornaram-se redundantes após a migração para o Environment `production` e
+> podem ser removidos depois de validado o primeiro release pós-merge.
 
-### Environment `staging` — variables (não sensível)
+### Variables por Environment (não sensível)
 
-| Variable | Valor | Origem |
+| Variable | `production` | `staging` | Origem |
+|---|---|---|---|
+| `REMOTE_TARGET` | `/home/deploy/apps/aerobi-api` | `/home/deploy/apps/aerobi-api-staging` | Ansible |
+| `HOST_PORT` | `3333` | `3433` | Ansible `ports.yml` |
+
+### Secrets por Environment
+
+Mesmos **nomes** nos dois ambientes, **valores** diferentes. `production` foi
+populado a partir do `.env` do servidor; `staging` com URLs próprias + chaves de
+upstream externo (Plugfield/AISWEB) copiadas de prod.
+
+| Secret | `production` | `staging` |
 |---|---|---|
-| `REMOTE_TARGET` | `/home/deploy/apps/aerobi-api-staging` | Ansible `setup_staging.yml` |
-| `HOST_PORT` | `3433` | Ansible `ports.yml` (`app_ports.staging`) |
+| `DATABASE_URL` | banco `aerobi` | banco `aerobi_staging` (**pendente** — senha no vault) |
+| `AEROBI_API_KEY` | chave prod | **pendente** — chave distinta de staging |
+| `CORS_ORIGINS` | origem prod | `https://staging.aerobi.com.br` |
+| `FRONTEND_URL` | (n/d em prod) | `https://staging.aerobi.com.br` |
+| `PLUGFIELD_*`, `AISWEB_*`, `ANAC_RAB_INDEX_URL`, `HTTP_USER_AGENT` | de prod | copiados de prod |
 
-### Environment `staging` — secrets (obrigatórios)
-
-Mesmos **nomes** dos de produção, **valores** de staging:
-
-| Secret | Observação |
-|---|---|
-| `DATABASE_URL` | **Obrigatório.** `postgresql://aerobi_staging_user:<senha-vault>@postgres:5432/aerobi_staging?schema=public` |
-| `CORS_ORIGINS` | `https://staging.aerobi.com.br` |
-| `FRONTEND_URL` | `https://staging.aerobi.com.br` |
-| `AEROBI_API_KEY` | chave própria de staging |
-
-Opcionais (mesmos nomes da prod, se aplicável): `AEROBI_REQUIRE_AUTH`,
-`PLUGFIELD_API_KEY`, `PLUGFIELD_TOKEN`, `PLUGFIELD_API_BASE_URL`,
-`PLUGFIELD_HTTP_TIMEOUT_MS`, `AISWEB_API_KEY`, `AISWEB_API_PASS`,
-`AISWEB_HTTP_TIMEOUT_MS`, `AVIASCAN_API_BASE_URL`, `AVIASCAN_HTTP_TIMEOUT_MS`,
-`AVIASCAN_CACHE_TTL_MS`, `ANAC_RAB_INDEX_URL`, `HTTP_USER_AGENT`,
-`RAB_SYNC_CRON`, `RAB_SYNC_CRON_DISABLED`, `JWT_SECRET_PUBLIC_KEY`,
+Opcionais (se aplicável, mesmos nomes): `AEROBI_REQUIRE_AUTH`,
+`PLUGFIELD_API_BASE_URL`, `PLUGFIELD_HTTP_TIMEOUT_MS`, `AISWEB_HTTP_TIMEOUT_MS`,
+`AVIASCAN_*`, `RAB_SYNC_CRON`, `RAB_SYNC_CRON_DISABLED`, `JWT_SECRET_PUBLIC_KEY`,
 `JWT_SECRET_PRIVATE_KEY`, `JWT_ACCESS_TTL`, `JWT_REFRESH_TTL`.
 
-> ⚠️ **Trava de segurança.** Como staging e produção compartilham nomes de
-> secrets, um secret **não configurado** no Environment `staging` faz *fallback*
-> para o valor repo-level (de produção). Por isso `DATABASE_URL` é obrigatório, e
-> o job `deploy-staging` **aborta** se o `DATABASE_URL` não apontar para
-> `aerobi_staging`. Configure os secrets de staging **antes** do primeiro deploy.
+> ⚠️ **Trava anti-fallback.** Como os nomes de secret são compartilhados, um
+> secret **não configurado** no Environment faz *fallback* para o valor
+> repo-level. O job de deploy de staging (`deploy.yml`, input `db_name_guard`)
+> **aborta** se: (a) `DATABASE_URL` não apontar para `/aerobi_staging`, ou
+> (b) `CORS_ORIGINS` não contiver `staging`. Configure os secrets pendentes de
+> staging **antes** do primeiro deploy, senão o guard bloqueia (por desenho).
 
 ## Comandos `gh` (setup dos Environments)
+
+Já provisionado (Environments criados, `production` migrado do servidor,
+variables setadas, staging com URLs + chaves de upstream). **Falta apenas**
+setar os dois secrets pendentes de staging:
 
 ```bash
 REPO=atzaero/aerobi-api
 
-# Criar Environments (idempotente)
-gh api -X PUT repos/$REPO/environments/production --silent
-gh api -X PUT repos/$REPO/environments/staging --silent
-
-# Variables do Environment staging (não sensível)
-gh variable set REMOTE_TARGET --env staging --repo $REPO \
-  --body "/home/deploy/apps/aerobi-api-staging"
-gh variable set HOST_PORT --env staging --repo $REPO --body "3433"
-
-# Secrets do Environment staging (valores reais — NÃO commitar)
+# DATABASE_URL de staging — senha em ansible-vault (vault_aerobi_staging_db_password)
 gh secret set DATABASE_URL --env staging --repo $REPO \
   --body "postgresql://aerobi_staging_user:<SENHA_VAULT>@postgres:5432/aerobi_staging?schema=public"
-gh secret set CORS_ORIGINS  --env staging --repo $REPO --body "https://staging.aerobi.com.br"
-gh secret set FRONTEND_URL  --env staging --repo $REPO --body "https://staging.aerobi.com.br"
+
+# AEROBI_API_KEY própria de staging (chave distinta da de produção)
 gh secret set AEROBI_API_KEY --env staging --repo $REPO --body "<CHAVE_STAGING>"
-# ... demais opcionais conforme necessário
 ```
 
-A senha de staging vive no `ansible-vault` do projeto `aerobi-ansible`
-(`vault_aerobi_staging_db_password`).
+> Enquanto `DATABASE_URL` de staging não for setado, a trava anti-fallback do
+> `deploy.yml` bloqueia o deploy de staging (não sobe contra o banco de prod).
 
 ## Fluxo de release
 
