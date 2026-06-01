@@ -1,28 +1,11 @@
 name: CI
 
-# =============================================================================
-# TEMPORÁRIO (issue #154): triggers automáticos desativados até reabilitar
-#
-# Motivo: limite de minutos do GitHub Actions atingido neste ciclo de
-# faturamento; mantemos o workflow disponível via `workflow_dispatch` (rodada
-# manual em github.com → Actions → CI → Run workflow) para não perder a
-# possibilidade de validar pontualmente.
-#
-# Os checks continuam sendo rodados localmente antes do commit/PR:
-#   - npm run lint:check
-#   - npm run format:check
-#   - npm run build
-#   - npm run test
-#
-# REVERTER quando os minutos forem renovados (próximo ciclo de billing):
-# basta restaurar os triggers `push` e `pull_request` abaixo.
-# =============================================================================
 on:
   workflow_dispatch:
-  # push:
-  #   branches: [develop]
-  # pull_request:
-  #   branches: [main, develop]
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [main, develop]
 
 # Nova execução na mesma ref cancela a anterior (menos fila e ruído em PRs).
 concurrency:

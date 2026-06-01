@@ -1,0 +1,206 @@
+name: Deploy (reusable)
+
+# Workflow reutilizável (workflow_call) de deploy via SSH, parametrizado por
+# ambiente. Usado por release.yml para produção e staging — MESMA imagem GHCR,
+# só mudam os inputs e os secrets/variables do GitHub Environment.
+#
+# A porta de host e o diretório-alvo vêm do GitHub Environment (vars.HOST_PORT /
+# vars.REMOTE_TARGET), cujos valores espelham a FONTE DA VERDADE do Ansible
+# (aerobi-ansible/inventory/prod/group_vars/all/ports.yml).
+#
+# Secrets de conexão SSH (REMOTE_*, SSH_PRIVATE_KEY, GH_TOKEN) são repo-level
+# (mesma VPS); os de aplicação (DATABASE_URL, AEROBI_API_KEY, ...) vêm do
+# Environment via `secrets: inherit`.
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: GitHub Environment (production | staging)
+        required: true
+        type: string
+      compose_file:
+        description: docker-compose a usar no servidor
+        required: true
+        type: string
+      env_file:
+        description: nome do arquivo de env gerado/transferido (.env | .env.staging)
+        required: true
+        type: string
+      node_env:
+        description: valor de NODE_ENV
+        required: true
+        type: string
+      image_tag:
+        description: versão/tag da imagem GHCR (sem prefixo v)
+        required: true
+        type: string
+      url:
+        description: URL pública do ambiente (link no GitHub Environment)
+        required: true
+        type: string
+      project_name:
+        description: "docker compose -p <project> (vazio = projeto default, usado por produção)"
+        required: false
+        type: string
+        default: ''
+      db_name_guard:
+        description: "se não-vazio, exige que DATABASE_URL aponte para este banco (trava anti-fallback)"
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  deploy:
+    name: Deploy ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
+      url: ${{ inputs.url }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: v${{ inputs.image_tag }}
+
+      # Trava anti-fallback (só quando db_name_guard é fornecido — ex.: staging).
+      # Como staging e produção compartilham nomes de secret, um secret NÃO
+      # configurado no Environment faz fallback para o repo-level (produção).
+      # Validação POSITIVA por chave: DATABASE_URL deve apontar para o banco
+      # esperado e CORS_ORIGINS deve conter "staging". grep -q não imprime valor.
+      - name: Guard — Environment configurado
+        if: inputs.db_name_guard != ''
+        env:
+          DB_GUARD: ${{ inputs.db_name_guard }}
+          DB_URL: ${{ secrets.DATABASE_URL }}
+          CORS: ${{ secrets.CORS_ORIGINS }}
+          RT: ${{ vars.REMOTE_TARGET }}
+          HP: ${{ vars.HOST_PORT }}
+        run: |
+          if [ -z "$RT" ] || [ -z "$HP" ]; then
+            echo "::error::vars.REMOTE_TARGET / vars.HOST_PORT ausentes no Environment '${{ inputs.environment }}'."
+            exit 1
+          fi
+          if ! printf '%s' "$DB_URL" | grep -qE "/${DB_GUARD}([?]|$)"; then
+            echo "::error::DATABASE_URL não aponta para o banco '${DB_GUARD}' — secret do Environment provavelmente não configurado (fallback para produção). Abortando."
+            exit 1
+          fi
+          if ! printf '%s' "$CORS" | grep -q 'staging'; then
+            echo "::error::CORS_ORIGINS não contém 'staging' — secret do Environment provavelmente em fallback para produção. Abortando."
+            exit 1
+          fi
+
+      - name: Create SSH key
+        run: |
+          mkdir -p ~/.ssh/
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.REMOTE_HOST }} >> ~/.ssh/known_hosts || true
+
+      - name: Check and Create Target Directory
+        env:
+          RT: ${{ vars.REMOTE_TARGET }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -p ${{ secrets.REMOTE_PORT }} ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} "
+            if [ ! -d \"$RT\" ]; then
+              mkdir -p $RT && echo 'Directory created.';
+            else
+              echo 'Target directory exists.';
+            fi
+          "
+
+      - name: Create env file and transfer
+        env:
+          ENVF: ${{ inputs.env_file }}
+          NODE_ENV_IN: ${{ inputs.node_env }}
+          TAG_IN: ${{ inputs.image_tag }}
+          HOST_PORT_IN: ${{ vars.HOST_PORT }}
+          RT: ${{ vars.REMOTE_TARGET }}
+        run: |
+          set -e
+          : > "$ENVF"
+          echo "REGISTRY=ghcr.io" >> "$ENVF"
+          echo "IMAGE_NAME=${{ github.repository }}" >> "$ENVF"
+          echo "TAG=$TAG_IN" >> "$ENVF"
+          echo "NODE_ENV=$NODE_ENV_IN" >> "$ENVF"
+          # PORT = porta interna do container (app escuta 3333). HOST_PORT = bind
+          # de host (do Environment), usado pelos compose para o mapeamento.
+          echo "PORT=3333" >> "$ENVF"
+          echo "HOST_PORT=$HOST_PORT_IN" >> "$ENVF"
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> "$ENVF"
+          echo "CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}" >> "$ENVF"
+          if [ -n "${{ secrets.ANAC_RAB_INDEX_URL }}" ]; then echo "ANAC_RAB_INDEX_URL=${{ secrets.ANAC_RAB_INDEX_URL }}" >> "$ENVF"; fi
+          if [ -n "${{ secrets.HTTP_USER_AGENT }}" ]; then echo "HTTP_USER_AGENT=${{ secrets.HTTP_USER_AGENT }}" >> "$ENVF"; fi
+          if [ -n "${{ secrets.AEROBI_API_KEY }}" ]; then echo "AEROBI_API_KEY=${{ secrets.AEROBI_API_KEY }}" >> "$ENVF"; fi
+          if [ -n "${{ secrets.AEROBI_REQUIRE_AUTH }}" ]; then echo "AEROBI_REQUIRE_AUTH=${{ secrets.AEROBI_REQUIRE_AUTH }}" >> "$ENVF"; fi
+          if [ -n "${{ secrets.PLUGFIELD_API_KEY }}" ]; then echo "PLUGFIELD_API_KEY=${{ secrets.PLUGFIELD_API_KEY }}" >> "$ENVF"; fi
+          if [ -n "${{ secrets.PLUGFIELD_TOKEN }}" ]; then echo "PLUGFIELD_TOKEN=${{ secrets.PLUGFIELD_TOKEN }}" >> "$ENVF"; fi
+          if [ -n "${{ secrets.PLUGFIELD_API_BASE_URL }}" ]; then echo "PLUGFIELD_API_BASE_URL=${{ secrets.PLUGFIELD_API_BASE_URL }}" >> "$ENVF"; fi
+          if [ -n "${{ secrets.PLUGFIELD_HTTP_TIMEOUT_MS }}" ]; then echo "PLUGFIELD_HTTP_TIMEOUT_MS=${{ secrets.PLUGFIELD_HTTP_TIMEOUT_MS }}" >> "$ENVF"; fi
+          if [ -n "${{ secrets.AISWEB_API_KEY }}" ]; then echo "AISWEB_API_KEY=${{ secrets.AISWEB_API_KEY }}" >> "$ENVF"; fi
+          if [ -n "${{ secrets.AISWEB_API_PASS }}" ]; then echo "AISWEB_API_PASS=${{ secrets.AISWEB_API_PASS }}" >> "$ENVF"; fi
+          if [ -n "${{ secrets.AISWEB_HTTP_TIMEOUT_MS }}" ]; then echo "AISWEB_HTTP_TIMEOUT_MS=${{ secrets.AISWEB_HTTP_TIMEOUT_MS }}" >> "$ENVF"; fi
+          if [ -n "${{ secrets.AVIASCAN_API_BASE_URL }}" ]; then echo "AVIASCAN_API_BASE_URL=${{ secrets.AVIASCAN_API_BASE_URL }}" >> "$ENVF"; fi
+          if [ -n "${{ secrets.AVIASCAN_HTTP_TIMEOUT_MS }}" ]; then echo "AVIASCAN_HTTP_TIMEOUT_MS=${{ secrets.AVIASCAN_HTTP_TIMEOUT_MS }}" >> "$ENVF"; fi
+          if [ -n "${{ secrets.AVIASCAN_CACHE_TTL_MS }}" ]; then echo "AVIASCAN_CACHE_TTL_MS=${{ secrets.AVIASCAN_CACHE_TTL_MS }}" >> "$ENVF"; fi
+          if [ -n "${{ secrets.RAB_SYNC_CRON }}" ]; then echo "RAB_SYNC_CRON=${{ secrets.RAB_SYNC_CRON }}" >> "$ENVF"; fi
+          if [ -n "${{ secrets.RAB_SYNC_CRON_DISABLED }}" ]; then echo "RAB_SYNC_CRON_DISABLED=${{ secrets.RAB_SYNC_CRON_DISABLED }}" >> "$ENVF"; fi
+          # Auth interno (JWT RS256)
+          if [ -n "${{ secrets.JWT_SECRET_PUBLIC_KEY }}" ]; then echo "JWT_SECRET_PUBLIC_KEY=${{ secrets.JWT_SECRET_PUBLIC_KEY }}" >> "$ENVF"; fi
+          if [ -n "${{ secrets.JWT_SECRET_PRIVATE_KEY }}" ]; then echo "JWT_SECRET_PRIVATE_KEY=${{ secrets.JWT_SECRET_PRIVATE_KEY }}" >> "$ENVF"; fi
+          if [ -n "${{ secrets.JWT_ACCESS_TTL }}" ]; then echo "JWT_ACCESS_TTL=${{ secrets.JWT_ACCESS_TTL }}" >> "$ENVF"; fi
+          if [ -n "${{ secrets.JWT_REFRESH_TTL }}" ]; then echo "JWT_REFRESH_TTL=${{ secrets.JWT_REFRESH_TTL }}" >> "$ENVF"; fi
+          if [ -n "${{ secrets.FRONTEND_URL }}" ]; then echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" >> "$ENVF"; fi
+          scp -i ~/.ssh/deploy_key -P ${{ secrets.REMOTE_PORT }} \
+            "${{ inputs.compose_file }}" "$ENVF" \
+            ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}:$RT
+
+      - name: Login to GitHub Container Registry on Remote Server
+        run: |
+          TOKEN="${{ secrets.GH_TOKEN }}"
+          if [ -z "$TOKEN" ]; then
+            echo "ERRO: GH_TOKEN nao disponivel"
+            exit 1
+          fi
+          echo "$TOKEN" | ssh -i ~/.ssh/deploy_key -p ${{ secrets.REMOTE_PORT }} ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} \
+            "docker login ghcr.io -u ${{ github.actor }} --password-stdin"
+
+      - name: Ensure Docker network warpgate exists
+        run: |
+          ssh -i ~/.ssh/deploy_key -p ${{ secrets.REMOTE_PORT }} ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} "
+            if ! docker network inspect warpgate >/dev/null 2>&1; then
+              docker network create warpgate
+            fi
+            docker network inspect warpgate >/dev/null
+          "
+
+      - name: Deploy via SSH
+        env:
+          RT: ${{ vars.REMOTE_TARGET }}
+          COMPOSE_FILE: ${{ inputs.compose_file }}
+          ENVF: ${{ inputs.env_file }}
+          PROJECT: ${{ inputs.project_name }}
+          VERSION: ${{ inputs.image_tag }}
+        run: |
+          PF=""
+          [ -n "$PROJECT" ] && PF="-p $PROJECT"
+          ssh -i ~/.ssh/deploy_key -p ${{ secrets.REMOTE_PORT }} \
+            -o ServerAliveInterval=60 \
+            -o ServerAliveCountMax=3 \
+            -o ConnectTimeout=30 \
+            ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} "
+            cd $RT && \
+            RETRY=0
+            while [ \$RETRY -lt 3 ]; do
+              if docker compose $PF -f $COMPOSE_FILE --env-file $ENVF pull --quiet; then break; fi
+              RETRY=\$((RETRY + 1))
+              sleep 10
+            done
+            docker compose $PF -f $COMPOSE_FILE down --remove-orphans || true && \
+            docker compose $PF -f $COMPOSE_FILE --env-file $ENVF up -d --force-recreate && \
+            echo '${{ inputs.environment }} v$VERSION deployed'
+          "
+
+      - name: Cleanup
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
