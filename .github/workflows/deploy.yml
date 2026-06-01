@@ -116,41 +116,32 @@ jobs:
           TAG_IN: ${{ inputs.image_tag }}
           HOST_PORT_IN: ${{ vars.HOST_PORT }}
           RT: ${{ vars.REMOTE_TARGET }}
+          # Todos os secrets (Environment + repo-level via inherit) como JSON.
+          # Lido por env (não interpolado no script) — evita injeção e vazamento.
+          SECRETS_JSON: ${{ toJSON(secrets) }}
         run: |
           set -e
           : > "$ENVF"
-          echo "REGISTRY=ghcr.io" >> "$ENVF"
-          echo "IMAGE_NAME=${{ github.repository }}" >> "$ENVF"
-          echo "TAG=$TAG_IN" >> "$ENVF"
-          echo "NODE_ENV=$NODE_ENV_IN" >> "$ENVF"
-          # PORT = porta interna do container (app escuta 3333). HOST_PORT = bind
-          # de host (do Environment), usado pelos compose para o mapeamento.
-          echo "PORT=3333" >> "$ENVF"
-          echo "HOST_PORT=$HOST_PORT_IN" >> "$ENVF"
-          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> "$ENVF"
-          echo "CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}" >> "$ENVF"
-          if [ -n "${{ secrets.ANAC_RAB_INDEX_URL }}" ]; then echo "ANAC_RAB_INDEX_URL=${{ secrets.ANAC_RAB_INDEX_URL }}" >> "$ENVF"; fi
-          if [ -n "${{ secrets.HTTP_USER_AGENT }}" ]; then echo "HTTP_USER_AGENT=${{ secrets.HTTP_USER_AGENT }}" >> "$ENVF"; fi
-          if [ -n "${{ secrets.AEROBI_API_KEY }}" ]; then echo "AEROBI_API_KEY=${{ secrets.AEROBI_API_KEY }}" >> "$ENVF"; fi
-          if [ -n "${{ secrets.AEROBI_REQUIRE_AUTH }}" ]; then echo "AEROBI_REQUIRE_AUTH=${{ secrets.AEROBI_REQUIRE_AUTH }}" >> "$ENVF"; fi
-          if [ -n "${{ secrets.PLUGFIELD_API_KEY }}" ]; then echo "PLUGFIELD_API_KEY=${{ secrets.PLUGFIELD_API_KEY }}" >> "$ENVF"; fi
-          if [ -n "${{ secrets.PLUGFIELD_TOKEN }}" ]; then echo "PLUGFIELD_TOKEN=${{ secrets.PLUGFIELD_TOKEN }}" >> "$ENVF"; fi
-          if [ -n "${{ secrets.PLUGFIELD_API_BASE_URL }}" ]; then echo "PLUGFIELD_API_BASE_URL=${{ secrets.PLUGFIELD_API_BASE_URL }}" >> "$ENVF"; fi
-          if [ -n "${{ secrets.PLUGFIELD_HTTP_TIMEOUT_MS }}" ]; then echo "PLUGFIELD_HTTP_TIMEOUT_MS=${{ secrets.PLUGFIELD_HTTP_TIMEOUT_MS }}" >> "$ENVF"; fi
-          if [ -n "${{ secrets.AISWEB_API_KEY }}" ]; then echo "AISWEB_API_KEY=${{ secrets.AISWEB_API_KEY }}" >> "$ENVF"; fi
-          if [ -n "${{ secrets.AISWEB_API_PASS }}" ]; then echo "AISWEB_API_PASS=${{ secrets.AISWEB_API_PASS }}" >> "$ENVF"; fi
-          if [ -n "${{ secrets.AISWEB_HTTP_TIMEOUT_MS }}" ]; then echo "AISWEB_HTTP_TIMEOUT_MS=${{ secrets.AISWEB_HTTP_TIMEOUT_MS }}" >> "$ENVF"; fi
-          if [ -n "${{ secrets.AVIASCAN_API_BASE_URL }}" ]; then echo "AVIASCAN_API_BASE_URL=${{ secrets.AVIASCAN_API_BASE_URL }}" >> "$ENVF"; fi
-          if [ -n "${{ secrets.AVIASCAN_HTTP_TIMEOUT_MS }}" ]; then echo "AVIASCAN_HTTP_TIMEOUT_MS=${{ secrets.AVIASCAN_HTTP_TIMEOUT_MS }}" >> "$ENVF"; fi
-          if [ -n "${{ secrets.AVIASCAN_CACHE_TTL_MS }}" ]; then echo "AVIASCAN_CACHE_TTL_MS=${{ secrets.AVIASCAN_CACHE_TTL_MS }}" >> "$ENVF"; fi
-          if [ -n "${{ secrets.RAB_SYNC_CRON }}" ]; then echo "RAB_SYNC_CRON=${{ secrets.RAB_SYNC_CRON }}" >> "$ENVF"; fi
-          if [ -n "${{ secrets.RAB_SYNC_CRON_DISABLED }}" ]; then echo "RAB_SYNC_CRON_DISABLED=${{ secrets.RAB_SYNC_CRON_DISABLED }}" >> "$ENVF"; fi
-          # Auth interno (JWT RS256)
-          if [ -n "${{ secrets.JWT_SECRET_PUBLIC_KEY }}" ]; then echo "JWT_SECRET_PUBLIC_KEY=${{ secrets.JWT_SECRET_PUBLIC_KEY }}" >> "$ENVF"; fi
-          if [ -n "${{ secrets.JWT_SECRET_PRIVATE_KEY }}" ]; then echo "JWT_SECRET_PRIVATE_KEY=${{ secrets.JWT_SECRET_PRIVATE_KEY }}" >> "$ENVF"; fi
-          if [ -n "${{ secrets.JWT_ACCESS_TTL }}" ]; then echo "JWT_ACCESS_TTL=${{ secrets.JWT_ACCESS_TTL }}" >> "$ENVF"; fi
-          if [ -n "${{ secrets.JWT_REFRESH_TTL }}" ]; then echo "JWT_REFRESH_TTL=${{ secrets.JWT_REFRESH_TTL }}" >> "$ENVF"; fi
-          if [ -n "${{ secrets.FRONTEND_URL }}" ]; then echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" >> "$ENVF"; fi
+          # Valores geridos pelo workflow + conexão SSH: NÃO entram no .env da app.
+          DENY="GITHUB_TOKEN GH_TOKEN SSH_PRIVATE_KEY REMOTE_HOST REMOTE_PORT REMOTE_USER REMOTE_TARGET REGISTRY IMAGE_NAME TAG NODE_ENV PORT APP_PORT HOST_PORT"
+          {
+            echo "REGISTRY=ghcr.io"
+            echo "IMAGE_NAME=${{ github.repository }}"
+            echo "TAG=$TAG_IN"
+            echo "NODE_ENV=$NODE_ENV_IN"
+            # PORT = porta interna do container (3333). HOST_PORT = bind de host.
+            echo "PORT=3333"
+            echo "HOST_PORT=$HOST_PORT_IN"
+          } >> "$ENVF"
+          # Todo o resto dos secrets vira config da app AUTOMATICAMENTE — sem
+          # allowlist manual (não há como "esquecer" MAIL_*/JWT_*/AVIASCAN_* etc.).
+          # jq escreve direto no arquivo (não no stdout) → não vaza nos logs.
+          printf '%s' "$SECRETS_JSON" | jq -r --arg deny "$DENY" '
+            ($deny | split(" ")) as $d
+            | to_entries[]
+            | select(.key as $k | ($d | index($k)) | not)
+            | "\(.key)=\(.value)"
+          ' >> "$ENVF"
           scp -i ~/.ssh/deploy_key -P ${{ secrets.REMOTE_PORT }} \
             "${{ inputs.compose_file }}" "$ENVF" \
             ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}:$RT
