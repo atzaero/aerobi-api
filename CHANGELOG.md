@@ -1,3 +1,10 @@
+# [2.6.0-beta.2](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.1...v2.6.0-beta.2) (2026-06-01)
+
+
+### Bug Fixes
+
+* **ci:** gera .env de deploy a partir de todos os secrets do Environment ([1978ee8](https://github.com/atzaero/aerobi-api/commit/1978ee8a653de1fe4ec0fa2e9760533be0ce2fd5))
+
 # [2.6.0-beta.1](https://github.com/atzaero/aerobi-api/compare/v2.5.0...v2.6.0-beta.1) (2026-06-01)
 
 
