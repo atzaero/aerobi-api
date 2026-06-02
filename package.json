@@ -28,7 +28,7 @@
     "security:check": "npm audit --package-lock-only --audit-level=high --omit=dev"
   },
   "dependencies": {
-    "@nestjs-modules/mailer": "^2.3.4",
+    "@nestjs-modules/mailer": "^2.3.6",
     "@nestjs/axios": "^4.0.1",
     "@nestjs/common": "^11.1.9",
     "@nestjs/config": "^4.0.2",
