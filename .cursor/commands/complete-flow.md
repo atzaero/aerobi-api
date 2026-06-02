@@ -10,5 +10,6 @@ Comandos atômicos referenciados por este fluxo:
 - [`.claude/commands/commit.md`](../../.claude/commands/commit.md)
 - [`.claude/commands/review.md`](../../.claude/commands/review.md)
 - [`.claude/commands/pr.md`](../../.claude/commands/pr.md)
+- [`.claude/commands/babysit-pr.md`](../../.claude/commands/babysit-pr.md)
 
 Contexto da stack: [`README.md`](../../README.md)
