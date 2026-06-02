@@ -1,3 +1,10 @@
+# [2.6.0-beta.3](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.2...v2.6.0-beta.3) (2026-06-02)
+
+
+### Features
+
+* adiciona /babysit-pr e integra no complete-flow ([f634a2f](https://github.com/atzaero/aerobi-api/commit/f634a2f31c73b7654508d6fd15f9920af26ae155))
+
 # [2.6.0-beta.2](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.1...v2.6.0-beta.2) (2026-06-01)
 
 
