@@ -149,6 +149,6 @@ jobs:
       node_env: staging
       image_tag: ${{ needs.release.outputs.new_release_version }}
       url: https://api.staging.aerobi.com.br
-      project_name: staging
+      project_name: aerobi-api-staging
       db_name_guard: aerobi_staging
     secrets: inherit
