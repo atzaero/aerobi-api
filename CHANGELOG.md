@@ -1,3 +1,10 @@
+# [2.6.0-beta.4](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.3...v2.6.0-beta.4) (2026-06-02)
+
+
+### Bug Fixes
+
+* **deploy:** usa project_name aerobi-api-staging para isolar staging do frontend ([#169](https://github.com/atzaero/aerobi-api/issues/169)) ([98448c8](https://github.com/atzaero/aerobi-api/commit/98448c8fa94271e2b4baa912b187d089e09977ac))
+
 # [2.6.0-beta.3](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.2...v2.6.0-beta.3) (2026-06-02)
 
 
