@@ -103,4 +103,17 @@ export enum ErrorCode {
 
   /** Tentativa de alteração de role por usuário sem permissão. */
   ROLE_CHANGE_FORBIDDEN = 'ROLE_CHANGE_FORBIDDEN',
+
+  // ---------------------------------------------------------------------------
+  // Storage / object storage (módulo `storage` — MinIO/S3)
+  // ---------------------------------------------------------------------------
+
+  /** Falha ao enviar arquivo para o object storage (MinIO/S3). */
+  STORAGE_UPLOAD_FAILED = 'STORAGE_UPLOAD_FAILED',
+
+  /** Falha ao remover arquivo do object storage. */
+  STORAGE_DELETE_FAILED = 'STORAGE_DELETE_FAILED',
+
+  /** Falha ao gerar presigned URL / baixar objeto do object storage. */
+  STORAGE_GET_PRESIGNED_URL_FAILED = 'STORAGE_GET_PRESIGNED_URL_FAILED',
 }

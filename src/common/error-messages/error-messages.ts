@@ -109,4 +109,18 @@ export const messages: Record<ErrorCode, { message: string }> = {
   [ErrorCode.ROLE_CHANGE_FORBIDDEN]: {
     message: 'Apenas administradores podem alterar a role de um usuário.',
   },
+
+  // ---------------------------------------------------------------------------
+  // Storage / object storage (MinIO/S3)
+  // ---------------------------------------------------------------------------
+  [ErrorCode.STORAGE_UPLOAD_FAILED]: {
+    message: 'Falha ao enviar o arquivo para o armazenamento: [ERROR_MESSAGE].',
+  },
+  [ErrorCode.STORAGE_DELETE_FAILED]: {
+    message: 'Falha ao remover o arquivo do armazenamento: [ERROR_MESSAGE].',
+  },
+  [ErrorCode.STORAGE_GET_PRESIGNED_URL_FAILED]: {
+    message:
+      'Falha ao gerar o link de acesso ao arquivo no armazenamento: [ERROR_MESSAGE].',
+  },
 } as const;
