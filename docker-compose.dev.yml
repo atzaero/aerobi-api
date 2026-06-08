@@ -50,8 +50,8 @@ services:
       until mc alias set local http://minio:9000 '${MINIO_ACCESS_KEY:-aerobi-admin}' '${MINIO_SECRET_KEY:-minio_dev_only}'; do
         echo 'aguardando minio...'; sleep 2;
       done;
-      mc mb --ignore-existing local/${MINIO_BUCKET_AVIASCAN:-aerobi-dev-aviascan};
-      echo 'bucket pronto: ${MINIO_BUCKET_AVIASCAN:-aerobi-dev-aviascan}';
+      mc mb --ignore-existing local/${MINIO_BUCKET_READINGS:-aerobi-dev-readings};
+      echo 'bucket pronto: ${MINIO_BUCKET_READINGS:-aerobi-dev-readings}';
       "
     restart: "no"
 
@@ -80,7 +80,7 @@ services:
       MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:-http://localhost:9000}
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-aerobi-admin}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minio_dev_only}
-      MINIO_BUCKET_AVIASCAN: ${MINIO_BUCKET_AVIASCAN:-aerobi-dev-aviascan}
+      MINIO_BUCKET_READINGS: ${MINIO_BUCKET_READINGS:-aerobi-dev-readings}
     depends_on:
       postgres:
         condition: service_healthy
