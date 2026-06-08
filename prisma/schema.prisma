@@ -354,6 +354,45 @@ model LandingRequest {
   @@map("landing_requests")
 }
 
+/// Leitura de matrícula de aeronave reconhecida por OCR a partir de uma imagem
+/// capturada por câmera em um aeródromo (pipeline aviascan-cv → aerobi-api).
+/// Cada registro guarda a matrícula lida, a confiança, a imagem (key no MinIO)
+/// e o status de validação humana.
+model AircraftReading {
+  id String @id @default(uuid()) @db.Uuid
+
+  /// Matrícula da aeronave lida por OCR (ex.: PR-ZTT).
+  registration    String   @map("registration")
+  /// Confiança da leitura como string (ex.: "0.98") — fiel ao formato enviado pelo OCR.
+  confidence      String   @map("confidence")
+  /// Momento da captura/leitura da imagem.
+  readingDatetime DateTime @map("reading_datetime") @db.Timestamptz(3)
+
+  /// Status de validação humana — `null` = ainda não validada.
+  readingStatus String? @map("reading_status")
+  /// Identificador do revisor (legado `String`; migração para FK `users.id` em PR separado).
+  revisorId     String? @map("revisor_id")
+  /// Key do objeto no MinIO (ex.: `readings/2026/06/<uuid>.jpg`) — nunca a presigned URL.
+  imageKey      String? @map("image_key") @db.Text
+  /// Comentários do revisor.
+  comments      String? @map("comments") @db.Text
+  /// Código ICAO do aeródromo onde a leitura ocorreu (ex.: SSCF).
+  aerodrome     String? @map("aerodrome")
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdBy String?   @map("created_by")
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedBy String?   @map("updated_by")
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+  deletedBy String?   @map("deleted_by")
+
+  @@index([registration])
+  @@index([aerodrome, readingDatetime])
+  @@index([readingDatetime])
+  @@index([deletedAt])
+  @@map("aircraft_reading")
+}
+
 /// Visita técnica em aeródromo (`technicalVisit` no Firestore). ICAO, CIAD, pista, nome e município do aeródromo vêm de `operational_aerodromes` via FK (evita duplicar o cadastro).
 model TechnicalVisit {
   id                     String               @id @default(uuid()) @db.Uuid
