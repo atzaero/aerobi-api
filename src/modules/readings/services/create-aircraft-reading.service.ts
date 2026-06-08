@@ -13,6 +13,7 @@ import {
   buildReadingImageKey,
   isAllowedImageMimetype,
 } from '../utils/reading-image';
+import { resolveReadingImageUrl } from '../utils/resolve-reading-image-url';
 
 // Valor literal mantido por compatibilidade com o aviascan-api legado (o cliente
 // Python só checa o status code, mas outros consumidores podem ler `message`).
@@ -45,7 +46,7 @@ export class CreateAircraftReadingService {
     return {
       id: created.id,
       message: LEGACY_SUCCESS_MESSAGE,
-      image_path: await this.resolveImageUrl(imageKey),
+      image_path: await resolveReadingImageUrl(this.storage, imageKey),
     };
   }
 
@@ -71,26 +72,6 @@ export class CreateAircraftReadingService {
         });
       }
       throw err;
-    }
-  }
-
-  /**
-   * Resolve a presigned URL como best-effort: o registro já foi persistido, então
-   * uma falha aqui não deve derrubar a operação (evita que o cliente reenvie e
-   * duplique a leitura). Retorna `null` e loga em caso de falha.
-   */
-  private async resolveImageUrl(
-    imageKey: string | null,
-  ): Promise<string | null> {
-    if (!imageKey) {
-      return null;
-    }
-    try {
-      return await this.storage.getPresignedUrl(imageKey);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      this.logger.warn(`Falha ao gerar presigned URL de ${imageKey}: ${msg}`);
-      return null;
     }
   }
 

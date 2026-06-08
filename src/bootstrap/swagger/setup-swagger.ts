@@ -28,7 +28,7 @@ Aplica em:
 - \`/private-aerodromes/*\` e \`/public-aerodromes/*\`
 - \`/plugfield/*\`
 - \`/aisweb/*\`
-- \`/aviascan/*\`
+- \`/readings\`
 - \`/anac/*\`
 - \`/aerodrome-groups\`, \`/operational-aerodromes\`, \`/aerodrome-geojsons\`, \`/aerodrome-feedbacks\`
 - \`/landing-requests\`, \`/technical-visits\`, \`/pilot-landings\`
