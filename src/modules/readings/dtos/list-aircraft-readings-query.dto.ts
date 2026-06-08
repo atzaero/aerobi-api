@@ -1,10 +1,8 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, Matches } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 
 import { BasePaginationQueryDTO } from '@/common/dtos/base-pagination-query.dto';
-
-/** Filtro de data por dia (`YYYY-MM-DD`), aplicado sobre `reading_datetime`. */
-const DATE_FORMAT = /^\d{4}-\d{2}-\d{2}$/;
+import { IsYmdDate } from '@/common/validators/is-ymd-date.validator';
 
 /**
  * Query de `GET /readings`. Herda `page`/`limit` e adiciona os mesmos filtros do
@@ -31,10 +29,7 @@ export class ListAircraftReadingsQueryDTO extends BasePaginationQueryDTO {
     description: 'Data inicial (YYYY-MM-DD), inclusiva.',
   })
   @IsOptional()
-  @IsString()
-  @Matches(DATE_FORMAT, {
-    message: 'start_date deve estar no formato YYYY-MM-DD',
-  })
+  @IsYmdDate()
   start_date?: string;
 
   @ApiPropertyOptional({
@@ -42,9 +37,6 @@ export class ListAircraftReadingsQueryDTO extends BasePaginationQueryDTO {
     description: 'Data final (YYYY-MM-DD), inclusiva.',
   })
   @IsOptional()
-  @IsString()
-  @Matches(DATE_FORMAT, {
-    message: 'end_date deve estar no formato YYYY-MM-DD',
-  })
+  @IsYmdDate()
   end_date?: string;
 }
