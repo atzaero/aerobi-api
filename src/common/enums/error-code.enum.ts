@@ -114,6 +114,9 @@ export enum ErrorCode {
   /** Falha ao remover arquivo do object storage. */
   STORAGE_DELETE_FAILED = 'STORAGE_DELETE_FAILED',
 
-  /** Falha ao gerar presigned URL / baixar objeto do object storage. */
+  /** Falha ao gerar presigned URL do object storage. */
   STORAGE_GET_PRESIGNED_URL_FAILED = 'STORAGE_GET_PRESIGNED_URL_FAILED',
+
+  /** Falha ao baixar objeto do object storage. */
+  STORAGE_DOWNLOAD_FAILED = 'STORAGE_DOWNLOAD_FAILED',
 }

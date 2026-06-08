@@ -14,7 +14,7 @@ import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 
-import { StorageProvider, UploadedFile } from '../interfaces';
+import { StorageProvider } from '../interfaces';
 
 /** Validade padrão de uma presigned URL (1 hora). */
 const PRESIGNED_URL_TTL_SECONDS = 60 * 60;
@@ -22,11 +22,12 @@ const PRESIGNED_URL_TTL_SECONDS = 60 * 60;
 /**
  * Provedor de object storage sobre a API S3 do MinIO (`@aws-sdk/client-s3`).
  *
- * Usa dois clientes: um com o endpoint **interno** (`MINIO_ENDPOINT`, rede
- * Docker) para upload/delete/download, e — quando configurado — outro com o
- * endpoint **público** (`MINIO_PUBLIC_ENDPOINT`) usado apenas para assinar as
- * presigned URLs, garantindo que a assinatura case com o host que o navegador
- * acessa.
+ * Opera sempre com a **key** do objeto (nunca com URLs): o que se persiste é a
+ * key, e a presigned URL é derivada sob demanda. Usa dois clientes: um com o
+ * endpoint **interno** (`MINIO_ENDPOINT`, rede Docker) para upload/delete/
+ * download, e — quando configurado — outro com o endpoint **público**
+ * (`MINIO_PUBLIC_ENDPOINT`) usado apenas para assinar as presigned URLs,
+ * garantindo que a assinatura case com o host que o navegador acessa.
  */
 @Injectable()
 export class MinioStorageProvider implements StorageProvider {
@@ -75,28 +76,11 @@ export class MinioStorageProvider implements StorageProvider {
       throw new Error('MinIO configuration is incomplete');
     }
 
-    this.s3Client = new S3Client({
-      endpoint: this.config.endpoint,
-      region: this.config.region,
-      credentials: {
-        accessKeyId: this.config.accessKey,
-        secretAccessKey: this.config.secretKey,
-      },
-      forcePathStyle: true,
-    });
-
+    this.s3Client = this.buildClient(this.config.endpoint);
     // Cliente dedicado ao endpoint público: as presigned URLs são assinadas com
     // o hostname que o cliente final consegue acessar (ex. s3.aerobi.com.br).
     this.s3PublicClient = this.config.publicEndpoint
-      ? new S3Client({
-          endpoint: this.config.publicEndpoint,
-          region: this.config.region,
-          credentials: {
-            accessKeyId: this.config.accessKey,
-            secretAccessKey: this.config.secretKey,
-          },
-          forcePathStyle: true,
-        })
+      ? this.buildClient(this.config.publicEndpoint)
       : null;
 
     this.logger.log(
@@ -105,76 +89,45 @@ export class MinioStorageProvider implements StorageProvider {
     );
   }
 
-  /**
-   * Extrai a key do objeto a partir de uma URL canônica ou de um path direto.
-   * Robusto a endpoint interno vs público e à presença/ausência do bucket.
-   */
-  private extractPathFromUrl(url: string): string {
-    const bucket = this.config.bucket;
-    let path = url.split('?')[0].split('#')[0];
-
-    if (path.includes(`${this.config.endpoint}/${bucket}/`)) {
-      path = path.replace(`${this.config.endpoint}/${bucket}/`, '');
-    } else if (
-      this.config.publicEndpoint &&
-      path.includes(`${this.config.publicEndpoint}/${bucket}/`)
-    ) {
-      path = path.replace(`${this.config.publicEndpoint}/${bucket}/`, '');
-    } else {
-      const bucketPattern = `/${bucket}/`;
-      const bucketIndex = path.indexOf(bucketPattern);
-      if (bucketIndex !== -1) {
-        path = path.substring(bucketIndex + bucketPattern.length);
-      } else {
-        try {
-          const pathParts = new URL(path).pathname.split('/').filter(Boolean);
-          path =
-            pathParts[0] === bucket && pathParts.length > 1
-              ? pathParts.slice(1).join('/')
-              : pathParts.join('/');
-        } catch {
-          if (path.startsWith(`${bucket}/`)) {
-            path = path.substring(bucket.length + 1);
-          } else if (path.includes(`/${bucket}/`)) {
-            path = path.split(`/${bucket}/`)[1] || path;
-          }
-        }
-      }
-    }
-
-    path = decodeURIComponent(path).trim();
-
-    if (!path) {
-      throw new Error(`Não foi possível extrair a key da URL: ${url}`);
-    }
-
-    return path;
+  private buildClient(endpoint: string): S3Client {
+    return new S3Client({
+      endpoint,
+      region: this.config.region,
+      credentials: {
+        accessKeyId: this.config.accessKey,
+        secretAccessKey: this.config.secretKey,
+      },
+      forcePathStyle: true,
+    });
   }
 
-  /** Detecta se o argumento é uma URL canônica (vs uma key direta). */
-  private isCanonicalUrl(path: string): boolean {
-    return (
-      path.startsWith('http://') ||
-      path.startsWith('https://') ||
-      path.includes(`${this.config.bucket}/`)
+  private assertKey(key: string): void {
+    if (!key || key.trim().length === 0) {
+      throw new Error('A key do objeto não pode ser vazia.');
+    }
+  }
+
+  private fail(
+    err: unknown,
+    code:
+      | ErrorCode.STORAGE_UPLOAD_FAILED
+      | ErrorCode.STORAGE_DELETE_FAILED
+      | ErrorCode.STORAGE_GET_PRESIGNED_URL_FAILED
+      | ErrorCode.STORAGE_DOWNLOAD_FAILED,
+    context: string,
+  ): never {
+    const message = err instanceof Error ? err.message : String(err);
+    this.logger.error(`${context}: ${message}`);
+    throw new CustomHttpException(
+      this.errorMessageService.getMessage(code, { ERROR_MESSAGE: message }),
+      HttpStatus.INTERNAL_SERVER_ERROR,
+      code,
     );
   }
 
-  /** Resolve a key a partir de uma URL canônica ou de uma key já direta. */
-  private resolveKey(path: string): string {
-    const key = this.isCanonicalUrl(path)
-      ? this.extractPathFromUrl(path)
-      : path;
-    if (!key || key.trim().length === 0) {
-      throw new Error(`Key inválida extraída de: "${path}".`);
-    }
-    return key;
-  }
-
-  async upload(file: Express.Multer.File, path: string): Promise<UploadedFile> {
+  async upload(file: Express.Multer.File, key: string): Promise<void> {
+    this.assertKey(key);
     try {
-      const key = `${path}/${file.originalname}`;
-
       await this.s3Client.send(
         new PutObjectCommand({
           Bucket: this.config.bucket,
@@ -183,28 +136,18 @@ export class MinioStorageProvider implements StorageProvider {
           ContentType: file.mimetype,
         }),
       );
-
-      return {
-        url: `${this.config.endpoint}/${this.config.bucket}/${key}`,
-        type: file.mimetype,
-        name: key,
-      };
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      this.logger.error(`Falha ao enviar arquivo para o MinIO: ${message}`);
-      throw new CustomHttpException(
-        this.errorMessageService.getMessage(ErrorCode.STORAGE_UPLOAD_FAILED, {
-          ERROR_MESSAGE: message,
-        }),
-        HttpStatus.INTERNAL_SERVER_ERROR,
+      this.fail(
+        err,
         ErrorCode.STORAGE_UPLOAD_FAILED,
+        'Falha ao enviar arquivo para o MinIO',
       );
     }
   }
 
-  async getPresignedUrl(path: string): Promise<string> {
+  async getPresignedUrl(key: string): Promise<string> {
+    this.assertKey(key);
     try {
-      const key = this.resolveKey(path);
       const command = new GetObjectCommand({
         Bucket: this.config.bucket,
         Key: key,
@@ -216,41 +159,32 @@ export class MinioStorageProvider implements StorageProvider {
         expiresIn: PRESIGNED_URL_TTL_SECONDS,
       });
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      this.logger.error(`Falha ao gerar presigned URL: ${message}`);
-      throw new CustomHttpException(
-        this.errorMessageService.getMessage(
-          ErrorCode.STORAGE_GET_PRESIGNED_URL_FAILED,
-          { ERROR_MESSAGE: message },
-        ),
-        HttpStatus.INTERNAL_SERVER_ERROR,
+      this.fail(
+        err,
         ErrorCode.STORAGE_GET_PRESIGNED_URL_FAILED,
+        'Falha ao gerar presigned URL',
       );
     }
   }
 
-  async delete(path: string): Promise<void> {
+  async delete(key: string): Promise<void> {
+    this.assertKey(key);
     try {
-      const key = this.resolveKey(path);
       await this.s3Client.send(
         new DeleteObjectCommand({ Bucket: this.config.bucket, Key: key }),
       );
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      this.logger.error(`Falha ao remover arquivo do MinIO: ${message}`);
-      throw new CustomHttpException(
-        this.errorMessageService.getMessage(ErrorCode.STORAGE_DELETE_FAILED, {
-          ERROR_MESSAGE: message,
-        }),
-        HttpStatus.INTERNAL_SERVER_ERROR,
+      this.fail(
+        err,
         ErrorCode.STORAGE_DELETE_FAILED,
+        'Falha ao remover arquivo do MinIO',
       );
     }
   }
 
-  async download(path: string): Promise<Buffer> {
+  async download(key: string): Promise<Buffer> {
+    this.assertKey(key);
     try {
-      const key = this.resolveKey(path);
       const response = await this.s3Client.send(
         new GetObjectCommand({ Bucket: this.config.bucket, Key: key }),
       );
@@ -260,15 +194,10 @@ export class MinioStorageProvider implements StorageProvider {
       const bytes = await response.Body.transformToByteArray();
       return Buffer.from(bytes);
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      this.logger.error(`Falha ao baixar arquivo do MinIO: ${message}`);
-      throw new CustomHttpException(
-        this.errorMessageService.getMessage(
-          ErrorCode.STORAGE_GET_PRESIGNED_URL_FAILED,
-          { ERROR_MESSAGE: message },
-        ),
-        HttpStatus.INTERNAL_SERVER_ERROR,
-        ErrorCode.STORAGE_GET_PRESIGNED_URL_FAILED,
+      this.fail(
+        err,
+        ErrorCode.STORAGE_DOWNLOAD_FAILED,
+        'Falha ao baixar arquivo do MinIO',
       );
     }
   }

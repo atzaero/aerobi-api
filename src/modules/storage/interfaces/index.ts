@@ -1,33 +1,24 @@
 /**
- * Arquivo enviado ao object storage, com a URL canônica (interna) do objeto.
- * A URL pública/temporária para consumo é obtida via `getPresignedUrl`.
- */
-export interface UploadedFile {
-  /** URL canônica do objeto (`<endpoint>/<bucket>/<key>`). */
-  url: string;
-  /** Nome (key final) do objeto. */
-  name: string;
-  /** Content-Type do objeto. */
-  type: string;
-}
-
-/**
- * Contrato de um provedor de object storage. Hoje implementado por
- * `MinioStorageProvider`; novos provedores (S3, GCS, …) podem ser adicionados
- * via `StorageProviderFactory` sem alterar os consumidores.
+ * Contrato de um provedor de object storage. Opera sempre com a **key** do
+ * objeto (ex. `readings/2026/06/<uuid>.jpg`) — a estratégia de nomenclatura é
+ * responsabilidade do módulo consumidor (ex. `readings`), não do storage.
+ *
+ * Hoje implementado por `MinioStorageProvider`; novos provedores (S3, GCS, …)
+ * podem ser adicionados via `StorageProviderFactory` sem alterar os consumidores.
  */
 export interface StorageProvider {
-  upload(
-    file: Express.Multer.File,
-    path: string,
-    options?: Record<string, unknown>,
-  ): Promise<UploadedFile>;
+  /** Envia o conteúdo de `file` para a `key` informada. */
+  upload(file: Express.Multer.File, key: string): Promise<void>;
 
-  delete(path: string): Promise<void>;
+  /** Remove o objeto identificado por `key`. */
+  delete(key: string): Promise<void>;
 
-  getPresignedUrl(path: string): Promise<string>;
+  /** Gera uma presigned URL temporária para leitura do objeto. */
+  getPresignedUrl(key: string): Promise<string>;
 
-  download(path: string): Promise<Buffer>;
+  /** Baixa o conteúdo do objeto como Buffer. */
+  download(key: string): Promise<Buffer>;
 
+  /** Configura CORS no bucket (opcional — apenas provedores que suportam). */
   configureBucketCors?(allowedOrigins?: string[]): Promise<void>;
 }

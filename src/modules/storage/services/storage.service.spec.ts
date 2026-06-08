@@ -1,5 +1,5 @@
 import type { StorageProviderFactory } from '../factories/storage-provider.factory';
-import type { StorageProvider, UploadedFile } from '../interfaces';
+import type { StorageProvider } from '../interfaces';
 
 import { StorageService } from './storage.service';
 
@@ -40,17 +40,10 @@ describe('StorageService', () => {
   });
 
   it('delega upload ao provider ativo', async () => {
-    const uploaded: UploadedFile = {
-      url: 'http://minio:9000/aerobi-dev-aviascan/readings/2026/06/a1b2.jpg',
-      name: 'readings/2026/06/a1b2.jpg',
-      type: 'image/jpeg',
-    };
-    upload.mockResolvedValue(uploaded);
+    upload.mockResolvedValue(undefined);
 
-    await expect(service.upload(file, 'readings/2026/06')).resolves.toEqual(
-      uploaded,
-    );
-    expect(upload).toHaveBeenCalledWith(file, 'readings/2026/06', undefined);
+    await service.upload(file, 'readings/2026/06/a1b2.jpg');
+    expect(upload).toHaveBeenCalledWith(file, 'readings/2026/06/a1b2.jpg');
   });
 
   it('delega getPresignedUrl ao provider ativo', async () => {

@@ -123,4 +123,7 @@ export const messages: Record<ErrorCode, { message: string }> = {
     message:
       'Falha ao gerar o link de acesso ao arquivo no armazenamento: [ERROR_MESSAGE].',
   },
+  [ErrorCode.STORAGE_DOWNLOAD_FAILED]: {
+    message: 'Falha ao baixar o arquivo do armazenamento: [ERROR_MESSAGE].',
+  },
 } as const;
