@@ -90,18 +90,45 @@ jobs:
             exit 1
           fi
 
+      # Conecta o runner à tailnet (Headscale) e resolve o host de deploy. O SSH
+      # passa a sair pela interface tailscale0 → NÃO toca a porta 22 pública nem
+      # o fail2ban (issue #129 do atzaero/aerobi-ansible: runner Azure com IP
+      # reciclado/banido fazia o deploy falhar com 'Connection timed out').
+      # Fallback: sem o secret HEADSCALE_AUTHKEY, usa o IP público (comportamento
+      # anterior) — permite mergear o workflow antes de cadastrar a key.
+      - name: Conectar à tailnet e resolver host de deploy
+        env:
+          TS_AUTHKEY: ${{ secrets.HEADSCALE_AUTHKEY }}
+          PUBLIC_HOST: ${{ secrets.REMOTE_HOST }}
+        run: |
+          set -e
+          if [ -n "$TS_AUTHKEY" ]; then
+            curl -fsSL https://tailscale.com/install.sh | sh
+            sudo tailscale up \
+              --login-server=https://headscale.aerobi.com.br \
+              --authkey="$TS_AUTHKEY" \
+              --hostname="gh-${{ github.event.repository.name }}-${{ github.run_id }}" \
+              --accept-dns=false
+            sudo tailscale status
+            echo "DEPLOY_HOST=100.64.0.1" >> "$GITHUB_ENV"
+            echo "Deploy via tailnet (100.64.0.1) — SSH não toca a 22 pública."
+          else
+            echo "DEPLOY_HOST=$PUBLIC_HOST" >> "$GITHUB_ENV"
+            echo "::warning::HEADSCALE_AUTHKEY ausente — deploy via IP público (sujeito ao fail2ban, issue #129). Cadastre o secret para usar a tailnet."
+          fi
+
       - name: Create SSH key
         run: |
           mkdir -p ~/.ssh/
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ secrets.REMOTE_HOST }} >> ~/.ssh/known_hosts || true
+          ssh-keyscan -H ${{ env.DEPLOY_HOST }} >> ~/.ssh/known_hosts || true
 
       - name: Check and Create Target Directory
         env:
           RT: ${{ vars.REMOTE_TARGET }}
         run: |
-          ssh -i ~/.ssh/deploy_key -p ${{ secrets.REMOTE_PORT }} ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} "
+          ssh -i ~/.ssh/deploy_key -p ${{ secrets.REMOTE_PORT }} ${{ secrets.REMOTE_USER }}@${{ env.DEPLOY_HOST }} "
             if [ ! -d \"$RT\" ]; then
               mkdir -p $RT && echo 'Directory created.';
             else
@@ -144,7 +171,7 @@ jobs:
           ' >> "$ENVF"
           scp -i ~/.ssh/deploy_key -P ${{ secrets.REMOTE_PORT }} \
             "${{ inputs.compose_file }}" "$ENVF" \
-            ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}:$RT
+            ${{ secrets.REMOTE_USER }}@${{ env.DEPLOY_HOST }}:$RT
 
       - name: Login to GitHub Container Registry on Remote Server
         run: |
@@ -153,12 +180,12 @@ jobs:
             echo "ERRO: GH_TOKEN nao disponivel"
             exit 1
           fi
-          echo "$TOKEN" | ssh -i ~/.ssh/deploy_key -p ${{ secrets.REMOTE_PORT }} ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} \
+          echo "$TOKEN" | ssh -i ~/.ssh/deploy_key -p ${{ secrets.REMOTE_PORT }} ${{ secrets.REMOTE_USER }}@${{ env.DEPLOY_HOST }} \
             "docker login ghcr.io -u ${{ github.actor }} --password-stdin"
 
       - name: Ensure Docker network warpgate exists
         run: |
-          ssh -i ~/.ssh/deploy_key -p ${{ secrets.REMOTE_PORT }} ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} "
+          ssh -i ~/.ssh/deploy_key -p ${{ secrets.REMOTE_PORT }} ${{ secrets.REMOTE_USER }}@${{ env.DEPLOY_HOST }} "
             if ! docker network inspect warpgate >/dev/null 2>&1; then
               docker network create warpgate
             fi
@@ -179,7 +206,7 @@ jobs:
             -o ServerAliveInterval=60 \
             -o ServerAliveCountMax=3 \
             -o ConnectTimeout=30 \
-            ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} "
+            ${{ secrets.REMOTE_USER }}@${{ env.DEPLOY_HOST }} "
             cd $RT && \
             RETRY=0
             while [ \$RETRY -lt 3 ]; do
@@ -194,4 +221,7 @@ jobs:
 
       - name: Cleanup
         if: always()
-        run: rm -f ~/.ssh/deploy_key
+        run: |
+          rm -f ~/.ssh/deploy_key
+          # Desconecta o nó efêmero (Headscale também o remove após inatividade).
+          command -v tailscale >/dev/null 2>&1 && sudo tailscale logout || true
