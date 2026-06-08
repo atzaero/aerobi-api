@@ -1,3 +1,14 @@
+# [2.6.0-beta.5](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.4...v2.6.0-beta.5) (2026-06-08)
+
+
+### Features
+
+* **readings:** GET /readings (paginado), GET/:id e DELETE/:id ([#186](https://github.com/atzaero/aerobi-api/issues/186)) ([#195](https://github.com/atzaero/aerobi-api/issues/195)) ([dcb5e7b](https://github.com/atzaero/aerobi-api/commit/dcb5e7bcd6e3843c9082bd5e26bb1f348d00c1d3)), closes [#183](https://github.com/atzaero/aerobi-api/issues/183)
+* **readings:** model AircraftReading + migration ([#183](https://github.com/atzaero/aerobi-api/issues/183)) ([#191](https://github.com/atzaero/aerobi-api/issues/191)) ([6e3ea77](https://github.com/atzaero/aerobi-api/commit/6e3ea77a35e2c025b0e517b075a051290783889f))
+* **readings:** POST /readings — ingestão single compatível com o Python ([#184](https://github.com/atzaero/aerobi-api/issues/184)) ([#193](https://github.com/atzaero/aerobi-api/issues/193)) ([7c284a2](https://github.com/atzaero/aerobi-api/commit/7c284a2f98bb768269d72b35e888ef9057354d59)), closes [#187](https://github.com/atzaero/aerobi-api/issues/187) [#182](https://github.com/atzaero/aerobi-api/issues/182) [#183](https://github.com/atzaero/aerobi-api/issues/183)
+* **readings:** POST /readings/batch — ingestão em lote ([#185](https://github.com/atzaero/aerobi-api/issues/185)) ([#197](https://github.com/atzaero/aerobi-api/issues/197)) ([ae5da1e](https://github.com/atzaero/aerobi-api/commit/ae5da1ed3122a483b6944b47c677633ae6148781)), closes [#184](https://github.com/atzaero/aerobi-api/issues/184)
+* **storage:** módulo MinIO/S3 com presigned URLs ([#182](https://github.com/atzaero/aerobi-api/issues/182)) ([#190](https://github.com/atzaero/aerobi-api/issues/190)) ([63d8c30](https://github.com/atzaero/aerobi-api/commit/63d8c30f52e238e3e71177606aab89c0ace7227b))
+
 # [2.6.0-beta.4](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.3...v2.6.0-beta.4) (2026-06-02)
 
 
