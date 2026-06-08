@@ -61,8 +61,8 @@ export class MinioStorageProvider implements StorageProvider {
       accessKey: this.configService.get<string>('MINIO_ACCESS_KEY') ?? '',
       secretKey: this.configService.get<string>('MINIO_SECRET_KEY') ?? '',
       bucket:
-        this.configService.get<string>('MINIO_BUCKET_AVIASCAN') ??
-        'aerobi-dev-aviascan',
+        this.configService.get<string>('MINIO_BUCKET_READINGS') ??
+        'aerobi-dev-readings',
       region: this.configService.get<string>('MINIO_REGION') ?? 'sa-east-1',
     };
 
