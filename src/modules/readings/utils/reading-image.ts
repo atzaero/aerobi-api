@@ -13,6 +13,9 @@ export const ALLOWED_IMAGE_MIMETYPES = Object.keys(MIME_TO_EXT);
 /** Tamanho máximo da imagem (10 MB), espelhando o limite do aviascan-api legado. */
 export const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
 
+/** Máximo de imagens por requisição de lote (`POST /readings/batch`). */
+export const MAX_BATCH_FILES = 50;
+
 /** `true` se o mimetype é uma imagem aceita. */
 export function isAllowedImageMimetype(mimetype: string): boolean {
   return mimetype in MIME_TO_EXT;
