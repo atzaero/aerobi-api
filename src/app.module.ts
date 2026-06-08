@@ -10,7 +10,6 @@ import { AerodromeGeojsonsModule } from '@/modules/aerodrome-geojsons/aerodrome-
 import { AerodromeGroupsModule } from '@/modules/aerodrome-groups/aerodrome-groups.module';
 import { AiswebModule } from '@/modules/aisweb/aisweb.module';
 import { AnacModule } from '@/modules/anac/anac.module';
-import { AviascanModule } from '@/modules/aviascan/aviascan.module';
 import { HealthModule } from '@/modules/health/health.module';
 import { LandingRequestsModule } from '@/modules/landing-requests/landing-requests.module';
 import { OperationalAerodromesModule } from '@/modules/operational-aerodromes/operational-aerodromes.module';
@@ -19,6 +18,7 @@ import { PlugfieldModule } from '@/modules/plugfield/plugfield.module';
 import { PrivateAerodromesModule } from '@/modules/private-aerodromes/private-aerodromes.module';
 import { PublicAerodromesModule } from '@/modules/public-aerodromes/public-aerodromes.module';
 import { RabModule } from '@/modules/rab/rab.module';
+import { ReadingsModule } from '@/modules/readings/readings.module';
 import { SchedulerModule } from '@/modules/scheduler/scheduler.module';
 import { TechnicalVisitsModule } from '@/modules/technical-visits/technical-visits.module';
 import { TokensModule } from '@/modules/tokens/tokens.module';
@@ -37,7 +37,7 @@ import { PrismaModule } from '@/prisma/prisma.module';
     RabModule,
     PlugfieldModule,
     AiswebModule,
-    AviascanModule,
+    ReadingsModule,
     PrivateAerodromesModule,
     PublicAerodromesModule,
     SchedulerModule,
