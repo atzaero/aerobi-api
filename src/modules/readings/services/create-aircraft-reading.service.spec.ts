@@ -11,6 +11,7 @@ describe('CreateAircraftReadingService', () => {
   let service: CreateAircraftReadingService;
   let create: jest.Mock;
   let upload: jest.Mock;
+  let remove: jest.Mock;
   let getPresignedUrl: jest.Mock;
   let getMessage: jest.Mock;
 
@@ -27,14 +28,21 @@ describe('CreateAircraftReadingService', () => {
     buffer: Buffer.from('img'),
   } as Express.Multer.File;
 
+  const keyPattern = /^readings\/2026\/06\/[0-9a-f-]+\.jpg$/;
+
   beforeEach(() => {
     create = jest.fn();
     upload = jest.fn();
+    remove = jest.fn();
     getPresignedUrl = jest.fn();
     getMessage = jest.fn().mockReturnValue('validação falhou');
 
     const repo = { create } as unknown as AircraftReadingRepository;
-    const storage = { upload, getPresignedUrl } as unknown as StorageService;
+    const storage = {
+      upload,
+      delete: remove,
+      getPresignedUrl,
+    } as unknown as StorageService;
     const errors = { getMessage } as unknown as ErrorMessageService;
 
     service = new CreateAircraftReadingService(repo, storage, errors);
@@ -47,7 +55,7 @@ describe('CreateAircraftReadingService', () => {
 
     expect(res).toEqual({
       id: 'r-1',
-      message: 'Reading created successfully',
+      message: 'Reading registered successfully',
       image_path: null,
     });
     expect(upload).not.toHaveBeenCalled();
@@ -57,40 +65,60 @@ describe('CreateAircraftReadingService', () => {
     );
   });
 
-  it('cria com imagem: faz upload na key particionada e retorna presigned URL', async () => {
-    create.mockResolvedValue({ id: 'r-2' });
+  it('cria com imagem: upload na key particionada e presigned URL na resposta', async () => {
+    const createInputs: Array<{ imageKey: string | null }> = [];
+    create.mockImplementation((input: { imageKey: string | null }) => {
+      createInputs.push(input);
+      return Promise.resolve({ id: 'r-2' });
+    });
     getPresignedUrl.mockResolvedValue('https://signed/url');
 
     const res = await service.execute(baseDto, image);
 
-    const expectedKeyPattern = /^readings\/2026\/06\/[0-9a-f-]+\.jpg$/;
     expect(upload).toHaveBeenCalledWith(
       image,
-      expect.stringMatching(expectedKeyPattern),
+      expect.stringMatching(keyPattern),
     );
-    expect(create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        imageKey: expect.stringMatching(expectedKeyPattern) as unknown,
-      }),
-    );
-    expect(getPresignedUrl).toHaveBeenCalled();
+    expect(createInputs[0].imageKey).toMatch(keyPattern);
     expect(res).toEqual({
       id: 'r-2',
-      message: 'Reading created successfully',
+      message: 'Reading registered successfully',
       image_path: 'https://signed/url',
     });
   });
 
   it('rejeita mimetype não permitido sem tocar no banco/storage', async () => {
-    const pdf = {
-      ...image,
-      mimetype: 'application/pdf',
-    };
+    const pdf = { ...image, mimetype: 'application/pdf' };
 
     await expect(service.execute(baseDto, pdf)).rejects.toBeInstanceOf(
       CustomHttpException,
     );
     expect(upload).not.toHaveBeenCalled();
     expect(create).not.toHaveBeenCalled();
+  });
+
+  it('compensa removendo a imagem órfã quando o create falha', async () => {
+    const dbError = new Error('db down');
+    create.mockRejectedValue(dbError);
+    remove.mockResolvedValue(undefined);
+
+    await expect(service.execute(baseDto, image)).rejects.toBe(dbError);
+
+    expect(upload).toHaveBeenCalled();
+    expect(remove).toHaveBeenCalledWith(expect.stringMatching(keyPattern));
+  });
+
+  it('presigned best-effort: registro persiste e image_path vira null se a assinatura falha', async () => {
+    create.mockResolvedValue({ id: 'r-3' });
+    getPresignedUrl.mockRejectedValue(new Error('minio down'));
+
+    const res = await service.execute(baseDto, image);
+
+    expect(res).toEqual({
+      id: 'r-3',
+      message: 'Reading registered successfully',
+      image_path: null,
+    });
+    expect(remove).not.toHaveBeenCalled();
   });
 });

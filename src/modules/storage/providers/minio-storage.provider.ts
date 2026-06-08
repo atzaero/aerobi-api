@@ -32,8 +32,9 @@ const PRESIGNED_URL_TTL_SECONDS = 60 * 60;
 @Injectable()
 export class MinioStorageProvider implements StorageProvider {
   private readonly logger = new Logger(MinioStorageProvider.name);
-  private readonly s3Client: S3Client;
-  private readonly s3PublicClient: S3Client | null;
+  // Clientes criados lazy (no primeiro uso), não no boot — ver assertConfigured.
+  private s3ClientInstance: S3Client | null = null;
+  private s3PublicClientInstance: S3Client | null = null;
   private readonly environment: string;
   private readonly config: {
     endpoint: string;
@@ -65,27 +66,8 @@ export class MinioStorageProvider implements StorageProvider {
       region: this.configService.get<string>('MINIO_REGION') ?? 'sa-east-1',
     };
 
-    if (
-      !this.config.endpoint ||
-      !this.config.accessKey ||
-      !this.config.secretKey
-    ) {
-      this.logger.error(
-        'Configuração do MinIO incompleta. Verifique MINIO_ENDPOINT, MINIO_ACCESS_KEY e MINIO_SECRET_KEY.',
-      );
-      throw new Error('MinIO configuration is incomplete');
-    }
-
-    this.s3Client = this.buildClient(this.config.endpoint);
-    // Cliente dedicado ao endpoint público: as presigned URLs são assinadas com
-    // o hostname que o cliente final consegue acessar (ex. s3.aerobi.com.br).
-    this.s3PublicClient = this.config.publicEndpoint
-      ? this.buildClient(this.config.publicEndpoint)
-      : null;
-
     this.logger.log(
-      `MinIO configurado (env=${this.environment}, bucket=${this.config.bucket}` +
-        `${this.config.publicEndpoint ? `, publicEndpoint=${this.config.publicEndpoint}` : ''})`,
+      `MinIO provider registrado (env=${this.environment}, bucket=${this.config.bucket}).`,
     );
   }
 
@@ -99,6 +81,46 @@ export class MinioStorageProvider implements StorageProvider {
       },
       forcePathStyle: true,
     });
+  }
+
+  /**
+   * Valida a config obrigatória do MinIO no PRIMEIRO uso (lazy), não no boot —
+   * assim a ausência de config degrada apenas os endpoints de storage em vez de
+   * impedir a aplicação inteira de subir. O erro é re-embrulhado pelo `fail()`
+   * de cada operação com o `ErrorCode` correspondente.
+   */
+  private assertConfigured(): void {
+    if (
+      !this.config.endpoint ||
+      !this.config.accessKey ||
+      !this.config.secretKey
+    ) {
+      throw new Error(
+        'Configuração do MinIO ausente (defina MINIO_ENDPOINT, MINIO_ACCESS_KEY e MINIO_SECRET_KEY).',
+      );
+    }
+  }
+
+  /** Cliente interno (lazy) para upload/delete/download. */
+  private get internalClient(): S3Client {
+    this.assertConfigured();
+    this.s3ClientInstance ??= this.buildClient(this.config.endpoint);
+    return this.s3ClientInstance;
+  }
+
+  /**
+   * Cliente para assinar presigned URLs: usa o endpoint público quando
+   * configurado (hostname acessível ao navegador); senão, cai para o interno.
+   */
+  private get signingClient(): S3Client {
+    this.assertConfigured();
+    if (!this.config.publicEndpoint) {
+      return this.internalClient;
+    }
+    this.s3PublicClientInstance ??= this.buildClient(
+      this.config.publicEndpoint,
+    );
+    return this.s3PublicClientInstance;
   }
 
   private assertKey(key: string): void {
@@ -128,7 +150,7 @@ export class MinioStorageProvider implements StorageProvider {
   async upload(file: Express.Multer.File, key: string): Promise<void> {
     this.assertKey(key);
     try {
-      await this.s3Client.send(
+      await this.internalClient.send(
         new PutObjectCommand({
           Bucket: this.config.bucket,
           Key: key,
@@ -154,7 +176,7 @@ export class MinioStorageProvider implements StorageProvider {
       });
       // Assina com o cliente público quando disponível (hostname acessível ao
       // navegador); senão, cai para o cliente interno.
-      const client = this.s3PublicClient ?? this.s3Client;
+      const client = this.signingClient;
       return await getSignedUrl(client, command, {
         expiresIn: PRESIGNED_URL_TTL_SECONDS,
       });
@@ -170,7 +192,7 @@ export class MinioStorageProvider implements StorageProvider {
   async delete(key: string): Promise<void> {
     this.assertKey(key);
     try {
-      await this.s3Client.send(
+      await this.internalClient.send(
         new DeleteObjectCommand({ Bucket: this.config.bucket, Key: key }),
       );
     } catch (err) {
@@ -185,7 +207,7 @@ export class MinioStorageProvider implements StorageProvider {
   async download(key: string): Promise<Buffer> {
     this.assertKey(key);
     try {
-      const response = await this.s3Client.send(
+      const response = await this.internalClient.send(
         new GetObjectCommand({ Bucket: this.config.bucket, Key: key }),
       );
       if (!response.Body) {
@@ -214,7 +236,7 @@ export class MinioStorageProvider implements StorageProvider {
           ? allowedOrigins
           : ['http://localhost:3000', 'http://localhost:3001'];
 
-      await this.s3Client.send(
+      await this.internalClient.send(
         new PutBucketCorsCommand({
           Bucket: this.config.bucket,
           CORSConfiguration: {
