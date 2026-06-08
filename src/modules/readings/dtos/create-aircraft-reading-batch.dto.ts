@@ -17,19 +17,41 @@ export class CreateAircraftReadingBatchDTO {
   metadata!: string;
 }
 
-/** Item do resultado do lote. */
+/** Status de processamento de um item do lote. */
+export type BatchItemStatus = 'created' | 'failed';
+
+/**
+ * Resultado por item (mesma ordem do array `metadata`). Itens criados trazem
+ * `id`/`image_path`; itens que falharam trazem `error` — o cliente pode reenviar
+ * apenas os que falharam, sem duplicar os já criados.
+ */
 export class BatchReadingResultItemDTO {
-  @ApiProperty({ format: 'uuid' })
-  id!: string;
+  @ApiProperty({ example: 0, description: 'Índice do item no array metadata.' })
+  index!: number;
+
+  @ApiProperty({ enum: ['created', 'failed'] })
+  status!: BatchItemStatus;
+
+  @ApiPropertyOptional({ type: String, format: 'uuid', nullable: true })
+  id!: string | null;
 
   @ApiPropertyOptional({ type: String, nullable: true })
   image_path!: string | null;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  error!: string | null;
 }
 
 /** Resposta do `POST /readings/batch`. */
 export class CreateAircraftReadingBatchResponseDTO {
-  @ApiProperty({ example: 3, description: 'Quantidade de leituras criadas.' })
+  @ApiProperty({ example: 3, description: 'Itens criados com sucesso.' })
   created!: number;
+
+  @ApiProperty({
+    example: 0,
+    description: 'Itens que falharam no processamento.',
+  })
+  failed!: number;
 
   @ApiProperty({ type: [BatchReadingResultItemDTO] })
   items!: BatchReadingResultItemDTO[];

@@ -34,7 +34,7 @@ describe('BatchCreateAircraftReadingService', () => {
     service = new BatchCreateAircraftReadingService(createService, errors);
   });
 
-  it('processa lote válido e retorna created + items', async () => {
+  it('processa lote válido: created/failed e items com status', async () => {
     execute
       .mockResolvedValueOnce({ id: 'r-1', image_path: 'url-1' })
       .mockResolvedValueOnce({ id: 'r-2', image_path: null });
@@ -47,12 +47,44 @@ describe('BatchCreateAircraftReadingService', () => {
     const res = await service.execute(metadata, [image()]);
 
     expect(execute).toHaveBeenCalledTimes(2);
-    expect(res).toEqual({
-      created: 2,
-      items: [
-        { id: 'r-1', image_path: 'url-1' },
-        { id: 'r-2', image_path: null },
-      ],
+    expect(res.created).toBe(2);
+    expect(res.failed).toBe(0);
+    expect(res.items).toEqual([
+      {
+        index: 0,
+        status: 'created',
+        id: 'r-1',
+        image_path: 'url-1',
+        error: null,
+      },
+      { index: 1, status: 'created', id: 'r-2', image_path: null, error: null },
+    ]);
+  });
+
+  it('falha parcial não derruba o lote: item falho vira status=failed', async () => {
+    execute
+      .mockResolvedValueOnce({ id: 'r-1', image_path: null })
+      .mockRejectedValueOnce(new Error('db timeout'));
+
+    const metadata = JSON.stringify([
+      validItem(),
+      validItem({ registration: 'PS-ABC' }),
+    ]);
+
+    const res = await service.execute(metadata, []);
+
+    expect(res.created).toBe(1);
+    expect(res.failed).toBe(1);
+    expect(res.items[0]).toMatchObject({
+      index: 0,
+      status: 'created',
+      id: 'r-1',
+    });
+    expect(res.items[1]).toMatchObject({
+      index: 1,
+      status: 'failed',
+      id: null,
+      error: 'db timeout',
     });
   });
 

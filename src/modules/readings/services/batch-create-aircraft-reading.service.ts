@@ -7,9 +7,15 @@ import { ErrorMessageService } from '@/common/error-messages/error-message.servi
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 
 import { BatchReadingItemDTO } from '../dtos/batch-reading-item.dto';
-import { CreateAircraftReadingBatchResponseDTO } from '../dtos/create-aircraft-reading-batch.dto';
+import {
+  BatchReadingResultItemDTO,
+  CreateAircraftReadingBatchResponseDTO,
+} from '../dtos/create-aircraft-reading-batch.dto';
 import { isAllowedImageMimetype } from '../utils/reading-image';
 import { CreateAircraftReadingService } from './create-aircraft-reading.service';
+
+/** Máximo de itens processados em paralelo (evita saturar o pool do DB/MinIO). */
+const CONCURRENCY = 8;
 
 @Injectable()
 export class BatchCreateAircraftReadingService {
@@ -23,23 +29,66 @@ export class BatchCreateAircraftReadingService {
     images: Express.Multer.File[],
   ): Promise<CreateAircraftReadingBatchResponseDTO> {
     const items = await this.parseAndValidate(metadata, images);
+    const results = await this.processInChunks(items, images);
+    const created = results.filter((r) => r.status === 'created').length;
+    return { created, failed: results.length - created, items: results };
+  }
 
-    const results = await Promise.all(
-      items.map(async (item) => {
-        const image =
-          item.image_index !== undefined ? images[item.image_index] : undefined;
-        const created = await this.createService.execute(item, image);
-        return { id: created.id, image_path: created.image_path };
-      }),
-    );
+  /**
+   * Processa os itens em chunks de `CONCURRENCY` (paralelismo limitado). Cada
+   * item é independente: uma falha de runtime vira `status: 'failed'` no item
+   * (não derruba o lote), para o cliente reenviar só os que falharam sem
+   * duplicar os já criados. A compensação de imagem órfã de cada item é feita
+   * pelo CreateAircraftReadingService.
+   */
+  private async processInChunks(
+    items: BatchReadingItemDTO[],
+    images: Express.Multer.File[],
+  ): Promise<BatchReadingResultItemDTO[]> {
+    const results: BatchReadingResultItemDTO[] = [];
+    for (let start = 0; start < items.length; start += CONCURRENCY) {
+      const chunk = items.slice(start, start + CONCURRENCY);
+      const chunkResults = await Promise.all(
+        chunk.map((item, offset) =>
+          this.processItem(item, start + offset, images),
+        ),
+      );
+      results.push(...chunkResults);
+    }
+    return results;
+  }
 
-    return { created: results.length, items: results };
+  private async processItem(
+    item: BatchReadingItemDTO,
+    index: number,
+    images: Express.Multer.File[],
+  ): Promise<BatchReadingResultItemDTO> {
+    const image =
+      item.image_index !== undefined ? images[item.image_index] : undefined;
+    try {
+      const created = await this.createService.execute(item, image);
+      return {
+        index,
+        status: 'created',
+        id: created.id,
+        image_path: created.image_path,
+        error: null,
+      };
+    } catch (err) {
+      return {
+        index,
+        status: 'failed',
+        id: null,
+        image_path: null,
+        error: err instanceof Error ? err.message : String(err),
+      };
+    }
   }
 
   /**
    * Parseia `metadata` (JSON), valida cada item (class-validator) e confere os
    * `image_index` (range + mimetype) ANTES de processar — para falhar com 400
-   * sem criar leituras parciais.
+   * sem criar leituras quando a entrada é inválida.
    */
   private async parseAndValidate(
     metadata: string,
@@ -58,7 +107,7 @@ export class BatchCreateAircraftReadingService {
       throw this.badRequest('metadata não pode ser vazio');
     }
 
-    const items = (raw as unknown[]).map((entry) =>
+    const items = raw.map((entry) =>
       plainToInstance(BatchReadingItemDTO, entry),
     );
 
