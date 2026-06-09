@@ -53,7 +53,7 @@ export type AuthzSubject =
  */
 export const PERMISSIONS: Record<
   AuthzSubject,
-  Partial<Record<AuthzAction, UserRole[]>>
+  Partial<Record<AuthzAction, readonly UserRole[]>>
 > = {
   // Grupos: criados/editados/removidos só por admin; coordinator apenas lê.
   group: {
@@ -210,11 +210,15 @@ export const PERMISSIONS: Record<
   },
 };
 
-/** Papéis autorizados para `subject`/`action` (vazio ⇒ ninguém). */
+/**
+ * Papéis autorizados para `subject`/`action` (vazio ⇒ ninguém). Devolve um array
+ * `readonly` — a referência aponta para a matriz interna, então mutá-la
+ * corromperia a política global; o tipo impede isso em tempo de compilação.
+ */
 export function rolesFor(
   subject: AuthzSubject,
   action: AuthzAction,
-): UserRole[] {
+): readonly UserRole[] {
   return PERMISSIONS[subject][action] ?? [];
 }
 
@@ -231,5 +235,5 @@ export function can(
   action: AuthzAction,
 ): boolean {
   if (!role) return false;
-  return (rolesFor(subject, action) as string[]).includes(role);
+  return (rolesFor(subject, action) as readonly string[]).includes(role);
 }
