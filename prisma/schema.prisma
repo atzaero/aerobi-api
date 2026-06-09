@@ -355,19 +355,43 @@ model LandingRequest {
   @@map("landing_requests")
 }
 
-/// Leitura de matrícula de aeronave reconhecida por OCR a partir de uma imagem
-/// capturada por câmera em um aeródromo (pipeline aviascan-cv → aerobi-api).
-/// Cada registro guarda a matrícula lida, a confiança, a imagem (key no MinIO)
-/// e o status de validação humana.
-model AircraftReading {
+/// Tipo de operação de um movimento no aeródromo (no jargão de aviação,
+/// "movimento" = pouso ou decolagem).
+enum MovementType {
+  LANDING
+  TAKEOFF
+}
+
+/// Origem do registro do movimento: `AUTOMATIC` = ingerido pelo pipeline de
+/// câmeras (aviascan-cv); `MANUAL` = inserido por um usuário via interface.
+enum MovementSource {
+  AUTOMATIC
+  MANUAL
+}
+
+/// Movimento de aeronave em um aeródromo — um pouso ou uma decolagem. Quando a
+/// origem é `AUTOMATIC`, a matrícula é reconhecida por OCR a partir de uma
+/// imagem de câmera (pipeline aviascan-cv → aerobi-api). Quando `MANUAL`, é
+/// preenchido por um usuário. Cada registro guarda a matrícula, a imagem (key no
+/// MinIO), o tipo de operação, a origem e o status de validação humana; os dados
+/// cadastrais da aeronave no instante do movimento ficam congelados em
+/// {@link MovementAircraftSnapshot}.
+model Movement {
   id String @id @default(uuid()) @db.Uuid
 
-  /// Matrícula da aeronave lida por OCR (ex.: PR-ZTT).
+  /// Matrícula da aeronave (ex.: PR-ZTT). Em `AUTOMATIC`, lida por OCR.
   registration    String   @map("registration")
-  /// Confiança da leitura como string (ex.: "0.98") — fiel ao formato enviado pelo OCR.
-  confidence      String   @map("confidence")
-  /// Momento da captura/leitura da imagem.
+  /// Confiança da leitura OCR como string (ex.: "0.98"). Não exposta nas rotas
+  /// de consulta; só faz sentido para movimentos `AUTOMATIC`.
+  confidence      String?  @map("confidence")
+  /// Momento da captura/ocorrência do movimento.
   readingDatetime DateTime @map("reading_datetime") @db.Timestamptz(3)
+
+  /// Pouso ou decolagem. Em `AUTOMATIC` é inferido pela regra de 48h; em
+  /// `MANUAL` vem do formulário.
+  operationType MovementType   @map("operation_type")
+  /// Como o registro entrou no sistema (câmera vs interface).
+  source        MovementSource @map("source")
 
   /// Status de validação humana — `null` = ainda não validada.
   readingStatus String? @map("reading_status")
@@ -377,10 +401,14 @@ model AircraftReading {
   imageKey      String? @map("image_key") @db.Text
   /// Comentários do revisor.
   comments      String? @map("comments") @db.Text
-  /// Código ICAO do aeródromo onde a leitura ocorreu (ex.: SSCF).
+  /// Código ICAO do aeródromo onde o movimento ocorreu (ex.: SSCF).
   aerodrome     String? @map("aerodrome")
 
+  /// Snapshot dos dados cadastrais (RAB) da aeronave no instante do movimento.
+  aircraftSnapshot MovementAircraftSnapshot?
+
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  /// "Inserido por": id do usuário (MANUAL) ou sentinela (ex.: "aviascan") (AUTOMATIC).
   createdBy String?   @map("created_by")
   updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
   updatedBy String?   @map("updated_by")
@@ -391,7 +419,45 @@ model AircraftReading {
   @@index([aerodrome, readingDatetime])
   @@index([readingDatetime])
   @@index([deletedAt])
-  @@map("aircraft_reading")
+  @@map("movement")
+}
+
+/// Snapshot 1:1 dos dados cadastrais da aeronave (tabela RAB da ANAC) congelados
+/// no instante do movimento. A `rab_row` é periódica (chave `(period, marcas)`) e
+/// o registro "atual" muda a cada período mensal — por isso copiamos um
+/// subconjunto curado dos campos aqui, mantendo `rabRowId`/`rabPeriod` apenas
+/// para rastreabilidade até a origem. Campos opcionais: a aeronave pode não ter
+/// linha RAB correspondente no momento do movimento.
+model MovementAircraftSnapshot {
+  id String @id @default(uuid()) @db.Uuid
+
+  movementId String   @unique @map("movement_id") @db.Uuid
+  movement   Movement @relation(fields: [movementId], references: [id], onDelete: Cascade)
+
+  /// Rastreabilidade até a `rab_row` de origem (id + período), quando havia match.
+  rabRowId  String? @map("rab_row_id")
+  rabPeriod String? @map("rab_period")
+
+  /// Subconjunto operacional congelado do `rab_row` (todos `String?`, fiéis à origem).
+  marcas          String? @map("marcas")
+  proprietarios   String? @map("proprietarios")
+  operadores      String? @map("operadores")
+  nrSerie         String? @map("nr_serie")
+  dsModelo        String? @map("ds_modelo")
+  nmFabricante    String? @map("nm_fabricante")
+  cdTipoIcao      String? @map("cd_tipo_icao")
+  nrPmd           String? @map("nr_pmd")
+  nrAssentos      String? @map("nr_assentos")
+  nrAnoFabricacao String? @map("nr_ano_fabricacao")
+  tpMotor         String? @map("tp_motor")
+  qtMotor         String? @map("qt_motor")
+  cfOperacional   String? @map("cf_operacional")
+  tpOperacao      String? @map("tp_operacao")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([rabRowId])
+  @@map("movement_aircraft_snapshot")
 }
 
 /// Visita técnica em aeródromo (`technicalVisit` no Firestore). ICAO, CIAD, pista, nome e município do aeródromo vêm de `operational_aerodromes` via FK (evita duplicar o cadastro).
