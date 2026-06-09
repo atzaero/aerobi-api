@@ -1,3 +1,16 @@
+# [2.6.0-beta.8](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.7...v2.6.0-beta.8) (2026-06-09)
+
+
+### Bug Fixes
+
+* **authz:** filtra recursos/usuário soft-deletados no GroupScopeGuard ([6af2ee5](https://github.com/atzaero/aerobi-api/commit/6af2ee56b23b18bf3df6a5c408e72262627e53c6))
+
+
+### Features
+
+* **authz:** GroupScopeGuard + @RequiresGroupScope (escopo por grupo) ([8d4f4af](https://github.com/atzaero/aerobi-api/commit/8d4f4af3768086ccc6684be09ea8d2a00c8eb8c0)), closes [#211](https://github.com/atzaero/aerobi-api/issues/211)
+* **authz:** vincula User a AerodromeGroup com escopo por grupo/UF ([#210](https://github.com/atzaero/aerobi-api/issues/210)) ([0d4f7ee](https://github.com/atzaero/aerobi-api/commit/0d4f7ee5afe791656d6b64e3390deb14c26e5b26))
+
 # [2.6.0-beta.7](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.6...v2.6.0-beta.7) (2026-06-09)
 
 
