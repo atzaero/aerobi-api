@@ -4,6 +4,9 @@ import type { ErrorMessageService } from '@/common/error-messages/error-message.
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import type { StorageService } from '@/modules/storage/services/storage.service';
 
+import type { Prisma, RabRow } from '@/generated/prisma/client';
+import type { RabRowRepository } from '@/modules/rab/repositories/rab-row.repository';
+
 import type { CreateMovementDTO } from '../dtos/create-movement.dto';
 import type { MovementRepository } from '../repositories/movement.repository';
 
@@ -17,6 +20,9 @@ describe('CreateMovementService', () => {
   let remove: jest.Mock;
   let getPresignedUrl: jest.Mock;
   let getMessage: jest.Mock;
+  let findLatestByMarcas: jest.Mock;
+
+  type MovementCreateInput = Prisma.MovementCreateInput;
 
   const baseDto: CreateMovementDTO = {
     registration: 'PR-ZTT',
@@ -44,6 +50,8 @@ describe('CreateMovementService', () => {
     remove = jest.fn();
     getPresignedUrl = jest.fn();
     getMessage = jest.fn().mockReturnValue('validação falhou');
+    // Por padrão sem match RAB; testes específicos sobrescrevem.
+    findLatestByMarcas = jest.fn().mockResolvedValue(null);
 
     const repo = { create } as unknown as MovementRepository;
     const storage = {
@@ -52,8 +60,11 @@ describe('CreateMovementService', () => {
       getPresignedUrl,
     } as unknown as StorageService;
     const errors = { getMessage } as unknown as ErrorMessageService;
+    const rabRowRepo = {
+      findLatestByMarcas,
+    } as unknown as RabRowRepository;
 
-    service = new CreateMovementService(repo, storage, errors);
+    service = new CreateMovementService(repo, storage, errors, rabRowRepo);
   });
 
   it('cria sem imagem: imageKey null e image_path null', async () => {
@@ -163,5 +174,67 @@ describe('CreateMovementService', () => {
         confidence: undefined,
       }),
     );
+  });
+
+  it('snapshot RAB: com match popula aircraftSnapshot.create no input do repo', async () => {
+    const rabRow = {
+      id: 'rab-1',
+      period: '2026-05',
+      marcas: 'PR-ZTT',
+      proprietarios: 'Fulano',
+      operadores: 'Operador X',
+      nrSerie: 'SN-123',
+      dsModelo: 'EMB-810D',
+      nmFabricante: 'NEIVA',
+      cdTipoIcao: 'P58',
+      nrPmd: '1810',
+      nrAssentos: '6',
+      nrAnoFabricacao: '1980',
+      tpMotor: 'PISTÃO',
+      qtMotor: '2',
+      cfOperacional: 'TPP',
+      tpOperacao: 'PRIVADA',
+    } as unknown as RabRow;
+    findLatestByMarcas.mockResolvedValue(rabRow);
+    const createInputs: MovementCreateInput[] = [];
+    create.mockImplementation((input: MovementCreateInput) => {
+      createInputs.push(input);
+      return Promise.resolve({ id: 's-1' });
+    });
+
+    await service.execute(baseDto, automaticOrigin);
+
+    expect(findLatestByMarcas).toHaveBeenCalledWith('PR-ZTT');
+    expect(createInputs[0].aircraftSnapshot?.create).toMatchObject({
+      rabRowId: 'rab-1',
+      rabPeriod: '2026-05',
+      marcas: 'PR-ZTT',
+      dsModelo: 'EMB-810D',
+      nmFabricante: 'NEIVA',
+      cfOperacional: 'TPP',
+    });
+  });
+
+  it('snapshot RAB: sem match grava snapshot vazio + warning e cria o movimento', async () => {
+    findLatestByMarcas.mockResolvedValue(null);
+    const createInputs: MovementCreateInput[] = [];
+    create.mockImplementation((input: MovementCreateInput) => {
+      createInputs.push(input);
+      return Promise.resolve({ id: 's-2' });
+    });
+    const warn = jest
+      .spyOn(service['logger'], 'warn')
+      .mockImplementation(() => undefined);
+
+    const res = await service.execute(baseDto, automaticOrigin);
+
+    expect(res.id).toBe('s-2');
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('PR-ZTT'));
+    expect(createInputs[0].aircraftSnapshot?.create).toMatchObject({
+      rabRowId: null,
+      rabPeriod: null,
+      marcas: null,
+      dsModelo: null,
+    });
   });
 });

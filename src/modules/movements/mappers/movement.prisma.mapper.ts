@@ -22,11 +22,16 @@ export interface MovementCreateData {
  * Projeta o DTO de criação (+ a key da imagem já enviada ao storage) no input
  * de criação do Prisma. A `origin` define `source` e `createdBy` (e, quando
  * fornecido, `operationType`) conforme o caminho de criação (AUTOMATIC vs MANUAL).
+ *
+ * O `snapshot` (dados RAB congelados da aeronave) é sempre persistido via nested
+ * create — atômico na mesma transação do movimento, mantendo a invariante 1:1
+ * mesmo quando não há linha RAB correspondente (snapshot vazio).
  */
 export function buildMovementCreateInput(
   dto: MovementCreateData,
   imageKey: string | null,
   origin: MovementOrigin,
+  snapshot: Prisma.MovementAircraftSnapshotCreateWithoutMovementInput,
 ): Prisma.MovementCreateInput {
   return {
     registration: dto.registration,
@@ -43,5 +48,6 @@ export function buildMovementCreateInput(
     // LANDING — a inferência pela regra de 48h será implementada na #234. No
     // caminho MANUAL a origem já fornece o `operationType` real do formulário.
     operationType: origin.operationType ?? MovementType.LANDING,
+    aircraftSnapshot: { create: snapshot },
   };
 }

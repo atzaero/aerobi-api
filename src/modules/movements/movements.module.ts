@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 
 import { AerobiApiKeyGuard } from '@/common/guards/aerobi-api-key.guard';
 import { PrismaModule } from '@/prisma/prisma.module';
+import { RabModule } from '@/modules/rab/rab.module';
 import { StorageModule } from '@/modules/storage/storage.module';
 
 import { BatchCreateMovementController } from './controllers/batch-create-movement.controller';
@@ -23,7 +24,7 @@ import { RemoveMovementService } from './services/remove-movement.service';
  * persiste em Postgres e guarda as imagens no MinIO.
  */
 @Module({
-  imports: [PrismaModule, StorageModule],
+  imports: [PrismaModule, StorageModule, RabModule],
   controllers: [
     CreateMovementController,
     BatchCreateMovementController,
