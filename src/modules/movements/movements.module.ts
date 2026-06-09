@@ -17,8 +17,9 @@ import { ListMovementsService } from './services/list-movements.service';
 import { RemoveMovementService } from './services/remove-movement.service';
 
 /**
- * Módulo de leituras de matrícula (aircraft readings). Recebe as leituras do
- * pipeline aviascan-cv, persiste em Postgres e guarda as imagens no MinIO.
+ * Módulo de movimentos (movements) — pousos e decolagens de aeronaves. Recebe os
+ * movimentos automáticos do pipeline aviascan-cv (via rota legada `/readings`),
+ * persiste em Postgres e guarda as imagens no MinIO.
  */
 @Module({
   imports: [PrismaModule, StorageModule],
