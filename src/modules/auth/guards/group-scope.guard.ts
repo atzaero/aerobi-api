@@ -32,7 +32,7 @@ import { GroupScopeSubject } from './group-scope.subject';
  * - `request.user` ausente → 401 (fallback caso o `JwtAuthGuard` falte).
  * - `user.role === ADMIN` → passa (bypass global, sem grupo).
  * - `params.id` ausente/não-UUID → 422 (não consulta o DB com lixo).
- * - Recurso inexistente → 404.
+ * - Recurso inexistente ou soft-deletado → 404.
  * - `recurso.groupId !== user.aerodromeGroupId` → 403.
  *
  * O `aerodromeGroupId` do usuário é lido **do banco** (não do JWT), de modo que
@@ -115,8 +115,11 @@ export class GroupScopeGuard implements CanActivate {
       );
     }
 
-    const dbUser = await this.prisma.user.findUnique({
-      where: { id: user.id },
+    // Lê o usuário ativo do banco (a JwtStrategy confia no payload e não
+    // revalida contra o DB; um usuário soft-deletado com access token ainda
+    // válido cai aqui como `null` → grupo `null` → 403).
+    const dbUser = await this.prisma.user.findFirst({
+      where: { id: user.id, deletedAt: null },
       select: { aerodromeGroupId: true },
     });
     const userGroupId = dbUser?.aerodromeGroupId ?? null;
