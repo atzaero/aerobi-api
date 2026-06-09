@@ -15,30 +15,38 @@ import type { UserRole } from '@/generated/prisma/client';
  * Nest inteiro nem duplicar a lógica do guard.
  */
 type Handler = (...args: never[]) => unknown;
-
-/**
- * Construtor de controller cujo `prototype` é indexável por nome de método.
- * O acesso **computado** ao handler (`prototype[method]`) é resolvido aqui
- * dentro de propósito — evita que os specs refiram `Controller.prototype.handle`
- * diretamente (que dispararia `@typescript-eslint/unbound-method`).
- */
-interface ControllerClass {
-  new (...args: never[]): object;
-  prototype: Record<string, Handler>;
-}
+type ControllerCtor<T> = new (...args: never[]) => T;
 
 const reflector = new Reflector();
 const guard = new PermissionsGuard(reflector, new ErrorMessageService());
 
-/** Lê o `@RequirePermission` efetivamente aplicado ao handler do controller. */
-export function readRequiredPermission(
-  controllerClass: ControllerClass,
-  method: string,
+/**
+ * Resolve o handler do controller por nome de método. O acesso **computado**
+ * (`prototype[method]`) é isolado aqui com um único cast deliberado — evita que
+ * os specs refiram `Controller.prototype.handle` (que dispararia
+ * `@typescript-eslint/unbound-method`).
+ */
+function resolveHandler<T>(
+  controllerClass: ControllerCtor<T>,
+  method: keyof T & string,
+): Handler {
+  return (controllerClass.prototype as Record<string, Handler>)[method];
+}
+
+/**
+ * Lê o `@RequirePermission` efetivamente aplicado ao handler do controller.
+ * Usa `getAllAndOverride([handler, class])` — **a mesma** resolução do
+ * `PermissionsGuard` — para enxergar tanto a metadata no método quanto no nível
+ * de classe.
+ */
+export function readRequiredPermission<T>(
+  controllerClass: ControllerCtor<T>,
+  method: keyof T & string,
 ): RequiredPermission | undefined {
-  return reflector.get<RequiredPermission>(
-    PERMISSION_KEY,
-    controllerClass.prototype[method],
-  );
+  return reflector.getAllAndOverride<RequiredPermission>(PERMISSION_KEY, [
+    resolveHandler(controllerClass, method),
+    controllerClass,
+  ]);
 }
 
 /**
@@ -47,12 +55,12 @@ export function readRequiredPermission(
  * (403/401) quando nega — para o spec assertar o `ErrorCode`. `role`
  * `undefined` simula token sem usuário (→ 401).
  */
-export function runPermissionsGuard(
-  controllerClass: ControllerClass,
-  method: string,
+export function runPermissionsGuard<T>(
+  controllerClass: ControllerCtor<T>,
+  method: keyof T & string,
   role: UserRole | undefined,
 ): boolean {
-  const handler = controllerClass.prototype[method];
+  const handler = resolveHandler(controllerClass, method);
   const context = {
     getHandler: () => handler,
     getClass: () => controllerClass,

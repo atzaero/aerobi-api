@@ -2,24 +2,22 @@ import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { UserRole } from '@/generated/prisma/client';
+import { buildAuthenticatedUserFixture } from '@/modules/auth/testing/authenticated-user.fixtures';
 import type { RefreshTokenRepository } from '@/modules/auth/repositories/refresh-token.repository';
-import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
 import type { UserRepository } from '../repositories/user.repository';
 import { buildUserFixture } from '../testing/user.fixtures';
 
 import { RemoveUserService } from './remove-user.service';
 
-const ADMIN: AuthenticatedUser = {
+const ADMIN = buildAuthenticatedUserFixture({
   id: 'admin-1',
-  email: 'admin@aerobi.local',
   role: UserRole.ADMIN,
-};
-const COORDINATOR: AuthenticatedUser = {
+});
+const COORDINATOR = buildAuthenticatedUserFixture({
   id: 'coord-1',
-  email: 'coord@aerobi.local',
   role: UserRole.COORDINATOR,
-};
+});
 
 describe('RemoveUserService', () => {
   let service: RemoveUserService;
