@@ -6,9 +6,12 @@
  *   quando ele estiver registrado globalmente. Set via `@Public()`.
  * - `ROLES_KEY`: lista de roles aceitas pelo `RolesGuard`. Set via
  *   `@Roles(UserRole.ADMIN, ...)`.
+ * - `PERMISSION_KEY`: par `{ subject, action }` exigido pelo
+ *   `PermissionsGuard`. Set via `@RequirePermission(subject, action)`.
  */
 export const IS_PUBLIC_KEY = 'auth:isPublic';
 export const ROLES_KEY = 'auth:roles';
+export const PERMISSION_KEY = 'auth:permission';
 
 /** Tipos válidos do claim `typ` no JWT (access vs refresh). */
 export const JWT_TOKEN_TYPE = {
