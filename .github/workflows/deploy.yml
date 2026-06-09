@@ -54,6 +54,10 @@ jobs:
   deploy:
     name: Deploy ${{ inputs.environment }}
     runs-on: ubuntu-latest
+    # Backstop: sem isto o job herda o default de 6h do GitHub e um step preso
+    # (ex.: `tailscale up` aguardando login com authkey expirada — issue #225)
+    # segura o runner por horas.
+    timeout-minutes: 20
     environment:
       name: ${{ inputs.environment }}
       url: ${{ inputs.url }}
@@ -104,11 +108,19 @@ jobs:
           set -e
           if [ -n "$TS_AUTHKEY" ]; then
             curl -fsSL https://tailscale.com/install.sh | sh
-            sudo tailscale up \
+            # `--timeout` faz o `tailscale up` ABORTAR se a authkey estiver
+            # expirada/inválida ou o headscale inacessível — sem ele o comando
+            # fica aguardando login interativo para sempre e o deploy pendura
+            # (issue #225). Mensagem explícita aponta a causa provável.
+            if ! sudo tailscale up \
               --login-server=https://headscale.aerobi.com.br \
               --authkey="$TS_AUTHKEY" \
               --hostname="gh-${{ github.event.repository.name }}-${{ github.run_id }}" \
-              --accept-dns=false
+              --accept-dns=false \
+              --timeout=120s; then
+              echo "::error::Falha ao conectar à tailnet (timeout). HEADSCALE_AUTHKEY provavelmente expirada/inválida ou headscale.aerobi.com.br inacessível — renove a preauthkey no Headscale e atualize o secret (issue #225)."
+              exit 1
+            fi
             sudo tailscale status
             echo "DEPLOY_HOST=100.64.0.1" >> "$GITHUB_ENV"
             echo "Deploy via tailnet (100.64.0.1) — SSH não toca a 22 pública."
