@@ -40,17 +40,16 @@ export class CreateMovementService {
     origin: MovementOrigin,
     image?: Express.Multer.File,
   ): Promise<CreateMovementResponseDTO> {
-    let imageKey: string | null = null;
-
+    // Valida o mimetype antes de qualquer efeito colateral (fail-fast).
     if (image) {
       this.assertImageMimetype(image.mimetype);
-      imageKey = buildReadingImageKey(image.mimetype, dto.reading_datetime);
-      await this.storage.upload(image, imageKey);
     }
 
     // Congela um snapshot dos dados RAB da aeronave no instante do movimento.
     // A `rab_row` é periódica; sem match a matrícula segue sem RAB (snapshot
-    // vazio) e o movimento NÃO falha — apenas registramos um aviso.
+    // vazio) e o movimento NÃO falha — apenas registramos um aviso. Resolvido
+    // ANTES do upload da imagem: se o lookup falhar (ex.: timeout de DB), não
+    // deixamos imagem órfã no storage.
     const rabRow = await this.rabRowRepo.findLatestByMarcas(dto.registration);
     if (!rabRow) {
       this.logger.warn(
@@ -58,6 +57,12 @@ export class CreateMovementService {
       );
     }
     const snapshot = buildAircraftSnapshotCreateInput(rabRow);
+
+    let imageKey: string | null = null;
+    if (image) {
+      imageKey = buildReadingImageKey(image.mimetype, dto.reading_datetime);
+      await this.storage.upload(image, imageKey);
+    }
 
     const created = await this.persist(dto, imageKey, origin, snapshot);
 
