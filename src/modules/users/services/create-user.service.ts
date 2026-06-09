@@ -5,7 +5,7 @@ import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { maskEmail } from '@/common/utils/mask-email.util';
-import { UserRole } from '@/generated/prisma/client';
+import { Uf, UserRole } from '@/generated/prisma/client';
 import { InviteTokenService } from '@/modules/tokens/services/invite-token.service';
 
 import type { CreateUserRequestDto } from '../dtos/create-user-request.dto';
@@ -56,6 +56,8 @@ export class CreateUserService {
       this.errorMessageService,
     );
 
+    const { aerodromeGroupId, state } = await this.resolveGroupAndState(input);
+
     if (await this.userRepository.existsByEmail(input.email)) {
       throw new CustomHttpException(
         this.errorMessageService.getMessage(
@@ -72,6 +74,8 @@ export class CreateUserService {
       email: input.email,
       name: input.name,
       role: input.role,
+      aerodromeGroupId,
+      state,
       ...(input.phone !== undefined && { phone: input.phone }),
       invitedById: input.actorId,
       invitedAt: now,
@@ -101,5 +105,54 @@ export class CreateUserService {
     );
 
     return toUserResponse(user);
+  }
+
+  /**
+   * Resolve o grupo/UF do novo user, espelhando `aerobi-web`
+   * (`app/actions/users/create`), com a tradução da sentinela `"admin"` do
+   * Firestore para `null` no Postgres (decisão da #210):
+   *  - role alvo ADMIN → sem grupo/UF (`null`/`null`);
+   *  - ator COORDINATOR → herda o **próprio** grupo/UF (resolvidos por consulta;
+   *    o JWT só carrega role). Sem grupo/UF provisionado ⇒ `FORBIDDEN`;
+   *  - ator ADMIN (criando role com grupo) → grupo/UF vêm do DTO; ausentes ⇒
+   *    `VALIDATION_FAILED` (400).
+   */
+  private async resolveGroupAndState(
+    input: CreateUserInput,
+  ): Promise<{ aerodromeGroupId: string | null; state: Uf | null }> {
+    if (input.role === UserRole.ADMIN) {
+      return { aerodromeGroupId: null, state: null };
+    }
+
+    if (input.actorRole === UserRole.COORDINATOR) {
+      const actorRecord = await this.userRepository.findActiveById(
+        input.actorId,
+      );
+      if (!actorRecord?.aerodromeGroupId || !actorRecord.state) {
+        throw new CustomHttpException(
+          this.errorMessageService.getMessage(ErrorCode.FORBIDDEN, {
+            RESOURCE: 'user',
+          }),
+          HttpStatus.FORBIDDEN,
+          ErrorCode.FORBIDDEN,
+        );
+      }
+      return {
+        aerodromeGroupId: actorRecord.aerodromeGroupId,
+        state: actorRecord.state,
+      };
+    }
+
+    if (!input.aerodromeGroupId || !input.state) {
+      throw new CustomHttpException(
+        this.errorMessageService.getMessage(ErrorCode.VALIDATION_FAILED, {
+          DETAILS:
+            'aerodromeGroupId e state são obrigatórios para a role informada',
+        }),
+        HttpStatus.BAD_REQUEST,
+        ErrorCode.VALIDATION_FAILED,
+      );
+    }
+    return { aerodromeGroupId: input.aerodromeGroupId, state: input.state };
   }
 }

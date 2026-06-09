@@ -1,7 +1,7 @@
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
-import { UserRole } from '@/generated/prisma/client';
+import { Uf, UserRole } from '@/generated/prisma/client';
 import { buildAuthenticatedUserFixture } from '@/modules/auth/testing/authenticated-user.fixtures';
 import type { RefreshTokenRepository } from '@/modules/auth/repositories/refresh-token.repository';
 
@@ -17,6 +17,14 @@ const ADMIN = buildAuthenticatedUserFixture({
 const COORDINATOR = buildAuthenticatedUserFixture({
   id: 'coord-1',
   role: UserRole.COORDINATOR,
+});
+
+/** Registro do COORDINATOR ator com grupo provisionado (group-a / SP). */
+const COORD_RECORD = buildUserFixture({
+  id: 'coord-1',
+  role: UserRole.COORDINATOR,
+  aerodromeGroupId: 'group-a',
+  state: Uf.SP,
 });
 
 describe('RemoveUserService', () => {
@@ -47,8 +55,22 @@ describe('RemoveUserService', () => {
     );
   });
 
+  /**
+   * O service chama `findActiveById` duas vezes (ator e alvo). Roteia o mock
+   * por id: o ator (`admin-1`/`coord-1`) e o alvo (`target`).
+   */
+  function routeFindActiveById(
+    actorRecord: ReturnType<typeof buildUserFixture> | null,
+    targetRecord: ReturnType<typeof buildUserFixture> | null,
+  ): void {
+    findActiveById.mockImplementation((id: string) =>
+      Promise.resolve(id === 'target' ? targetRecord : actorRecord),
+    );
+  }
+
   it('ADMIN remove qualquer role → soft-delete + revoga refresh tokens', async () => {
-    findActiveById.mockResolvedValue(
+    routeFindActiveById(
+      null, // ADMIN → scope `all`, não depende do próprio registro
       buildUserFixture({ id: 'target', role: UserRole.COORDINATOR }),
     );
     revokeAllForUser.mockResolvedValue(2);
@@ -58,11 +80,11 @@ describe('RemoveUserService', () => {
     expect(revokeAllForUser).toHaveBeenCalledWith('target');
   });
 
-  it('user inexistente → USER_NOT_FOUND', async () => {
-    findActiveById.mockResolvedValue(null);
+  it('ADMIN: user inexistente → USER_NOT_FOUND', async () => {
+    routeFindActiveById(null, null);
 
     try {
-      await service.execute('ghost', ADMIN);
+      await service.execute('target', ADMIN);
       fail('should have thrown');
     } catch (e) {
       expect((e as CustomHttpException).getErrorCode()).toBe(
@@ -72,12 +94,29 @@ describe('RemoveUserService', () => {
     expect(softDelete).not.toHaveBeenCalled();
   });
 
-  describe('recorte por role-alvo', () => {
+  it('auto-exclusão → VALIDATION_FAILED (sem soft-delete)', async () => {
+    try {
+      await service.execute('admin-1', ADMIN);
+      fail('should have thrown');
+    } catch (e) {
+      expect((e as CustomHttpException).getErrorCode()).toBe(
+        ErrorCode.VALIDATION_FAILED,
+      );
+    }
+    expect(softDelete).not.toHaveBeenCalled();
+  });
+
+  describe('escopo por grupo (COORDINATOR)', () => {
     it.each([UserRole.OPERATOR, UserRole.TECHNICAL])(
-      'COORDINATOR remove %s → permitido',
+      'remove %s do próprio grupo → permitido',
       async (targetRole) => {
-        findActiveById.mockResolvedValue(
-          buildUserFixture({ id: 'target', role: targetRole }),
+        routeFindActiveById(
+          COORD_RECORD,
+          buildUserFixture({
+            id: 'target',
+            role: targetRole,
+            aerodromeGroupId: 'group-a',
+          }),
         );
         revokeAllForUser.mockResolvedValue(0);
 
@@ -89,10 +128,15 @@ describe('RemoveUserService', () => {
     );
 
     it.each([UserRole.ADMIN, UserRole.COORDINATOR])(
-      'COORDINATOR remove %s → FORBIDDEN (sem soft-delete)',
+      'remove %s (não gerível) → USER_NOT_FOUND (não vaza)',
       async (targetRole) => {
-        findActiveById.mockResolvedValue(
-          buildUserFixture({ id: 'target', role: targetRole }),
+        routeFindActiveById(
+          COORD_RECORD,
+          buildUserFixture({
+            id: 'target',
+            role: targetRole,
+            aerodromeGroupId: 'group-a',
+          }),
         );
 
         try {
@@ -100,12 +144,55 @@ describe('RemoveUserService', () => {
           fail('should have thrown');
         } catch (e) {
           expect((e as CustomHttpException).getErrorCode()).toBe(
-            ErrorCode.FORBIDDEN,
+            ErrorCode.USER_NOT_FOUND,
           );
         }
         expect(softDelete).not.toHaveBeenCalled();
         expect(revokeAllForUser).not.toHaveBeenCalled();
       },
     );
+
+    it('remove OPERATOR de outro grupo → USER_NOT_FOUND', async () => {
+      routeFindActiveById(
+        COORD_RECORD,
+        buildUserFixture({
+          id: 'target',
+          role: UserRole.OPERATOR,
+          aerodromeGroupId: 'group-b',
+        }),
+      );
+
+      try {
+        await service.execute('target', COORDINATOR);
+        fail('should have thrown');
+      } catch (e) {
+        expect((e as CustomHttpException).getErrorCode()).toBe(
+          ErrorCode.USER_NOT_FOUND,
+        );
+      }
+      expect(softDelete).not.toHaveBeenCalled();
+    });
+
+    it('COORDINATOR sem grupo provisionado → FORBIDDEN', async () => {
+      routeFindActiveById(
+        buildUserFixture({
+          id: 'coord-1',
+          role: UserRole.COORDINATOR,
+          aerodromeGroupId: null,
+          state: null,
+        }),
+        buildUserFixture({ id: 'target', role: UserRole.OPERATOR }),
+      );
+
+      try {
+        await service.execute('target', COORDINATOR);
+        fail('should have thrown');
+      } catch (e) {
+        expect((e as CustomHttpException).getErrorCode()).toBe(
+          ErrorCode.FORBIDDEN,
+        );
+      }
+      expect(softDelete).not.toHaveBeenCalled();
+    });
   });
 });

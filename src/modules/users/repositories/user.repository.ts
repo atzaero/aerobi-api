@@ -43,6 +43,10 @@ export class UserRepository implements IUserRepository {
         name: data.name,
         role: data.role,
         ...(data.phone !== undefined && { phone: data.phone }),
+        ...(data.aerodromeGroupId !== undefined && {
+          aerodromeGroupId: data.aerodromeGroupId,
+        }),
+        ...(data.state !== undefined && { state: data.state }),
         ...(data.invitedById !== undefined && {
           invitedById: data.invitedById,
         }),
@@ -89,6 +93,10 @@ export class UserRepository implements IUserRepository {
 
     if (params.role) {
       where.role = params.role;
+    }
+
+    if (params.aerodromeGroupId) {
+      where.aerodromeGroupId = params.aerodromeGroupId;
     }
 
     if (params.search) {

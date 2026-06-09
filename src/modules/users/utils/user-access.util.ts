@@ -31,14 +31,16 @@ export function assertSelfOrAdmin(
 
 /**
  * Recorte por **role-alvo** na gestão de usuários (regra de negócio, não a
- * matriz `PERMISSIONS`). Espelha célula a célula o `aerobi-web`
- * (`app/actions/users/{create,delete}`): ADMIN gere qualquer role; COORDINATOR
- * só adiciona/remove `OPERATOR`/`TECHNICAL`. Qualquer outro caso → 403.
+ * matriz `PERMISSIONS`): ADMIN gere qualquer role; COORDINATOR só cria
+ * `OPERATOR`/`TECHNICAL`. Qualquer outro caso → 403.
+ *
+ * Usado no **create**. Em `remove`/`resend` o recorte por role-alvo é absorvido
+ * pelo **escopo por grupo** (`resolveUserGroupScope` + `isTargetManageableInGroup`
+ * em `group-scope.util`), que combina role-alvo + próprio grupo e responde
+ * `USER_NOT_FOUND` (não vaza a existência de alvos fora do escopo).
  *
  * O gate papel × ação (quem chega à rota) é do `PermissionsGuard`; este recorte
- * é o passo seguinte — _quais_ usuários o ator pode tocar. O **escopo por grupo**
- * (coordinator restrito ao próprio `aerodromeGroupId`) é a epic #204 e **não**
- * entra aqui.
+ * é o passo seguinte — _quais_ usuários o ator pode tocar.
  *
  * @param actorRole papel do ator autenticado (`@CurrentUser().role`)
  * @param targetRole papel do usuário-alvo (a criar, ou do registro carregado)

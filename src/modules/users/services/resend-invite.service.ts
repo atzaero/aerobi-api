@@ -15,7 +15,10 @@ import {
 } from '../events/user-invited.event';
 import { toUserResponse } from '../mappers/user.mapper';
 import { UserRepository } from '../repositories/user.repository';
-import { assertCanManageTargetRole } from '../utils/user-access.util';
+import {
+  isTargetManageableInGroup,
+  resolveActorGroupScope,
+} from '../utils/group-scope.util';
 
 export interface ResendInviteInput {
   /** Id do user pendente que receberá o novo convite. */
@@ -54,9 +57,33 @@ export class ResendInviteService {
   ) {}
 
   async execute(input: ResendInviteInput): Promise<UserResponseDto> {
+    // Escopo por grupo (espelha o delete do aerobi-web): COORDINATOR só reenvia
+    // a OPERATOR/TECHNICAL do próprio grupo (resolvido por consulta — JWT só tem
+    // role). Alvo fora do escopo retorna USER_NOT_FOUND (não vaza existência nem
+    // o estado do convite); COORDINATOR sem grupo ⇒ FORBIDDEN; ADMIN qualquer.
+    const scope = await resolveActorGroupScope(
+      input.actorRole,
+      input.actorId,
+      (id) => this.userRepository.findActiveById(id),
+    );
+
+    if (scope.kind === 'none') {
+      throw new CustomHttpException(
+        this.errorMessageService.getMessage(ErrorCode.FORBIDDEN, {
+          RESOURCE: 'user',
+        }),
+        HttpStatus.FORBIDDEN,
+        ErrorCode.FORBIDDEN,
+      );
+    }
+
     const user = await this.userRepository.findActiveById(input.userId);
 
-    if (!user) {
+    if (
+      !user ||
+      (scope.kind === 'group' &&
+        !isTargetManageableInGroup(user, scope.groupId))
+    ) {
       throw new CustomHttpException(
         this.errorMessageService.getMessage(ErrorCode.USER_NOT_FOUND, {
           ID: input.userId,
@@ -65,12 +92,6 @@ export class ResendInviteService {
         ErrorCode.USER_NOT_FOUND,
       );
     }
-
-    assertCanManageTargetRole(
-      input.actorRole,
-      user.role,
-      this.errorMessageService,
-    );
 
     if (user.acceptedInviteAt) {
       throw new CustomHttpException(

@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-import { UserRole } from '@/generated/prisma/client';
+import { Uf, UserRole } from '@/generated/prisma/client';
 
 export class UserResponseDto {
   @ApiProperty({ format: 'uuid' })
@@ -17,6 +17,12 @@ export class UserResponseDto {
 
   @ApiProperty({ enum: UserRole })
   role!: UserRole;
+
+  @ApiPropertyOptional({ format: 'uuid', nullable: true })
+  aerodromeGroupId!: string | null;
+
+  @ApiPropertyOptional({ enum: Uf, nullable: true })
+  state!: Uf | null;
 
   @ApiProperty()
   emailVerified!: boolean;

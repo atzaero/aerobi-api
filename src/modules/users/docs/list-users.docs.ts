@@ -13,8 +13,12 @@ export function ListUsersDocs() {
     Get(),
     ApiBearerAuth(),
     ApiOperation({
-      summary:
-        'Lista usuários paginados (ADMIN; COORDINATOR aguarda escopo por grupo — #204)',
+      summary: 'Lista usuários paginados (ADMIN/COORDINATOR)',
+      description:
+        'ADMIN lista todos e pode filtrar por `aerodromeGroupId`. ' +
+        'COORDINATOR é restrito ao **próprio grupo** (o filtro é forçado a ' +
+        'partir do registro do ator, ignorando o `aerodromeGroupId` da query); ' +
+        'COORDINATOR sem grupo provisionado recebe lista vazia.',
     }),
     ApiOkResponse({ type: UsersPaginatedResponseDto }),
     ApiForbiddenResponse(),
