@@ -33,6 +33,8 @@ export function buildUserFixture(overrides: Partial<User> = {}): User {
     emailVerified: true,
     timezone: null,
     lastLoginAt: null,
+    aerodromeGroupId: null,
+    state: null,
     invitedById: null,
     invitedAt: null,
     acceptedInviteAt: REFERENCE_DATE,

@@ -248,6 +248,7 @@ model AerodromeGroup {
   deletionRequested Boolean? @map("deletion_requested")
 
   operationalAerodromes OperationalAerodrome[]
+  users                 User[]
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   createdBy String?   @map("created_by")
@@ -607,6 +608,13 @@ model User {
   timezone      String?   @db.VarChar(64)
   lastLoginAt   DateTime? @map("last_login_at") @db.Timestamptz(3)
 
+  /// Grupo de aeródromos ao qual o usuário pertence (escopo). ADMIN global
+  /// fica `null` (bypass por role, não pela sentinela "admin" do Firestore).
+  aerodromeGroupId String?         @map("aerodrome_group_id") @db.Uuid
+  aerodromeGroup   AerodromeGroup? @relation(fields: [aerodromeGroupId], references: [id], onDelete: SetNull)
+  /// UF de atuação do usuário (espelha `state` do Firestore).
+  state            Uf?
+
   /// ADMIN que originou o convite (self-relation).
   invitedById      String?   @map("invited_by_id") @db.Uuid
   invitedBy        User?     @relation("UserInvites", fields: [invitedById], references: [id], onDelete: SetNull)
@@ -626,6 +634,7 @@ model User {
 
   @@index([email])
   @@index([role])
+  @@index([aerodromeGroupId])
   @@index([deletedAt])
   @@map("users")
 }
