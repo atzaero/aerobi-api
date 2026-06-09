@@ -1,3 +1,10 @@
+# [2.6.0-beta.10](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.9...v2.6.0-beta.10) (2026-06-09)
+
+
+### Bug Fixes
+
+* **deploy:** timeout no tailscale up + timeout-minutes no job ([#225](https://github.com/atzaero/aerobi-api/issues/225)) ([f16a301](https://github.com/atzaero/aerobi-api/commit/f16a301527285c72a64d2678a686f59e8125a9fa))
+
 # [2.6.0-beta.9](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.8...v2.6.0-beta.9) (2026-06-09)
 
 
