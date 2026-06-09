@@ -81,6 +81,7 @@ describe('CreateUserService', () => {
       name: 'Piloto',
       role: UserRole.OPERATOR,
       actorId: 'admin-1',
+      actorRole: UserRole.ADMIN,
       actorName: 'Admin Aerobi',
     });
 
@@ -109,6 +110,7 @@ describe('CreateUserService', () => {
         name: 'X',
         role: UserRole.OPERATOR,
         actorId: 'admin-1',
+        actorRole: UserRole.ADMIN,
       });
       fail('should have thrown');
     } catch (e) {
@@ -116,5 +118,54 @@ describe('CreateUserService', () => {
         ErrorCode.EMAIL_ALREADY_REGISTERED,
       );
     }
+  });
+
+  describe('recorte por role-alvo', () => {
+    it.each([UserRole.OPERATOR, UserRole.TECHNICAL])(
+      'COORDINATOR cria %s → permitido',
+      async (targetRole) => {
+        existsByEmail.mockResolvedValue(false);
+        create.mockResolvedValue(buildPendingUserFixture({ role: targetRole }));
+        createInviteToken.mockResolvedValue({
+          token: 'plain-invite',
+          tokenRecord: {
+            id: 't-1',
+            expiresAt: new Date(Date.now() + 72 * 3600_000),
+          },
+        });
+
+        await expect(
+          service.execute({
+            email: 'novo@aerobi.local',
+            name: 'Novo',
+            role: targetRole,
+            actorId: 'coord-1',
+            actorRole: UserRole.COORDINATOR,
+          }),
+        ).resolves.toMatchObject({ id: 'user-1' });
+      },
+    );
+
+    it.each([UserRole.ADMIN, UserRole.COORDINATOR])(
+      'COORDINATOR cria %s → FORBIDDEN (sem persistir)',
+      async (targetRole) => {
+        try {
+          await service.execute({
+            email: 'novo@aerobi.local',
+            name: 'Novo',
+            role: targetRole,
+            actorId: 'coord-1',
+            actorRole: UserRole.COORDINATOR,
+          });
+          fail('should have thrown');
+        } catch (e) {
+          expect((e as CustomHttpException).getErrorCode()).toBe(
+            ErrorCode.FORBIDDEN,
+          );
+        }
+        expect(existsByEmail).not.toHaveBeenCalled();
+        expect(create).not.toHaveBeenCalled();
+      },
+    );
   });
 });

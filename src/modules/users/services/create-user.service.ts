@@ -5,6 +5,7 @@ import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { maskEmail } from '@/common/utils/mask-email.util';
+import { UserRole } from '@/generated/prisma/client';
 import { InviteTokenService } from '@/modules/tokens/services/invite-token.service';
 
 import type { CreateUserRequestDto } from '../dtos/create-user-request.dto';
@@ -15,17 +16,23 @@ import {
 } from '../events/user-invited.event';
 import { toUserResponse } from '../mappers/user.mapper';
 import { UserRepository } from '../repositories/user.repository';
+import { assertCanManageTargetRole } from '../utils/user-access.util';
 
 export interface CreateUserInput extends CreateUserRequestDto {
-  /** ADMIN que está criando (vem do `@CurrentUser`). */
+  /** Ator que está criando (vem do `@CurrentUser`). */
   actorId: string;
+  /** Papel do ator — usado no recorte por role-alvo (ADMIN/COORDINATOR). */
+  actorRole: UserRole;
   actorName?: string;
 }
 
 /**
  * Cria um User pendente (sem senha) e dispara o fluxo de convite.
  *
- * Apenas ADMIN deve chamar (guard aplicado no controller). Validações:
+ * Autorização em duas camadas: o `PermissionsGuard` (`user:create`) deixa
+ * passar ADMIN/COORDINATOR; aqui aplica-se o **recorte por role-alvo**
+ * (coordinator só cria `OPERATOR`/`TECHNICAL`). Validações:
+ *  - Ator pode gerir a role alvo → caso contrário `FORBIDDEN`
  *  - Email não pode existir (mesmo soft-deletado) → `EMAIL_ALREADY_REGISTERED`
  *
  * Após persistir, emite Token tipo INVITE e o evento `user.invited` —
@@ -43,6 +50,12 @@ export class CreateUserService {
   ) {}
 
   async execute(input: CreateUserInput): Promise<UserResponseDto> {
+    assertCanManageTargetRole(
+      input.actorRole,
+      input.role,
+      this.errorMessageService,
+    );
+
     if (await this.userRepository.existsByEmail(input.email)) {
       throw new CustomHttpException(
         this.errorMessageService.getMessage(

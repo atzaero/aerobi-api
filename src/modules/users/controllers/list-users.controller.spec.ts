@@ -32,4 +32,8 @@ describe('ListUsersController', () => {
     await expect(controller.handle(query)).resolves.toBe(page);
     expect(execute).toHaveBeenCalledWith(query);
   });
+
+  // Autorização de list-users permanece ADMIN-only via @Roles + RolesGuard
+  // (não migrou para @RequirePermission). A ampliação para COORDINATOR depende
+  // do escopo por grupo (epic #204) — ver JSDoc do controller.
 });

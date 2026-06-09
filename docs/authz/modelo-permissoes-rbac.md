@@ -139,11 +139,61 @@ Ver o cabeçalho de `permissions.ts`.
 
 ### Controllers ainda sob `AerobiApiKeyGuard`
 
-Os controllers atuais protegem-se por **`AerobiApiKeyGuard`** (header
-`X-API-Key`) e **ainda não consomem** esta política. A matriz é a **fundação**
-(guards/services/testes vão consumir `can()` / `rolesFor()`); a ligação dos
+A maioria dos controllers protege-se por **`AerobiApiKeyGuard`** (header
+`X-API-Key`) e **ainda não consome** esta política. A matriz é a **fundação**
+(guards/services/testes consomem `can()` / `rolesFor()`); a ligação desses
 controllers ao RBAC por papel é **migração futura**. Até lá, o `permissions.ts`
 serve como contrato e é a referência de paridade com o front.
+
+### Registro do guard: controller-level vs `APP_GUARD` (decisão #209)
+
+O `PermissionsGuard` pode ser ligado de duas formas. O **piloto `users/`**
+(#209) adota o **controller-level**; o `APP_GUARD` global fica para o futuro:
+
+| Abordagem | Prós | Contras |
+| --- | --- | --- |
+| **Controller-level** (`@UseGuards(JwtAuthGuard, PermissionsGuard)` + `@RequirePermission(...)` por controller) — **adotado agora** | Explícito; **não toca** nas rotas `X-API-Key`; convive com `AerobiApiKeyGuard`; opt-in rota a rota durante a migração | Verboso (repete `@UseGuards`/`@RequirePermission`) |
+| **`APP_GUARD` global** | DRY (um registro cobre tudo) | Aplicar-se-ia a **todas** as rotas, incluindo as `X-API-Key` — exigiria `@Public()`/bypass em massa antes da migração; arriscado |
+
+**Recomendação:** manter **controller-level** enquanto coexistirem rotas
+`X-API-Key` e rotas RBAC humanas. A migração para `APP_GUARD` só compensa
+depois que a maioria dos controllers estiver sob `JwtAuthGuard` e houver um
+`@Public()` consistente para o que ficar fora.
+
+> **Recorte por role-alvo ≠ matriz.** O `PermissionsGuard` resolve só o gate
+> papel × ação. O recorte por **role-alvo** (nota ¹) é regra de negócio na
+> camada de serviço — em `users/` está em
+> [`assertCanManageTargetRole`](../../src/modules/users/utils/user-access.util.ts),
+> consumido por `create-user`, `remove-user` e `resend-invite`.
+
+#### Piloto `users/` — mapa aplicado
+
+| Controller | Guard | Permissão | Recorte no service |
+| --- | --- | --- | --- |
+| `list-users` | `JwtAuthGuard, RolesGuard` (**inalterado**) | `@Roles(ADMIN)` | — (ver nota de paridade abaixo) |
+| `create-user` | `JwtAuthGuard, PermissionsGuard` | `user:create` | `assertCanManageTargetRole` |
+| `remove-user` | `JwtAuthGuard, PermissionsGuard` | `user:delete` | `assertCanManageTargetRole` |
+| `resend-invite` | `JwtAuthGuard, PermissionsGuard` | `user:create` | `assertCanManageTargetRole` |
+| `update-user` | `JwtAuthGuard` (inalterado) | — | `assertSelfOrAdmin` (self **ou** ADMIN) |
+| `find-user-by-id` | `JwtAuthGuard` (inalterado) | — | `assertSelfOrAdmin` |
+
+`update-user` e `find-user-by-id` **não** migram para `@RequirePermission`: são
+endpoints **self-or-admin** (o próprio dono edita/lê o seu registro). A matriz
+não tem `user:read`, e `user:update` é ADMIN-only (reset de senha) — aplicá-la
+quebraria o self-service. A parte ADMIN-only (mudar role) permanece no service
+(`ROLE_CHANGE_FORBIDDEN`).
+
+> **Paridade do `list-users` (deferido para #204).** A matriz diz
+> `user:list = [ADMIN, COORDINATOR]`, mas o endpoint permanece **ADMIN-only**
+> de propósito. No `aerobi-web` o COORDINATOR só lista usuários do **próprio
+> grupo** (filtro forçado por `aerodromeGroupId` do token). Aqui o escopo por
+> grupo ainda não existe (sem `User.aerodromeGroupId`, sem claim no JWT, sem
+> filtro no repo — tudo na epic #204). Ampliar `list` para COORDINATOR **sem**
+> esse filtro exporia **todos** os usuários (incl. ADMINs de todos os grupos),
+> ou seja, **mais** que o front. Por isso `list` migra para
+> `@RequirePermission('user','list')` **junto** com o escopo por grupo na #204.
+> `create`/`delete`/`resend` já ampliam porque o recorte por role-alvo limita o
+> alcance a `OPERATOR`/`TECHNICAL` (o filtro por grupo dessas ações também é #204).
 
 ### Acesso público ≠ RBAC
 
