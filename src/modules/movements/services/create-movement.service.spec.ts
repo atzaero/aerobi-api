@@ -1,3 +1,5 @@
+import { MovementSource, MovementType } from '@/generated/prisma/enums';
+
 import type { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import type { StorageService } from '@/modules/storage/services/storage.service';
@@ -5,6 +7,7 @@ import type { StorageService } from '@/modules/storage/services/storage.service'
 import type { CreateMovementDTO } from '../dtos/create-movement.dto';
 import type { MovementRepository } from '../repositories/movement.repository';
 
+import type { MovementOrigin } from './movement-origin';
 import { CreateMovementService } from './create-movement.service';
 
 describe('CreateMovementService', () => {
@@ -20,6 +23,11 @@ describe('CreateMovementService', () => {
     confidence: '0.98',
     reading_datetime: new Date('2026-06-08T16:52:39Z'),
     aerodrome: 'SSCF',
+  };
+
+  const automaticOrigin: MovementOrigin = {
+    source: MovementSource.AUTOMATIC,
+    createdBy: 'aviascan',
   };
 
   const image = {
@@ -51,7 +59,7 @@ describe('CreateMovementService', () => {
   it('cria sem imagem: imageKey null e image_path null', async () => {
     create.mockResolvedValue({ id: 'r-1' });
 
-    const res = await service.execute(baseDto);
+    const res = await service.execute(baseDto, automaticOrigin);
 
     expect(res).toEqual({
       id: 'r-1',
@@ -61,7 +69,13 @@ describe('CreateMovementService', () => {
     expect(upload).not.toHaveBeenCalled();
     expect(getPresignedUrl).not.toHaveBeenCalled();
     expect(create).toHaveBeenCalledWith(
-      expect.objectContaining({ registration: 'PR-ZTT', imageKey: null }),
+      expect.objectContaining({
+        registration: 'PR-ZTT',
+        imageKey: null,
+        source: MovementSource.AUTOMATIC,
+        createdBy: 'aviascan',
+        operationType: MovementType.LANDING,
+      }),
     );
   });
 
@@ -73,7 +87,7 @@ describe('CreateMovementService', () => {
     });
     getPresignedUrl.mockResolvedValue('https://signed/url');
 
-    const res = await service.execute(baseDto, image);
+    const res = await service.execute(baseDto, automaticOrigin, image);
 
     expect(upload).toHaveBeenCalledWith(
       image,
@@ -90,9 +104,9 @@ describe('CreateMovementService', () => {
   it('rejeita mimetype não permitido sem tocar no banco/storage', async () => {
     const pdf = { ...image, mimetype: 'application/pdf' };
 
-    await expect(service.execute(baseDto, pdf)).rejects.toBeInstanceOf(
-      CustomHttpException,
-    );
+    await expect(
+      service.execute(baseDto, automaticOrigin, pdf),
+    ).rejects.toBeInstanceOf(CustomHttpException);
     expect(upload).not.toHaveBeenCalled();
     expect(create).not.toHaveBeenCalled();
   });
@@ -102,7 +116,9 @@ describe('CreateMovementService', () => {
     create.mockRejectedValue(dbError);
     remove.mockResolvedValue(undefined);
 
-    await expect(service.execute(baseDto, image)).rejects.toBe(dbError);
+    await expect(service.execute(baseDto, automaticOrigin, image)).rejects.toBe(
+      dbError,
+    );
 
     expect(upload).toHaveBeenCalled();
     expect(remove).toHaveBeenCalledWith(expect.stringMatching(keyPattern));
@@ -112,7 +128,7 @@ describe('CreateMovementService', () => {
     create.mockResolvedValue({ id: 'r-3' });
     getPresignedUrl.mockRejectedValue(new Error('minio down'));
 
-    const res = await service.execute(baseDto, image);
+    const res = await service.execute(baseDto, automaticOrigin, image);
 
     expect(res).toEqual({
       id: 'r-3',
@@ -120,5 +136,32 @@ describe('CreateMovementService', () => {
       image_path: null,
     });
     expect(remove).not.toHaveBeenCalled();
+  });
+
+  it('origem MANUAL: source MANUAL, operationType do input e createdBy do body', async () => {
+    create.mockResolvedValue({ id: 'm-1' });
+    const manualDto = {
+      registration: 'PR-ABC',
+      reading_datetime: new Date('2026-06-08T16:52:39Z'),
+      aerodrome: 'SBSP',
+    };
+    const manualOrigin: MovementOrigin = {
+      source: MovementSource.MANUAL,
+      createdBy: 'user-42',
+      operationType: MovementType.TAKEOFF,
+    };
+
+    const res = await service.execute(manualDto, manualOrigin);
+
+    expect(res.id).toBe('m-1');
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        registration: 'PR-ABC',
+        source: MovementSource.MANUAL,
+        createdBy: 'user-42',
+        operationType: MovementType.TAKEOFF,
+        confidence: undefined,
+      }),
+    );
   });
 });

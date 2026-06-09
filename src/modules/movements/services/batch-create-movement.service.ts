@@ -2,6 +2,8 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 
+import { MovementSource } from '@/generated/prisma/enums';
+
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
@@ -66,7 +68,12 @@ export class BatchCreateMovementService {
     const image =
       item.image_index !== undefined ? images[item.image_index] : undefined;
     try {
-      const created = await this.createService.execute(item, image);
+      // Lote vem do pipeline aviascan-cv → origem AUTOMATIC (igual ao /readings).
+      const created = await this.createService.execute(
+        item,
+        { source: MovementSource.AUTOMATIC, createdBy: 'aviascan' },
+        image,
+      );
       return {
         index,
         status: 'created',
