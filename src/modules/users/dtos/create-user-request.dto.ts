@@ -4,11 +4,12 @@ import {
   IsEnum,
   IsOptional,
   IsString,
+  IsUUID,
   MaxLength,
   MinLength,
 } from 'class-validator';
 
-import { UserRole } from '@/generated/prisma/client';
+import { Uf, UserRole } from '@/generated/prisma/client';
 
 import {
   NormalizeEmail,
@@ -40,4 +41,23 @@ export class CreateUserRequestDto {
   @IsString()
   @MaxLength(32)
   phone?: string;
+
+  /**
+   * Grupo de aeródromos do novo user. **Obrigatório quando o ator é ADMIN** e
+   * a role alvo é COORDINATOR/OPERATOR/TECHNICAL. Ignorado quando o ator é
+   * COORDINATOR (herda o próprio grupo) e quando a role alvo é ADMIN (sem grupo).
+   */
+  @ApiPropertyOptional({ format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  aerodromeGroupId?: string;
+
+  /**
+   * UF do grupo. Mesmas regras de `aerodromeGroupId` — exigido do ADMIN para
+   * roles com grupo; ignorado para COORDINATOR (herda) e ADMIN alvo (sem UF).
+   */
+  @ApiPropertyOptional({ enum: Uf })
+  @IsOptional()
+  @IsEnum(Uf)
+  state?: Uf;
 }

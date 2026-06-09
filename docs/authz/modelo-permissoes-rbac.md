@@ -170,10 +170,10 @@ depois que a maioria dos controllers estiver sob `JwtAuthGuard` e houver um
 
 | Controller | Guard | Permissão | Recorte no service |
 | --- | --- | --- | --- |
-| `list-users` | `JwtAuthGuard, RolesGuard` (**inalterado**) | `@Roles(ADMIN)` | — (ver nota de paridade abaixo) |
-| `create-user` | `JwtAuthGuard, PermissionsGuard` | `user:create` | `assertCanManageTargetRole` |
-| `remove-user` | `JwtAuthGuard, PermissionsGuard` | `user:delete` | `assertCanManageTargetRole` |
-| `resend-invite` | `JwtAuthGuard, PermissionsGuard` | `user:create` | `assertCanManageTargetRole` |
+| `list-users` | `JwtAuthGuard, PermissionsGuard` | `user:list` | escopo por grupo (`resolveUserGroupScope`) |
+| `create-user` | `JwtAuthGuard, PermissionsGuard` | `user:create` | `assertCanManageTargetRole` + grupo herdado/informado |
+| `remove-user` | `JwtAuthGuard, PermissionsGuard` | `user:delete` | escopo por grupo (`isTargetManageableInGroup` → 404) |
+| `resend-invite` | `JwtAuthGuard, PermissionsGuard` | `user:create` | escopo por grupo (`isTargetManageableInGroup` → 404) |
 | `update-user` | `JwtAuthGuard` (inalterado) | — | `assertSelfOrAdmin` (self **ou** ADMIN) |
 | `find-user-by-id` | `JwtAuthGuard` (inalterado) | — | `assertSelfOrAdmin` |
 
@@ -183,17 +183,32 @@ não tem `user:read`, e `user:update` é ADMIN-only (reset de senha) — aplicá
 quebraria o self-service. A parte ADMIN-only (mudar role) permanece no service
 (`ROLE_CHANGE_FORBIDDEN`).
 
-> **Paridade do `list-users` (deferido para #204).** A matriz diz
-> `user:list = [ADMIN, COORDINATOR]`, mas o endpoint permanece **ADMIN-only**
-> de propósito. No `aerobi-web` o COORDINATOR só lista usuários do **próprio
-> grupo** (filtro forçado por `aerodromeGroupId` do token). Aqui o escopo por
-> grupo ainda não existe (sem `User.aerodromeGroupId`, sem claim no JWT, sem
-> filtro no repo — tudo na epic #204). Ampliar `list` para COORDINATOR **sem**
-> esse filtro exporia **todos** os usuários (incl. ADMINs de todos os grupos),
-> ou seja, **mais** que o front. Por isso `list` migra para
-> `@RequirePermission('user','list')` **junto** com o escopo por grupo na #204.
-> `create`/`delete`/`resend` já ampliam porque o recorte por role-alvo limita o
-> alcance a `OPERATOR`/`TECHNICAL` (o filtro por grupo dessas ações também é #204).
+#### Escopo por grupo em `users/` (#219)
+
+O **escopo por registro** vive no service (espelha as Server Actions do
+`aerobi-web` `app/actions/users/*`), resolvido a partir do **grupo do ator no
+DB** — o JWT continua só com `role` (decisão da epic #204). Helpers em
+`users/utils/group-scope.util.ts` (`resolveUserGroupScope`,
+`isTargetManageableInGroup`), espelhando `resolveGroupScope`/`manageable` do web:
+
+- **`list`** — COORDINATOR é forçado ao próprio `aerodromeGroupId` (ignora o da
+  query); sem grupo provisionado ⇒ lista vazia (sem _fail open_). ADMIN vê todos
+  e pode filtrar por grupo.
+- **`create`** — COORDINATOR só cria `OPERATOR`/`TECHNICAL` e o novo user
+  **herda o grupo/UF do próprio coordenador**. ADMIN: ao criar role com grupo
+  informa `aerodromeGroupId`+`state`; ao criar ADMIN o grupo/UF ficam `null`
+  (admin global — tradução da sentinela `"admin"` do Firestore para `null` no
+  Postgres, decisão #210).
+- **`delete`/`resend`** — COORDINATOR só toca `OPERATOR`/`TECHNICAL` do **próprio
+  grupo**; alvo fora do escopo retorna **`USER_NOT_FOUND` (404)** — mesmo status
+  do inexistente, para **não vazar** a existência. COORDINATOR sem grupo ⇒
+  `FORBIDDEN`. `delete` também bloqueia **auto-exclusão**.
+
+> **Coordinator → coordinator:** o backend mantém `assertCanManageTargetRole`
+> (COORDINATOR só gere `OPERATOR`/`TECHNICAL`), seguindo este doc e o `delete` do
+> web. O `create-action` do web permite COORDINATOR criar COORDINATOR (só bloqueia
+> ADMIN) — divergência interna do web tratada como bug a corrigir lá, não
+> replicada aqui.
 
 ### Acesso público ≠ RBAC
 

@@ -15,6 +15,8 @@ export function toUserResponse(user: User): UserResponseDto {
     name: user.name,
     phone: user.phone ?? null,
     role: user.role,
+    aerodromeGroupId: user.aerodromeGroupId ?? null,
+    state: user.state ?? null,
     emailVerified: user.emailVerified,
     timezone: user.timezone ?? null,
     lastLoginAt: user.lastLoginAt?.toISOString() ?? null,

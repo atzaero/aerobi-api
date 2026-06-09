@@ -1,4 +1,4 @@
-import type { User, UserRole } from '@/generated/prisma/client';
+import type { Uf, User, UserRole } from '@/generated/prisma/client';
 
 /** Dados para criar um User novo (pendente — sem password). */
 export interface CreateUserData {
@@ -6,6 +6,14 @@ export interface CreateUserData {
   name: string;
   phone?: string;
   role: UserRole;
+  /**
+   * Grupo de aeródromos do user. `null` para ADMIN global (sem grupo);
+   * não-nulo para COORDINATOR/OPERATOR/TECHNICAL. O service resolve a origem
+   * (grupo do COORDINATOR ator ou informado pelo ADMIN).
+   */
+  aerodromeGroupId?: string | null;
+  /** UF do grupo. `null` para ADMIN global; alinhado com `aerodromeGroupId`. */
+  state?: Uf | null;
   invitedById?: string;
   invitedAt?: Date;
   createdBy?: string;
@@ -30,6 +38,11 @@ export interface ListUsersParams {
   take: number;
   search?: string;
   role?: UserRole;
+  /**
+   * Restringe a um grupo de aeródromos. Forçado pelo service para COORDINATOR
+   * (próprio grupo); ADMIN pode informá-lo livremente como filtro.
+   */
+  aerodromeGroupId?: string;
 }
 
 /** Resultado de listagem paginada — rows + total para construir metadata. */

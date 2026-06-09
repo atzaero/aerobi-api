@@ -1,10 +1,11 @@
 import { Controller, Query, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
-import { Roles } from '@/modules/auth/decorators/roles.decorator';
+import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator';
+import { RequirePermission } from '@/modules/auth/decorators/require-permission.decorator';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
-import { RolesGuard } from '@/modules/auth/guards/roles.guard';
-import { UserRole } from '@/generated/prisma/client';
+import { PermissionsGuard } from '@/modules/auth/guards/permissions.guard';
+import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
 import { ListUsersDocs } from '../docs/list-users.docs';
 import { ListUsersQueryDto } from '../dtos/list-users-query.dto';
@@ -12,24 +13,23 @@ import { UsersPaginatedResponseDto } from '../dtos/users-paginated-response.dto'
 import { ListUsersService } from '../services/list-users.service';
 
 /**
- * Listagem de usuários. Mantida **ADMIN-only** (`@Roles`) — diferente da matriz
- * (`user:list` = ADMIN/COORDINATOR) — de propósito: o `aerobi-web` restringe o
- * COORDINATOR ao **próprio grupo**, e o escopo por grupo (`aerodromeGroupId` no
- * token/`User`) só chega na epic #204. Ampliar para COORDINATOR aqui exporia
- * **todos** os usuários (incl. ADMINs de todos os grupos) — mais que o front.
- * Migra para `@RequirePermission('user','list')` + filtro de grupo junto da #204.
+ * Listagem de usuários. Gated por `@RequirePermission('user','list')`
+ * (ADMIN/COORDINATOR). O **escopo por grupo** é aplicado no service: COORDINATOR
+ * só enxerga o **próprio grupo** (`aerodromeGroupId` resolvido por consulta);
+ * ADMIN vê todos. Espelha `aerobi-web` `app/actions/users/list`.
  */
 @ApiTags('Users')
 @Controller('users')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class ListUsersController {
   constructor(private readonly service: ListUsersService) {}
 
   @ListUsersDocs()
-  @Roles(UserRole.ADMIN)
+  @RequirePermission('user', 'list')
   handle(
     @Query() query: ListUsersQueryDto,
+    @CurrentUser() actor: AuthenticatedUser,
   ): Promise<UsersPaginatedResponseDto> {
-    return this.service.execute(query);
+    return this.service.execute(query, actor);
   }
 }

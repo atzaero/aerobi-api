@@ -1,4 +1,5 @@
 import { UserRole } from '@/generated/prisma/client';
+import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
 import type { ListUsersQueryDto } from '../dtos/list-users-query.dto';
 import type { UsersPaginatedResponseDto } from '../dtos/users-paginated-response.dto';
@@ -17,11 +18,16 @@ describe('ListUsersController', () => {
     } as unknown as ListUsersService);
   });
 
-  it('repassa a query ao service e devolve o resultado paginado', async () => {
+  it('repassa a query e o ator ao service e devolve o resultado paginado', async () => {
     const query: ListUsersQueryDto = {
       page: 1,
       limit: 10,
       role: UserRole.OPERATOR,
+    };
+    const actor: AuthenticatedUser = {
+      id: 'admin-1',
+      email: 'admin@aerobi.local',
+      role: UserRole.ADMIN,
     };
     const page = {
       data: [],
@@ -29,11 +35,11 @@ describe('ListUsersController', () => {
     } as unknown as UsersPaginatedResponseDto;
     execute.mockResolvedValue(page);
 
-    await expect(controller.handle(query)).resolves.toBe(page);
-    expect(execute).toHaveBeenCalledWith(query);
+    await expect(controller.handle(query, actor)).resolves.toBe(page);
+    expect(execute).toHaveBeenCalledWith(query, actor);
   });
 
-  // Autorização de list-users permanece ADMIN-only via @Roles + RolesGuard
-  // (não migrou para @RequirePermission). A ampliação para COORDINATOR depende
-  // do escopo por grupo (epic #204) — ver JSDoc do controller.
+  // Autorização de list-users: @RequirePermission('user','list') (ADMIN/COORDINATOR).
+  // O escopo por grupo (COORDINATOR restrito ao próprio grupo) é aplicado no
+  // service (list-users.service.spec) — ver JSDoc do controller.
 });
