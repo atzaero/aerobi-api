@@ -1,3 +1,15 @@
+# [2.6.0-beta.9](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.8...v2.6.0-beta.9) (2026-06-09)
+
+
+### Bug Fixes
+
+* **authz:** aplica feedback do code-review do PR [#224](https://github.com/atzaero/aerobi-api/issues/224) ([80c748a](https://github.com/atzaero/aerobi-api/commit/80c748a3906f08498991bdb378175f1416642fb2))
+
+
+### Features
+
+* **authz:** escopo por grupo no módulo users/ (list/create/delete/resend) ([#219](https://github.com/atzaero/aerobi-api/issues/219)) ([c23a58c](https://github.com/atzaero/aerobi-api/commit/c23a58c855497094e390dc9ae812153b1d4e3f0d)), closes [#204](https://github.com/atzaero/aerobi-api/issues/204) [#210](https://github.com/atzaero/aerobi-api/issues/210)
+
 # [2.6.0-beta.8](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.7...v2.6.0-beta.8) (2026-06-09)
 
 
