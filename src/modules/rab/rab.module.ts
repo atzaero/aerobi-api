@@ -50,6 +50,6 @@ import { RabSyncStateService } from './services/rab-sync-state.service';
     RabRowsService,
     RabSyncService,
   ],
-  exports: [RabSyncService, AnacIndexService],
+  exports: [RabSyncService, AnacIndexService, RabRowRepository],
 })
 export class RabModule {}

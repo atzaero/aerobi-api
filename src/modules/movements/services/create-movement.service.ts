@@ -3,9 +3,11 @@ import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
+import { RabRowRepository } from '@/modules/rab/repositories/rab-row.repository';
 import { StorageService } from '@/modules/storage/services/storage.service';
 
 import { CreateMovementResponseDTO } from '../dtos/create-movement-response.dto';
+import { buildAircraftSnapshotCreateInput } from '../mappers/aircraft-snapshot.prisma.mapper';
 import {
   buildMovementCreateInput,
   type MovementCreateData,
@@ -30,6 +32,7 @@ export class CreateMovementService {
     private readonly repo: MovementRepository,
     private readonly storage: StorageService,
     private readonly errorMessageService: ErrorMessageService,
+    private readonly rabRowRepo: RabRowRepository,
   ) {}
 
   async execute(
@@ -45,7 +48,18 @@ export class CreateMovementService {
       await this.storage.upload(image, imageKey);
     }
 
-    const created = await this.persist(dto, imageKey, origin);
+    // Congela um snapshot dos dados RAB da aeronave no instante do movimento.
+    // A `rab_row` é periódica; sem match a matrícula segue sem RAB (snapshot
+    // vazio) e o movimento NÃO falha — apenas registramos um aviso.
+    const rabRow = await this.rabRowRepo.findLatestByMarcas(dto.registration);
+    if (!rabRow) {
+      this.logger.warn(
+        `Matrícula ${dto.registration} sem linha RAB correspondente — snapshot de aeronave gravado vazio.`,
+      );
+    }
+    const snapshot = buildAircraftSnapshotCreateInput(rabRow);
+
+    const created = await this.persist(dto, imageKey, origin, snapshot);
 
     return {
       id: created.id,
@@ -62,10 +76,11 @@ export class CreateMovementService {
     dto: MovementCreateData,
     imageKey: string | null,
     origin: MovementOrigin,
+    snapshot: Parameters<typeof buildMovementCreateInput>[3],
   ) {
     try {
       return await this.repo.create(
-        buildMovementCreateInput(dto, imageKey, origin),
+        buildMovementCreateInput(dto, imageKey, origin, snapshot),
       );
     } catch (err) {
       if (imageKey) {
