@@ -2,11 +2,10 @@ import { Body, Controller, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator';
-import { Roles } from '@/modules/auth/decorators/roles.decorator';
+import { RequirePermission } from '@/modules/auth/decorators/require-permission.decorator';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
-import { RolesGuard } from '@/modules/auth/guards/roles.guard';
+import { PermissionsGuard } from '@/modules/auth/guards/permissions.guard';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
-import { UserRole } from '@/generated/prisma/client';
 
 import { CreateUserDocs } from '../docs/create-user.docs';
 import { CreateUserRequestDto } from '../dtos/create-user-request.dto';
@@ -15,12 +14,12 @@ import { CreateUserService } from '../services/create-user.service';
 
 @ApiTags('Users')
 @Controller('users')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class CreateUserController {
   constructor(private readonly service: CreateUserService) {}
 
   @CreateUserDocs()
-  @Roles(UserRole.ADMIN)
+  @RequirePermission('user', 'create')
   handle(
     @Body() dto: CreateUserRequestDto,
     @CurrentUser() actor: AuthenticatedUser,
@@ -28,6 +27,7 @@ export class CreateUserController {
     return this.service.execute({
       ...dto,
       actorId: actor.id,
+      actorRole: actor.role,
     });
   }
 }

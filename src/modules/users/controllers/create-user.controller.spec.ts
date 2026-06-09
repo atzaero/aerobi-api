@@ -1,9 +1,15 @@
+import { ErrorCode } from '@/common/enums/error-code.enum';
+import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { UserRole } from '@/generated/prisma/client';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
 import type { CreateUserRequestDto } from '../dtos/create-user-request.dto';
 import type { UserResponseDto } from '../dtos/user-response.dto';
 import type { CreateUserService } from '../services/create-user.service';
+import {
+  readRequiredPermission,
+  runPermissionsGuard,
+} from '../testing/permissions-guard.harness';
 
 import { CreateUserController } from './create-user.controller';
 
@@ -18,7 +24,7 @@ describe('CreateUserController', () => {
     } as unknown as CreateUserService);
   });
 
-  it('delega o body + actorId do CurrentUser para o service', async () => {
+  it('delega o body + actorId/actorRole do CurrentUser para o service', async () => {
     const dto: CreateUserRequestDto = {
       email: 'piloto@aerobi.local',
       name: 'Piloto',
@@ -36,6 +42,39 @@ describe('CreateUserController', () => {
     expect(execute).toHaveBeenCalledWith({
       ...dto,
       actorId: 'admin-1',
+      actorRole: UserRole.ADMIN,
     });
+  });
+
+  describe('autorização (@RequirePermission user:create)', () => {
+    it('declara a permissão user:create', () => {
+      expect(readRequiredPermission(CreateUserController, 'handle')).toEqual({
+        subject: 'user',
+        action: 'create',
+      });
+    });
+
+    it.each([UserRole.ADMIN, UserRole.COORDINATOR])(
+      'autoriza %s (2xx)',
+      (role) => {
+        expect(runPermissionsGuard(CreateUserController, 'handle', role)).toBe(
+          true,
+        );
+      },
+    );
+
+    it.each([UserRole.OPERATOR, UserRole.TECHNICAL])(
+      'nega %s (403 FORBIDDEN)',
+      (role) => {
+        try {
+          runPermissionsGuard(CreateUserController, 'handle', role);
+          fail('should have thrown');
+        } catch (e) {
+          expect((e as CustomHttpException).getErrorCode()).toBe(
+            ErrorCode.FORBIDDEN,
+          );
+        }
+      },
+    );
   });
 });
