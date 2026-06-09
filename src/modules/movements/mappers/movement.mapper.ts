@@ -14,7 +14,6 @@ export class MovementMapper {
     const row = new MovementResponseDTO();
     row.id = entity.id;
     row.registration = entity.registration;
-    row.confidence = entity.confidence;
     row.readingDatetime = entity.readingDatetime.toISOString();
     row.readingStatus = entity.readingStatus;
     row.revisorId = entity.revisorId;

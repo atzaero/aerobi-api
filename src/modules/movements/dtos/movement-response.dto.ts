@@ -12,9 +12,6 @@ export class MovementResponseDTO {
   @ApiProperty({ example: 'PR-ZTT' })
   registration!: string;
 
-  @ApiPropertyOptional({ type: String, nullable: true, example: '0.98' })
-  confidence!: string | null;
-
   @ApiProperty({ type: String, format: 'date-time' })
   readingDatetime!: string;
 

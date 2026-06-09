@@ -60,6 +60,7 @@ describe('ListMovementsService', () => {
     });
     expect(res.data[0].imageUrl).toBe('https://signed/a');
     expect(res.data[0].readingDatetime).toBe('2026-06-08T16:52:39.000Z');
+    expect(res.data[0]).not.toHaveProperty('confidence');
   });
 
   it('monta where com filtros e intervalo de datas', async () => {
