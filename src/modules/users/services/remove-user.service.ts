@@ -9,7 +9,7 @@ import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-
 import { UserRepository } from '../repositories/user.repository';
 import {
   isTargetManageableInGroup,
-  resolveUserGroupScope,
+  resolveActorGroupScope,
 } from '../utils/group-scope.util';
 
 /**
@@ -40,16 +40,16 @@ export class RemoveUserService {
   async execute(id: string, actor: AuthenticatedUser): Promise<void> {
     if (id === actor.id) {
       throw new CustomHttpException(
-        this.errorMessageService.getMessage(ErrorCode.VALIDATION_FAILED),
+        this.errorMessageService.getMessage(ErrorCode.VALIDATION_FAILED, {
+          DETAILS: 'não é permitido remover o próprio usuário',
+        }),
         HttpStatus.BAD_REQUEST,
         ErrorCode.VALIDATION_FAILED,
       );
     }
 
-    const actorRecord = await this.userRepository.findActiveById(actor.id);
-    const scope = resolveUserGroupScope(
-      actor.role,
-      actorRecord?.aerodromeGroupId ?? null,
+    const scope = await resolveActorGroupScope(actor.role, actor.id, (id) =>
+      this.userRepository.findActiveById(id),
     );
 
     if (scope.kind === 'none') {

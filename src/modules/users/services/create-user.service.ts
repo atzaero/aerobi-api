@@ -145,7 +145,10 @@ export class CreateUserService {
 
     if (!input.aerodromeGroupId || !input.state) {
       throw new CustomHttpException(
-        this.errorMessageService.getMessage(ErrorCode.VALIDATION_FAILED),
+        this.errorMessageService.getMessage(ErrorCode.VALIDATION_FAILED, {
+          DETAILS:
+            'aerodromeGroupId e state são obrigatórios para a role informada',
+        }),
         HttpStatus.BAD_REQUEST,
         ErrorCode.VALIDATION_FAILED,
       );

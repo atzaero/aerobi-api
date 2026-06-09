@@ -193,7 +193,10 @@ DB** — o JWT continua só com `role` (decisão da epic #204). Helpers em
 
 - **`list`** — COORDINATOR é forçado ao próprio `aerodromeGroupId` (ignora o da
   query); sem grupo provisionado ⇒ lista vazia (sem _fail open_). ADMIN vê todos
-  e pode filtrar por grupo.
+  e pode filtrar por grupo. _Nota:_ o backend é **mais conservador** que o web —
+  no `aerobi-web` o `list/action` só força o filtro quando o COORDINATOR tem
+  grupo (`coordinator && actorGroupId`), deixando um potencial _fail open_ se o
+  grupo faltar; aqui o `none` retorna vazio (a corrigir no web).
 - **`create`** — COORDINATOR só cria `OPERATOR`/`TECHNICAL` e o novo user
   **herda o grupo/UF do próprio coordenador**. ADMIN: ao criar role com grupo
   informa `aerodromeGroupId`+`state`; ao criar ADMIN o grupo/UF ficam `null`

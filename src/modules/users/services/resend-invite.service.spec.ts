@@ -169,30 +169,33 @@ describe('ResendInviteService', () => {
       },
     );
 
-    it('reenvia a ADMIN (não gerível) → USER_NOT_FOUND (não vaza)', async () => {
-      routeFindActiveById(
-        COORD_RECORD,
-        buildPendingUserFixture({
-          role: UserRole.ADMIN,
-          aerodromeGroupId: 'group-a',
-        }),
-      );
-
-      try {
-        await service.execute({
-          userId: 'user-1',
-          actorId: 'coord-1',
-          actorRole: UserRole.COORDINATOR,
-        });
-        fail('should have thrown');
-      } catch (e) {
-        expect((e as CustomHttpException).getErrorCode()).toBe(
-          ErrorCode.USER_NOT_FOUND,
+    it.each([UserRole.ADMIN, UserRole.COORDINATOR])(
+      'reenvia a %s (não gerível) → USER_NOT_FOUND (não vaza)',
+      async (targetRole) => {
+        routeFindActiveById(
+          COORD_RECORD,
+          buildPendingUserFixture({
+            role: targetRole,
+            aerodromeGroupId: 'group-a',
+          }),
         );
-      }
-      expect(createInviteToken).not.toHaveBeenCalled();
-      expect(emit).not.toHaveBeenCalled();
-    });
+
+        try {
+          await service.execute({
+            userId: 'user-1',
+            actorId: 'coord-1',
+            actorRole: UserRole.COORDINATOR,
+          });
+          fail('should have thrown');
+        } catch (e) {
+          expect((e as CustomHttpException).getErrorCode()).toBe(
+            ErrorCode.USER_NOT_FOUND,
+          );
+        }
+        expect(createInviteToken).not.toHaveBeenCalled();
+        expect(emit).not.toHaveBeenCalled();
+      },
+    );
 
     it('reenvia a OPERATOR de outro grupo → USER_NOT_FOUND', async () => {
       routeFindActiveById(

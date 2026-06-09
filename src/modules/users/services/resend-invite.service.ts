@@ -17,7 +17,7 @@ import { toUserResponse } from '../mappers/user.mapper';
 import { UserRepository } from '../repositories/user.repository';
 import {
   isTargetManageableInGroup,
-  resolveUserGroupScope,
+  resolveActorGroupScope,
 } from '../utils/group-scope.util';
 
 export interface ResendInviteInput {
@@ -61,10 +61,10 @@ export class ResendInviteService {
     // a OPERATOR/TECHNICAL do próprio grupo (resolvido por consulta — JWT só tem
     // role). Alvo fora do escopo retorna USER_NOT_FOUND (não vaza existência nem
     // o estado do convite); COORDINATOR sem grupo ⇒ FORBIDDEN; ADMIN qualquer.
-    const actorRecord = await this.userRepository.findActiveById(input.actorId);
-    const scope = resolveUserGroupScope(
+    const scope = await resolveActorGroupScope(
       input.actorRole,
-      actorRecord?.aerodromeGroupId ?? null,
+      input.actorId,
+      (id) => this.userRepository.findActiveById(id),
     );
 
     if (scope.kind === 'none') {

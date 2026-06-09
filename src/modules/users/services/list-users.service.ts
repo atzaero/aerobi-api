@@ -7,7 +7,7 @@ import type { ListUsersQueryDto } from '../dtos/list-users-query.dto';
 import { UsersPaginatedResponseDto } from '../dtos/users-paginated-response.dto';
 import { toUserResponse } from '../mappers/user.mapper';
 import { UserRepository } from '../repositories/user.repository';
-import { resolveUserGroupScope } from '../utils/group-scope.util';
+import { resolveActorGroupScope } from '../utils/group-scope.util';
 
 @Injectable()
 export class ListUsersService {
@@ -21,11 +21,9 @@ export class ListUsersService {
 
     // Escopo por grupo (espelha `scopedFilters` do aerobi-web): COORDINATOR é
     // restrito ao próprio grupo (resolvido por consulta — o JWT só tem role);
-    // ADMIN vê todos e pode filtrar livremente por `aerodromeGroupId`.
-    const actorRecord = await this.userRepository.findActiveById(actor.id);
-    const scope = resolveUserGroupScope(
-      actor.role,
-      actorRecord?.aerodromeGroupId ?? null,
+    // ADMIN vê todos (sem consulta) e pode filtrar livremente por `aerodromeGroupId`.
+    const scope = await resolveActorGroupScope(actor.role, actor.id, (id) =>
+      this.userRepository.findActiveById(id),
     );
 
     // COORDINATOR sem grupo (`none`) não enxerga nada — sem "fail open".

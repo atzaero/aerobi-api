@@ -37,6 +37,22 @@ export function resolveUserGroupScope(
 }
 
 /**
+ * Resolve o `UserGroupScope` do ator buscando o grupo no DB **apenas quando
+ * necessário**: ADMIN (e papéis não-restritos) curto-circuitam para `all` sem
+ * consulta; só COORDINATOR dispara o `lookup` do próprio registro. Centraliza o
+ * padrão usado por list/remove/resend.
+ */
+export async function resolveActorGroupScope(
+  actorRole: UserRole,
+  actorId: string,
+  lookup: (id: string) => Promise<{ aerodromeGroupId: string | null } | null>,
+): Promise<UserGroupScope> {
+  if (actorRole !== UserRole.COORDINATOR) return { kind: 'all' };
+  const record = await lookup(actorId);
+  return resolveUserGroupScope(actorRole, record?.aerodromeGroupId ?? null);
+}
+
+/**
  * `true` se o alvo é gerível por um ator no escopo `group` — espelha o
  * `manageable` do `aerobi-web` (`app/actions/users/delete/service.ts`):
  * COORDINATOR só toca `OPERATOR`/`TECHNICAL` do **próprio grupo**. Usado para
