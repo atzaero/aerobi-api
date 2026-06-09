@@ -6,9 +6,12 @@
  *   quando ele estiver registrado globalmente. Set via `@Public()`.
  * - `ROLES_KEY`: lista de roles aceitas pelo `RolesGuard`. Set via
  *   `@Roles(UserRole.ADMIN, ...)`.
+ * - `GROUP_SCOPE_KEY`: subject do recurso a checar pelo `GroupScopeGuard`.
+ *   Set via `@RequiresGroupScope(GroupScopeSubject.OPERATIONAL_AERODROME)`.
  */
 export const IS_PUBLIC_KEY = 'auth:isPublic';
 export const ROLES_KEY = 'auth:roles';
+export const GROUP_SCOPE_KEY = 'auth:groupScope';
 
 /** Tipos válidos do claim `typ` no JWT (access vs refresh). */
 export const JWT_TOKEN_TYPE = {
