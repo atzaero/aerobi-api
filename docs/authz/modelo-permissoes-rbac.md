@@ -170,7 +170,7 @@ depois que a maioria dos controllers estiver sob `JwtAuthGuard` e houver um
 
 | Controller | Guard | Permissão | Recorte no service |
 | --- | --- | --- | --- |
-| `list-users` | `JwtAuthGuard, PermissionsGuard` | `user:list` | — (escopo por grupo é #204) |
+| `list-users` | `JwtAuthGuard, RolesGuard` (**inalterado**) | `@Roles(ADMIN)` | — (ver nota de paridade abaixo) |
 | `create-user` | `JwtAuthGuard, PermissionsGuard` | `user:create` | `assertCanManageTargetRole` |
 | `remove-user` | `JwtAuthGuard, PermissionsGuard` | `user:delete` | `assertCanManageTargetRole` |
 | `resend-invite` | `JwtAuthGuard, PermissionsGuard` | `user:create` | `assertCanManageTargetRole` |
@@ -182,6 +182,18 @@ endpoints **self-or-admin** (o próprio dono edita/lê o seu registro). A matriz
 não tem `user:read`, e `user:update` é ADMIN-only (reset de senha) — aplicá-la
 quebraria o self-service. A parte ADMIN-only (mudar role) permanece no service
 (`ROLE_CHANGE_FORBIDDEN`).
+
+> **Paridade do `list-users` (deferido para #204).** A matriz diz
+> `user:list = [ADMIN, COORDINATOR]`, mas o endpoint permanece **ADMIN-only**
+> de propósito. No `aerobi-web` o COORDINATOR só lista usuários do **próprio
+> grupo** (filtro forçado por `aerodromeGroupId` do token). Aqui o escopo por
+> grupo ainda não existe (sem `User.aerodromeGroupId`, sem claim no JWT, sem
+> filtro no repo — tudo na epic #204). Ampliar `list` para COORDINATOR **sem**
+> esse filtro exporia **todos** os usuários (incl. ADMINs de todos os grupos),
+> ou seja, **mais** que o front. Por isso `list` migra para
+> `@RequirePermission('user','list')` **junto** com o escopo por grupo na #204.
+> `create`/`delete`/`resend` já ampliam porque o recorte por role-alvo limita o
+> alcance a `OPERATOR`/`TECHNICAL` (o filtro por grupo dessas ações também é #204).
 
 ### Acesso público ≠ RBAC
 
