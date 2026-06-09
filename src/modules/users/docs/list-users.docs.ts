@@ -12,7 +12,7 @@ export function ListUsersDocs() {
   return applyDecorators(
     Get(),
     ApiBearerAuth(),
-    ApiOperation({ summary: 'Lista usuários paginados (ADMIN)' }),
+    ApiOperation({ summary: 'Lista usuários paginados (ADMIN/COORDINATOR)' }),
     ApiOkResponse({ type: UsersPaginatedResponseDto }),
     ApiForbiddenResponse(),
   );

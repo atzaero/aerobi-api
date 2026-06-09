@@ -5,6 +5,7 @@ import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { maskEmail } from '@/common/utils/mask-email.util';
+import { UserRole } from '@/generated/prisma/client';
 import { InviteTokenService } from '@/modules/tokens/services/invite-token.service';
 
 import type { UserResponseDto } from '../dtos/user-response.dto';
@@ -14,13 +15,16 @@ import {
 } from '../events/user-invited.event';
 import { toUserResponse } from '../mappers/user.mapper';
 import { UserRepository } from '../repositories/user.repository';
+import { assertCanManageTargetRole } from '../utils/user-access.util';
 
 export interface ResendInviteInput {
   /** Id do user pendente que receberá o novo convite. */
   userId: string;
-  /** Id do ADMIN que está reenviando (vem do `@CurrentUser`). */
+  /** Id do ator que está reenviando (vem do `@CurrentUser`). */
   actorId: string;
-  /** Nome do ADMIN para personalizar o email. */
+  /** Papel do ator — usado no recorte por role-alvo (ADMIN/COORDINATOR). */
+  actorRole: UserRole;
+  /** Nome do ator para personalizar o email. */
   actorName?: string;
 }
 
@@ -61,6 +65,12 @@ export class ResendInviteService {
         ErrorCode.USER_NOT_FOUND,
       );
     }
+
+    assertCanManageTargetRole(
+      input.actorRole,
+      user.role,
+      this.errorMessageService,
+    );
 
     if (user.acceptedInviteAt) {
       throw new CustomHttpException(
