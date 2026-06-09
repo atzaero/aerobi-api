@@ -18,7 +18,7 @@ import { PlugfieldModule } from '@/modules/plugfield/plugfield.module';
 import { PrivateAerodromesModule } from '@/modules/private-aerodromes/private-aerodromes.module';
 import { PublicAerodromesModule } from '@/modules/public-aerodromes/public-aerodromes.module';
 import { RabModule } from '@/modules/rab/rab.module';
-import { ReadingsModule } from '@/modules/readings/readings.module';
+import { MovementsModule } from '@/modules/movements/movements.module';
 import { SchedulerModule } from '@/modules/scheduler/scheduler.module';
 import { TechnicalVisitsModule } from '@/modules/technical-visits/technical-visits.module';
 import { TokensModule } from '@/modules/tokens/tokens.module';
@@ -37,7 +37,7 @@ import { PrismaModule } from '@/prisma/prisma.module';
     RabModule,
     PlugfieldModule,
     AiswebModule,
-    ReadingsModule,
+    MovementsModule,
     PrivateAerodromesModule,
     PublicAerodromesModule,
     SchedulerModule,
