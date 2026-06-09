@@ -237,3 +237,31 @@ export function can(
   if (!role) return false;
   return (rolesFor(subject, action) as readonly string[]).includes(role);
 }
+
+/**
+ * Matriz de permissões **já resolvida** para um papel: `{ subject: action[] }`.
+ * Subjects sem nenhuma ação permitida são omitidos (deny-by-default), portanto é
+ * `Partial`. Forma consumida pelo front (`GET /auth/me`) para mostrar/ocultar
+ * ações sem reimplementar `can()`.
+ */
+export type ResolvedPermissions = Partial<Record<AuthzSubject, AuthzAction[]>>;
+
+/**
+ * Projeta a matriz `PERMISSIONS` na fatia aplicável a `role`, devolvendo só as
+ * ações que `role` pode executar por entidade (via `can()`, fonte única). Itera
+ * a própria matriz, então acompanha automaticamente novos subjects/ações.
+ */
+export function permissionsForRole(role: UserRole): ResolvedPermissions {
+  const resolved: ResolvedPermissions = {};
+
+  for (const subject of Object.keys(PERMISSIONS) as AuthzSubject[]) {
+    const actions = (Object.keys(PERMISSIONS[subject]) as AuthzAction[]).filter(
+      (action) => can(role, subject, action),
+    );
+    if (actions.length > 0) {
+      resolved[subject] = actions;
+    }
+  }
+
+  return resolved;
+}

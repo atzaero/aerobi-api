@@ -4,6 +4,7 @@ import { LoginResponseDto } from '../dtos/login-response.dto';
 import { MeResponseDto } from '../dtos/me-response.dto';
 import { RefreshResponseDto } from '../dtos/refresh-response.dto';
 import type { AuthenticatedUser } from '../interfaces/authenticated-user.interface';
+import { permissionsForRole } from '../permissions';
 
 import type { LoginResult } from './auth-login.service';
 import type { RefreshSessionResult } from './auth-refresh-session.service';
@@ -44,6 +45,7 @@ export class AuthResponseMapperService {
       id: user.id,
       email: user.email,
       role: user.role,
+      permissions: permissionsForRole(user.role),
     };
   }
 }

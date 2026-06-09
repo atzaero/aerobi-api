@@ -15,8 +15,12 @@ export function MeDocs() {
     ApiOperation({
       summary: 'Dados do usuário autenticado (a partir do JWT)',
       description:
-        'Retorna apenas claims do JWT — sem round-trip ao DB. Para dados ' +
-        'completos do usuário, usar `GET /users/:id` (módulo users).',
+        'Retorna claims do JWT (`id`, `email`, `role`) — sem round-trip ao ' +
+        'DB — mais `permissions`: a matriz RBAC já resolvida para o role no ' +
+        'formato `{ subject: action[] }`, para o front mostrar/ocultar ações ' +
+        'sem reimplementar `can()`. As permissões **não** vivem no JWT: são ' +
+        'resolvidas neste endpoint. Para dados completos do usuário, usar ' +
+        '`GET /users/:id` (módulo users).',
     }),
     ApiResponse({ status: HttpStatus.OK, type: MeResponseDto }),
     ApiUnauthorizedResponse(),
