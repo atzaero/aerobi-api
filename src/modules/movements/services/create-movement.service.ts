@@ -5,15 +5,18 @@ import { ErrorMessageService } from '@/common/error-messages/error-message.servi
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { StorageService } from '@/modules/storage/services/storage.service';
 
-import { CreateMovementDTO } from '../dtos/create-movement.dto';
 import { CreateMovementResponseDTO } from '../dtos/create-movement-response.dto';
-import { buildMovementCreateInput } from '../mappers/movement.prisma.mapper';
+import {
+  buildMovementCreateInput,
+  type MovementCreateData,
+} from '../mappers/movement.prisma.mapper';
 import { MovementRepository } from '../repositories/movement.repository';
 import {
   buildReadingImageKey,
   isAllowedImageMimetype,
 } from '../utils/reading-image';
 import { resolveReadingImageUrl } from '../utils/resolve-reading-image-url';
+import type { MovementOrigin } from './movement-origin';
 
 // Valor literal mantido por compatibilidade com o aviascan-api legado (o cliente
 // Python só checa o status code, mas outros consumidores podem ler `message`).
@@ -30,7 +33,8 @@ export class CreateMovementService {
   ) {}
 
   async execute(
-    dto: CreateMovementDTO,
+    dto: MovementCreateData,
+    origin: MovementOrigin,
     image?: Express.Multer.File,
   ): Promise<CreateMovementResponseDTO> {
     let imageKey: string | null = null;
@@ -41,7 +45,7 @@ export class CreateMovementService {
       await this.storage.upload(image, imageKey);
     }
 
-    const created = await this.persist(dto, imageKey);
+    const created = await this.persist(dto, imageKey, origin);
 
     return {
       id: created.id,
@@ -54,9 +58,15 @@ export class CreateMovementService {
    * Persiste a leitura. Se o INSERT falhar após a imagem já ter sido enviada,
    * compensa removendo o objeto do storage para não deixar lixo órfão.
    */
-  private async persist(dto: CreateMovementDTO, imageKey: string | null) {
+  private async persist(
+    dto: MovementCreateData,
+    imageKey: string | null,
+    origin: MovementOrigin,
+  ) {
     try {
-      return await this.repo.create(buildMovementCreateInput(dto, imageKey));
+      return await this.repo.create(
+        buildMovementCreateInput(dto, imageKey, origin),
+      );
     } catch (err) {
       if (imageKey) {
         await this.storage.delete(imageKey).catch((delErr: unknown) => {

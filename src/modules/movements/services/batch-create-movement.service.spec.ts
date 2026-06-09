@@ -1,3 +1,5 @@
+import { MovementSource } from '@/generated/prisma/enums';
+
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import type { ErrorMessageService } from '@/common/error-messages/error-message.service';
 
@@ -47,6 +49,11 @@ describe('BatchCreateMovementService', () => {
     const res = await service.execute(metadata, [image()]);
 
     expect(execute).toHaveBeenCalledTimes(2);
+    expect(execute).toHaveBeenCalledWith(
+      expect.objectContaining({ registration: 'PR-ZTT' }),
+      { source: MovementSource.AUTOMATIC, createdBy: 'aviascan' },
+      expect.anything(),
+    );
     expect(res.created).toBe(2);
     expect(res.failed).toBe(0);
     expect(res.items).toEqual([

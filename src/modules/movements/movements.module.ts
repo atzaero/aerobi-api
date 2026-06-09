@@ -5,6 +5,7 @@ import { PrismaModule } from '@/prisma/prisma.module';
 import { StorageModule } from '@/modules/storage/storage.module';
 
 import { BatchCreateMovementController } from './controllers/batch-create-movement.controller';
+import { CreateManualMovementController } from './controllers/create-manual-movement.controller';
 import { CreateMovementController } from './controllers/create-movement.controller';
 import { FindMovementByIdController } from './controllers/find-movement-by-id.controller';
 import { ListMovementsController } from './controllers/list-movements.controller';
@@ -26,6 +27,7 @@ import { RemoveMovementService } from './services/remove-movement.service';
   controllers: [
     CreateMovementController,
     BatchCreateMovementController,
+    CreateManualMovementController,
     ListMovementsController,
     FindMovementByIdController,
     RemoveMovementController,
