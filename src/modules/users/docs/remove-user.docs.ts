@@ -14,11 +14,18 @@ export function RemoveUserDocs() {
     HttpCode(HttpStatus.NO_CONTENT),
     ApiBearerAuth(),
     ApiOperation({
-      summary: 'Soft-delete de um usuário (ADMIN) e revoga refresh tokens',
+      summary:
+        'Soft-delete de um usuário (ADMIN/COORDINATOR) e revoga refresh tokens',
+      description:
+        'COORDINATOR só pode remover OPERATOR/TECHNICAL (recorte por ' +
+        'role-alvo); ADMIN remove qualquer role.',
     }),
     ApiParam({ name: 'id', format: 'uuid' }),
     ApiNoContentResponse(),
-    ApiForbiddenResponse(),
+    ApiForbiddenResponse({
+      description:
+        'Sem permissão `user:delete`, ou COORDINATOR tentando remover ADMIN/COORDINATOR.',
+    }),
     ApiNotFoundResponse(),
   );
 }

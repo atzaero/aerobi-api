@@ -61,6 +61,7 @@ describe('ResendInviteService', () => {
     const result = await service.execute({
       userId: 'user-1',
       actorId: 'admin-1',
+      actorRole: UserRole.ADMIN,
       actorName: 'Admin',
     });
 
@@ -82,7 +83,11 @@ describe('ResendInviteService', () => {
     findActiveById.mockResolvedValue(null);
 
     try {
-      await service.execute({ userId: 'ghost', actorId: 'admin-1' });
+      await service.execute({
+        userId: 'ghost',
+        actorId: 'admin-1',
+        actorRole: UserRole.ADMIN,
+      });
       fail('should have thrown');
     } catch (e) {
       expect((e as CustomHttpException).getErrorCode()).toBe(
@@ -98,11 +103,36 @@ describe('ResendInviteService', () => {
     });
 
     try {
-      await service.execute({ userId: 'user-1', actorId: 'admin-1' });
+      await service.execute({
+        userId: 'user-1',
+        actorId: 'admin-1',
+        actorRole: UserRole.ADMIN,
+      });
       fail('should have thrown');
     } catch (e) {
       expect((e as CustomHttpException).getErrorCode()).toBe(
         ErrorCode.INVITE_ALREADY_ACCEPTED,
+      );
+    }
+    expect(createInviteToken).not.toHaveBeenCalled();
+    expect(emit).not.toHaveBeenCalled();
+  });
+
+  it('COORDINATOR reenvia convite de ADMIN → FORBIDDEN (sem reemitir)', async () => {
+    findActiveById.mockResolvedValue(
+      buildPendingUserFixture({ role: UserRole.ADMIN }),
+    );
+
+    try {
+      await service.execute({
+        userId: 'user-1',
+        actorId: 'coord-1',
+        actorRole: UserRole.COORDINATOR,
+      });
+      fail('should have thrown');
+    } catch (e) {
+      expect((e as CustomHttpException).getErrorCode()).toBe(
+        ErrorCode.FORBIDDEN,
       );
     }
     expect(createInviteToken).not.toHaveBeenCalled();

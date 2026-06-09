@@ -9,6 +9,7 @@ import { MeController } from './controllers/me.controller';
 import { RefreshSessionController } from './controllers/refresh-session.controller';
 import { GroupScopeGuard } from './guards/group-scope.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { PermissionsGuard } from './guards/permissions.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { RefreshTokenRepository } from './repositories/refresh-token.repository';
 import { AuthLoginService } from './services/auth-login.service';
@@ -32,9 +33,9 @@ import { JwtStrategy } from './strategies/jwt.strategy';
  * - `AuthLoginService` / `AuthRefreshSessionService` / `AuthLogoutService` —
  *   casos de uso que orquestram os primitivos acima.
  *
- * Exporta `JwtAuthGuard`, `RolesGuard`, `GroupScopeGuard` (para `@UseGuards`
- * em outros módulos) e `IssueTokenPairService` (para que o PR 3 emita par no
- * aceite de convite).
+ * Exporta `JwtAuthGuard`, `RolesGuard`, `PermissionsGuard`, `GroupScopeGuard`
+ * (para `@UseGuards` em outros módulos) e `IssueTokenPairService` (para que o
+ * PR 3 emita par no aceite de convite).
  */
 @Module({
   imports: [
@@ -59,6 +60,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     JwtStrategy,
     JwtAuthGuard,
     RolesGuard,
+    PermissionsGuard,
     GroupScopeGuard,
     JwtSignerService,
     JwtVerifierService,
@@ -76,6 +78,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
   exports: [
     JwtAuthGuard,
     RolesGuard,
+    PermissionsGuard,
     GroupScopeGuard,
     IssueTokenPairService,
     RefreshTokenRepository,

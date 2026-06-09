@@ -4,15 +4,19 @@ import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { RefreshTokenRepository } from '@/modules/auth/repositories/refresh-token.repository';
+import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
 import { UserRepository } from '../repositories/user.repository';
+import { assertCanManageTargetRole } from '../utils/user-access.util';
 
 /**
  * Soft-delete de User (`deletedAt`). Garante que todos os refresh
  * tokens do user sejam revogados — caso contrário, sessões existentes
  * continuariam a poder rotacionar mesmo após o "delete".
  *
- * Apenas ADMIN deve chamar (guard aplicado no controller).
+ * Autorização em duas camadas: o `PermissionsGuard` (`user:delete`) deixa
+ * passar ADMIN/COORDINATOR; aqui aplica-se o **recorte por role-alvo**
+ * (coordinator só remove `OPERATOR`/`TECHNICAL`).
  */
 @Injectable()
 export class RemoveUserService {
@@ -25,7 +29,7 @@ export class RemoveUserService {
     private readonly errorMessageService: ErrorMessageService,
   ) {}
 
-  async execute(id: string, actorId: string): Promise<void> {
+  async execute(id: string, actor: AuthenticatedUser): Promise<void> {
     const user = await this.userRepository.findActiveById(id);
     if (!user) {
       throw new CustomHttpException(
@@ -37,11 +41,13 @@ export class RemoveUserService {
       );
     }
 
-    await this.userRepository.softDelete(id, actorId);
+    assertCanManageTargetRole(actor.role, user.role, this.errorMessageService);
+
+    await this.userRepository.softDelete(id, actor.id);
     const revoked = await this.refreshTokenRepository.revokeAllForUser(id);
 
     this.logger.log(
-      `User soft-deleted id=${id} revokedRefreshTokens=${revoked} deletedBy=${actorId}`,
+      `User soft-deleted id=${id} revokedRefreshTokens=${revoked} deletedBy=${actor.id}`,
     );
   }
 }

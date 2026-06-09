@@ -30,6 +30,40 @@ export function assertSelfOrAdmin(
 }
 
 /**
+ * Recorte por **role-alvo** na gestão de usuários (regra de negócio, não a
+ * matriz `PERMISSIONS`). Espelha célula a célula o `aerobi-web`
+ * (`app/actions/users/{create,delete}`): ADMIN gere qualquer role; COORDINATOR
+ * só adiciona/remove `OPERATOR`/`TECHNICAL`. Qualquer outro caso → 403.
+ *
+ * O gate papel × ação (quem chega à rota) é do `PermissionsGuard`; este recorte
+ * é o passo seguinte — _quais_ usuários o ator pode tocar. O **escopo por grupo**
+ * (coordinator restrito ao próprio `aerodromeGroupId`) é a epic #204 e **não**
+ * entra aqui.
+ *
+ * @param actorRole papel do ator autenticado (`@CurrentUser().role`)
+ * @param targetRole papel do usuário-alvo (a criar, ou do registro carregado)
+ */
+export function assertCanManageTargetRole(
+  actorRole: UserRole,
+  targetRole: UserRole,
+  errorMessageService: ErrorMessageService,
+): void {
+  if (actorRole === UserRole.ADMIN) return;
+  if (
+    actorRole === UserRole.COORDINATOR &&
+    (targetRole === UserRole.OPERATOR || targetRole === UserRole.TECHNICAL)
+  ) {
+    return;
+  }
+
+  throw new CustomHttpException(
+    errorMessageService.getMessage(ErrorCode.FORBIDDEN, { RESOURCE: 'user' }),
+    HttpStatus.FORBIDDEN,
+    ErrorCode.FORBIDDEN,
+  );
+}
+
+/**
  * Garante que `actor` é ADMIN. Usado quando a regra é estritamente
  * "só ADMIN" (não permite owner) — ex: alterar role de outro user.
  */
