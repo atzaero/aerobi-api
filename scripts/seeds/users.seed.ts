@@ -17,9 +17,13 @@
  *   SEED_USER_2_PASSWORD='CoordTrocar123!'
  *   SEED_USER_2_NAME='Coordenador'
  *   SEED_USER_2_ROLE=COORDINATOR
+ *   SEED_USER_2_AERODROME_GROUP_ID='wyAxumH2-...-UUID' # opcional
+ *   SEED_USER_2_STATE=PI                               # opcional (Uf)
  *
- * Cada bloco precisa ter os 4 campos; se faltar algum, o seed falha em
- * vez de criar usuário incompleto.
+ * Cada bloco precisa ter os 4 campos obrigatórios (email/password/name/
+ * role); se faltar algum, o seed falha em vez de criar usuário incompleto.
+ * `AERODROME_GROUP_ID` (UUID de um `AerodromeGroup` existente) e `STATE`
+ * (sigla de UF) são opcionais — ADMIN global fica sem grupo (`null`).
  *
  * Sem nenhuma variável `SEED_USER_*` definida o seed é skip silencioso
  * (apenas log informativo) — permite rodar `RUN_SEEDS_ON_BOOT=true` em
@@ -27,7 +31,7 @@
  */
 import bcrypt from 'bcryptjs';
 
-import { UserRole } from '@/generated/prisma/client';
+import { Uf, UserRole } from '@/generated/prisma/client';
 
 import type { SeedContext, SeedRunner } from './types';
 
@@ -40,7 +44,12 @@ type SeedUserSpec = {
   password: string;
   name: string;
   role: UserRole;
+  aerodromeGroupId: string | null;
+  state: Uf | null;
 };
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function parseRole(raw: string, index: number): UserRole {
   const upper = raw.trim().toUpperCase();
@@ -51,6 +60,28 @@ function parseRole(raw: string, index: number): UserRole {
     );
   }
   return upper as UserRole;
+}
+
+function parseState(raw: string, index: number): Uf {
+  const upper = raw.trim().toUpperCase();
+  if (!(upper in Uf)) {
+    throw new Error(
+      `[seed:users] SEED_USER_${index}_STATE inválida: "${raw}". ` +
+        `Valores aceitos: ${Object.values(Uf).join(', ')}.`,
+    );
+  }
+  return upper as Uf;
+}
+
+function parseAerodromeGroupId(raw: string, index: number): string {
+  const value = raw.trim();
+  if (!UUID_RE.test(value)) {
+    throw new Error(
+      `[seed:users] SEED_USER_${index}_AERODROME_GROUP_ID inválido: ` +
+        `"${raw}". Esperado um UUID.`,
+    );
+  }
+  return value;
 }
 
 function parseSeedUsers(env: NodeJS.ProcessEnv): SeedUserSpec[] {
@@ -83,12 +114,19 @@ function parseSeedUsers(env: NodeJS.ProcessEnv): SeedUserSpec[] {
       );
     }
 
+    const aerodromeGroupIdRaw = env[`${prefix}AERODROME_GROUP_ID`]?.trim();
+    const stateRaw = env[`${prefix}STATE`]?.trim();
+
     users.push({
       index: i,
       email: email.toLowerCase(),
       password,
       name,
       role: parseRole(roleRaw, i),
+      aerodromeGroupId: aerodromeGroupIdRaw
+        ? parseAerodromeGroupId(aerodromeGroupIdRaw, i)
+        : null,
+      state: stateRaw ? parseState(stateRaw, i) : null,
     });
   }
 
@@ -135,6 +173,8 @@ export const usersSeed: SeedRunner = {
           emailVerified: true,
           password: passwordHash,
           acceptedInviteAt: existing?.acceptedInviteAt ?? now,
+          aerodromeGroupId: spec.aerodromeGroupId,
+          state: spec.state,
         },
         create: {
           email: spec.email,
@@ -143,6 +183,8 @@ export const usersSeed: SeedRunner = {
           emailVerified: true,
           password: passwordHash,
           acceptedInviteAt: now,
+          aerodromeGroupId: spec.aerodromeGroupId,
+          state: spec.state,
         },
         select: { id: true, email: true, role: true },
       });
