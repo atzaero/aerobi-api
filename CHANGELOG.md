@@ -1,3 +1,18 @@
+# [2.6.0-beta.7](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.6...v2.6.0-beta.7) (2026-06-09)
+
+
+### Bug Fixes
+
+* **authz:** mantém list-users ADMIN-only (paridade aerobi-web) até escopo por grupo ([#204](https://github.com/atzaero/aerobi-api/issues/204)) ([28348fd](https://github.com/atzaero/aerobi-api/commit/28348fd9e2fa6ae385688f51e76d1a516ffecd57)), closes [#208](https://github.com/atzaero/aerobi-api/issues/208) [#209](https://github.com/atzaero/aerobi-api/issues/209)
+
+
+### Features
+
+* **authz:** @RequirePermission + PermissionsGuard ([f5c644b](https://github.com/atzaero/aerobi-api/commit/f5c644be7bb27557231dab1e69c3bff3fe5450c8)), closes [#209](https://github.com/atzaero/aerobi-api/issues/209) [#206](https://github.com/atzaero/aerobi-api/issues/206)
+* **authz:** estende GET /auth/me com permissions do role ([#207](https://github.com/atzaero/aerobi-api/issues/207)) ([79c6f61](https://github.com/atzaero/aerobi-api/commit/79c6f61b48eccbaefbcea30c4284093c8edd228b))
+* **authz:** matriz de permissões RBAC (can/rolesFor) + testes ([a21f8c1](https://github.com/atzaero/aerobi-api/commit/a21f8c16f5ee1e364318d0cc18c912979c0ff12a)), closes [#203](https://github.com/atzaero/aerobi-api/issues/203) [#205](https://github.com/atzaero/aerobi-api/issues/205)
+* **authz:** piloto users/ — migra @Roles para @RequirePermission + recorte role-alvo no service ([664427c](https://github.com/atzaero/aerobi-api/commit/664427c039c915748138e3b4c3f87841448ea2e7)), closes [#209](https://github.com/atzaero/aerobi-api/issues/209)
+
 # [2.6.0-beta.6](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.5...v2.6.0-beta.6) (2026-06-09)
 
 
