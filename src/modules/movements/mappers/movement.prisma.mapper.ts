@@ -44,9 +44,9 @@ export function buildMovementCreateInput(
     aerodrome: dto.aerodrome,
     source: origin.source,
     createdBy: origin.createdBy,
-    // TODO(#234): para a ingestão AUTOMATIC, `operationType` ainda é o placeholder
-    // LANDING — a inferência pela regra de 48h será implementada na #234. No
-    // caminho MANUAL a origem já fornece o `operationType` real do formulário.
+    // O service (fonte única) já resolve `operationType` antes de chamar este
+    // mapper: AUTOMATIC pela regra toggle de 48h, MANUAL pelo formulário. O
+    // fallback LANDING é apenas defensivo e não deve ser atingido na prática.
     operationType: origin.operationType ?? MovementType.LANDING,
     aircraftSnapshot: { create: snapshot },
   };
