@@ -3,6 +3,7 @@ import { UserRole } from '@/generated/prisma/client';
 import {
   PERMISSIONS,
   can,
+  permissionsForRole,
   rolesFor,
   type AuthzAction,
   type AuthzSubject,
@@ -224,5 +225,69 @@ describe('can — deny-by-default e entradas inválidas', () => {
     expect(can(UserRole.ADMIN, 'dashboard', 'delete')).toBe(false);
     expect(can(UserRole.ADMIN, 'rab', 'create')).toBe(false);
     expect(can(UserRole.ADMIN, 'audit', 'delete')).toBe(false);
+  });
+});
+
+describe('permissionsForRole — projeção da matriz por papel', () => {
+  it('coincide célula a célula com can() para todos os papéis', () => {
+    for (const role of ALL_ROLES) {
+      const resolved = permissionsForRole(role);
+
+      for (const subject of Object.keys(PERMISSIONS) as AuthzSubject[]) {
+        for (const action of ALL_ACTIONS) {
+          const allowed = resolved[subject]?.includes(action) ?? false;
+          expect(allowed).toBe(can(role, subject, action));
+        }
+      }
+    }
+  });
+
+  it('omite subjects sem nenhuma ação permitida (Partial)', () => {
+    const technical = permissionsForRole(UserRole.TECHNICAL);
+
+    // TECHNICAL não tem acesso a estes subjects ⇒ chave ausente.
+    expect(technical.group).toBeUndefined();
+    expect(technical.user).toBeUndefined();
+    expect(technical.document).toBeUndefined();
+    expect(technical.rab).toBeUndefined();
+    // Mas mantém os que pode.
+    expect(technical.technical_visit).toEqual([
+      'list',
+      'read',
+      'create',
+      'update',
+      'delete',
+      'export',
+    ]);
+    expect(technical.aerodrome).toEqual(['list', 'read']);
+    expect(technical.dashboard).toEqual(['read']);
+  });
+
+  it('ADMIN recebe a fatia mais ampla (ex.: delete de aeródromo e user.update)', () => {
+    const admin = permissionsForRole(UserRole.ADMIN);
+
+    expect(admin.aerodrome).toContain('delete');
+    expect(admin.user).toContain('update');
+    expect(admin.feedback).toContain('delete');
+  });
+
+  it('OPERATOR: decide pouso e edita observação, mas sem create/update full de aeródromo', () => {
+    const operator = permissionsForRole(UserRole.OPERATOR);
+
+    expect(operator.landing_request).toContain('decide');
+    expect(operator.aerodrome).toContain('update-observation');
+    expect(operator.aerodrome).not.toContain('create');
+    expect(operator.aerodrome).not.toContain('update');
+  });
+
+  it('preserva a ordem de declaração das ações na matriz', () => {
+    // A iteração segue Object.keys(PERMISSIONS[subject]) ⇒ ordem de inserção.
+    expect(permissionsForRole(UserRole.ADMIN).group).toEqual([
+      'list',
+      'read',
+      'create',
+      'update',
+      'delete',
+    ]);
   });
 });
