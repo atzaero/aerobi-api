@@ -1,3 +1,10 @@
+# [2.6.0-beta.6](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.5...v2.6.0-beta.6) (2026-06-09)
+
+
+### Bug Fixes
+
+* **deploy:** conecta runner à tailnet (Headscale) antes do SSH ([eada192](https://github.com/atzaero/aerobi-api/commit/eada192d6a90aaf1f68e6d82a97404c878c0db7f)), closes [atzaero/aerobi-ansible#129](https://github.com/atzaero/aerobi-ansible/issues/129) [atzaero/aerobi-ansible#129](https://github.com/atzaero/aerobi-ansible/issues/129)
+
 # [2.6.0-beta.5](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.4...v2.6.0-beta.5) (2026-06-08)
 
 
