@@ -1,0 +1,18 @@
+import { applyDecorators } from '@nestjs/common';
+import {
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiSecurity,
+} from '@nestjs/swagger';
+
+import { MovementResponseDTO } from '../dtos/movement-response.dto';
+
+export function RemoveMovementDocs() {
+  return applyDecorators(
+    ApiSecurity('api_key'),
+    ApiOperation({ summary: 'Remove (soft delete) uma leitura por id.' }),
+    ApiOkResponse({ type: MovementResponseDTO }),
+    ApiNotFoundResponse({ description: 'Leitura não encontrada.' }),
+  );
+}
