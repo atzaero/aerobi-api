@@ -8,15 +8,11 @@ import {
 
 import { MovementResponseDTO } from '../dtos/movement-response.dto';
 
-export function RemoveMovementDocs() {
+export function RemoveMovementCanonicalDocs() {
   return applyDecorators(
     ApiSecurity('api_key'),
-    ApiOperation({
-      deprecated: true,
-      summary:
-        'DEPRECADO: use DELETE /movements/:id. Remove (soft delete) um movimento por id.',
-    }),
+    ApiOperation({ summary: 'Remove (soft delete) um movimento por id.' }),
     ApiOkResponse({ type: MovementResponseDTO }),
-    ApiNotFoundResponse({ description: 'Leitura não encontrada.' }),
+    ApiNotFoundResponse({ description: 'Movimento não encontrado.' }),
   );
 }
