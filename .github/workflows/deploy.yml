@@ -111,14 +111,25 @@ jobs:
             # `--timeout` faz o `tailscale up` ABORTAR se a authkey estiver
             # expirada/inválida ou o headscale inacessível — sem ele o comando
             # fica aguardando login interativo para sempre e o deploy pendura
-            # (issue #225). Mensagem explícita aponta a causa provável.
-            if ! sudo tailscale up \
-              --login-server=https://headscale.aerobi.com.br \
-              --authkey="$TS_AUTHKEY" \
-              --hostname="gh-${{ github.event.repository.name }}-${{ github.run_id }}" \
-              --accept-dns=false \
-              --timeout=120s; then
-              echo "::error::Falha ao conectar à tailnet (timeout). HEADSCALE_AUTHKEY provavelmente expirada/inválida ou headscale.aerobi.com.br inacessível — renove a preauthkey no Headscale e atualize o secret (issue #225)."
+            # (issue #225). O retry com backoff cobre blips transitórios do
+            # headscale; se a key estiver de facto expirada/inválida, as 3
+            # tentativas falham e a mensagem aponta a causa (issue #263).
+            ts_ok=0
+            for attempt in 1 2 3; do
+              if sudo tailscale up \
+                --login-server=https://headscale.aerobi.com.br \
+                --authkey="$TS_AUTHKEY" \
+                --hostname="gh-${{ github.event.repository.name }}-${{ github.run_id }}" \
+                --accept-dns=false \
+                --timeout=120s; then
+                ts_ok=1
+                break
+              fi
+              echo "::warning::Tentativa $attempt/3 de conectar à tailnet falhou; novo retry em $((attempt * 15))s."
+              sleep $((attempt * 15))
+            done
+            if [ "$ts_ok" != "1" ]; then
+              echo "::error::Falha ao conectar à tailnet após 3 tentativas. HEADSCALE_AUTHKEY provavelmente expirada/inválida ou headscale.aerobi.com.br inacessível — renove a preauthkey efêmera (docker exec headscale headscale preauthkeys create --user <ID> --reusable --ephemeral --expiration 90d --tags tag:ci) e atualize o secret (issues #225/#263)."
               exit 1
             fi
             sudo tailscale status
