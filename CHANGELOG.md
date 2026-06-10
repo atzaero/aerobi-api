@@ -1,3 +1,20 @@
+# [2.6.0-beta.11](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.10...v2.6.0-beta.11) (2026-06-10)
+
+
+### Bug Fixes
+
+* **movements:** resolver snapshot RAB antes do upload da imagem ([bbbaa0d](https://github.com/atzaero/aerobi-api/commit/bbbaa0dd746a7cdca66c6a86cba9e74b2ff0f347)), closes [#233](https://github.com/atzaero/aerobi-api/issues/233) [#233](https://github.com/atzaero/aerobi-api/issues/233)
+
+
+### Features
+
+* **movements:** congela snapshot RAB 1:1 da aeronave na criação do movimento ([d9af550](https://github.com/atzaero/aerobi-api/commit/d9af55015fbb8eb981345c3ab3abae061886b276)), closes [#233](https://github.com/atzaero/aerobi-api/issues/233)
+* **movements:** CreateMovementService como fonte única + split de origem ([1992cde](https://github.com/atzaero/aerobi-api/commit/1992cdeea4ccaacbd80b697e6ab2966c95aeb734)), closes [#234](https://github.com/atzaero/aerobi-api/issues/234) [#232](https://github.com/atzaero/aerobi-api/issues/232) [#234](https://github.com/atzaero/aerobi-api/issues/234) [#232](https://github.com/atzaero/aerobi-api/issues/232)
+* **movements:** infere pouso/decolagem na ingestão AUTOMATIC via toggle 48h ([455e165](https://github.com/atzaero/aerobi-api/commit/455e165ad494827f6c8f16a28a72d4fc1a66d7ad)), closes [#234](https://github.com/atzaero/aerobi-api/issues/234) [#234](https://github.com/atzaero/aerobi-api/issues/234)
+* **movements:** ocultar confidence nas respostas de consulta ([74b0cd4](https://github.com/atzaero/aerobi-api/commit/74b0cd4517137b33a2fe5af404aa9928f028fe7c)), closes [#235](https://github.com/atzaero/aerobi-api/issues/235)
+* **movements:** rotas canônicas /movements e resposta enriquecida ([8aaa446](https://github.com/atzaero/aerobi-api/commit/8aaa446426f2404c86ef15aff50713ae0e96065f)), closes [#236](https://github.com/atzaero/aerobi-api/issues/236)
+* **movements:** schema Movement + enums type/source + snapshot RAB + migration ([2cd50ef](https://github.com/atzaero/aerobi-api/commit/2cd50efaa7e7a755c879cddd503b4104f85737a4)), closes [#230](https://github.com/atzaero/aerobi-api/issues/230)
+
 # [2.6.0-beta.10](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.9...v2.6.0-beta.10) (2026-06-09)
 
 
