@@ -10,4 +10,5 @@ export interface IRabRowRepository {
     take: number,
   ): Promise<RabRow[]>;
   count(where: Prisma.RabRowWhereInput): Promise<number>;
+  findLatestByMarcas(marcas: string): Promise<RabRow | null>;
 }
