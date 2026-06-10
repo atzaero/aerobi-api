@@ -15,4 +15,16 @@ export interface IMovementRepository {
 
   /** Soft delete usando os campos de auditoria deletedAt/deletedBy. */
   softDelete(id: string, deletedBy: string): Promise<Movement>;
+
+  /**
+   * Último movimento ativo da matrícula dentro da janela de 48h anterior a
+   * `reference` (estritamente antes de `reference`). Usado pela regra toggle de
+   * inferência de pouso/decolagem na ingestão AUTOMATIC. Quando `aerodrome` é
+   * informado, filtra também por aeródromo; quando null, considera só a matrícula.
+   */
+  findLastByRegistrationWithin48h(
+    registration: string,
+    aerodrome: string | null,
+    reference: Date,
+  ): Promise<Movement | null>;
 }

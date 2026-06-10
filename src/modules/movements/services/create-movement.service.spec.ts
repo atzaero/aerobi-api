@@ -4,7 +4,7 @@ import type { ErrorMessageService } from '@/common/error-messages/error-message.
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import type { StorageService } from '@/modules/storage/services/storage.service';
 
-import type { Prisma, RabRow } from '@/generated/prisma/client';
+import type { Movement, Prisma, RabRow } from '@/generated/prisma/client';
 import type { RabRowRepository } from '@/modules/rab/repositories/rab-row.repository';
 
 import type { CreateMovementDTO } from '../dtos/create-movement.dto';
@@ -21,6 +21,7 @@ describe('CreateMovementService', () => {
   let getPresignedUrl: jest.Mock;
   let getMessage: jest.Mock;
   let findLatestByMarcas: jest.Mock;
+  let findLastByRegistrationWithin48h: jest.Mock;
 
   type MovementCreateInput = Prisma.MovementCreateInput;
 
@@ -52,8 +53,13 @@ describe('CreateMovementService', () => {
     getMessage = jest.fn().mockReturnValue('validação falhou');
     // Por padrão sem match RAB; testes específicos sobrescrevem.
     findLatestByMarcas = jest.fn().mockResolvedValue(null);
+    // Por padrão sem movimento anterior na janela de 48h (→ LANDING).
+    findLastByRegistrationWithin48h = jest.fn().mockResolvedValue(null);
 
-    const repo = { create } as unknown as MovementRepository;
+    const repo = {
+      create,
+      findLastByRegistrationWithin48h,
+    } as unknown as MovementRepository;
     const storage = {
       upload,
       delete: remove,
@@ -235,6 +241,83 @@ describe('CreateMovementService', () => {
       rabPeriod: null,
       marcas: null,
       dsModelo: null,
+    });
+  });
+
+  describe('regra toggle de 48h (AUTOMATIC)', () => {
+    const lastMovement = (operationType: MovementType): Movement =>
+      ({ id: 'prev', operationType }) as unknown as Movement;
+
+    it('sem movimento anterior em 48h → LANDING', async () => {
+      findLastByRegistrationWithin48h.mockResolvedValue(null);
+      create.mockResolvedValue({ id: 't-1' });
+
+      await service.execute(baseDto, automaticOrigin);
+
+      expect(findLastByRegistrationWithin48h).toHaveBeenCalledWith(
+        'PR-ZTT',
+        'SSCF',
+        baseDto.reading_datetime,
+      );
+      expect(create).toHaveBeenCalledWith(
+        expect.objectContaining({ operationType: MovementType.LANDING }),
+      );
+    });
+
+    it('último movimento LANDING → TAKEOFF', async () => {
+      findLastByRegistrationWithin48h.mockResolvedValue(
+        lastMovement(MovementType.LANDING),
+      );
+      create.mockResolvedValue({ id: 't-2' });
+
+      await service.execute(baseDto, automaticOrigin);
+
+      expect(create).toHaveBeenCalledWith(
+        expect.objectContaining({ operationType: MovementType.TAKEOFF }),
+      );
+    });
+
+    it('último movimento TAKEOFF → LANDING', async () => {
+      findLastByRegistrationWithin48h.mockResolvedValue(
+        lastMovement(MovementType.TAKEOFF),
+      );
+      create.mockResolvedValue({ id: 't-3' });
+
+      await service.execute(baseDto, automaticOrigin);
+
+      expect(create).toHaveBeenCalledWith(
+        expect.objectContaining({ operationType: MovementType.LANDING }),
+      );
+    });
+
+    it('aerodrome ausente no DTO → consulta a regra com null', async () => {
+      findLastByRegistrationWithin48h.mockResolvedValue(null);
+      create.mockResolvedValue({ id: 't-4' });
+      const dtoSemAerodromo = { ...baseDto, aerodrome: undefined };
+
+      await service.execute(dtoSemAerodromo, automaticOrigin);
+
+      expect(findLastByRegistrationWithin48h).toHaveBeenCalledWith(
+        'PR-ZTT',
+        null,
+        baseDto.reading_datetime,
+      );
+    });
+
+    it('MANUAL: não chama a regra e usa o operationType do formulário', async () => {
+      create.mockResolvedValue({ id: 'm-2' });
+      const manualOrigin: MovementOrigin = {
+        source: MovementSource.MANUAL,
+        createdBy: 'user-7',
+        operationType: MovementType.TAKEOFF,
+      };
+
+      await service.execute(baseDto, manualOrigin);
+
+      expect(findLastByRegistrationWithin48h).not.toHaveBeenCalled();
+      expect(create).toHaveBeenCalledWith(
+        expect.objectContaining({ operationType: MovementType.TAKEOFF }),
+      );
     });
   });
 });

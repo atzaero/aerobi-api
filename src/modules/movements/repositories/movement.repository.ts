@@ -9,6 +9,9 @@ const activeWhere: Pick<Prisma.MovementWhereInput, 'deletedAt'> = {
   deletedAt: null,
 };
 
+/** Janela da regra toggle de inferência de pouso/decolagem (48h). */
+const TOGGLE_WINDOW_MS = 48 * 60 * 60 * 1000;
+
 @Injectable()
 export class MovementRepository implements IMovementRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -46,6 +49,26 @@ export class MovementRepository implements IMovementRepository {
     return this.prisma.movement.update({
       where: { id, ...activeWhere },
       data: { deletedAt: new Date(), deletedBy, updatedBy: deletedBy },
+    });
+  }
+
+  findLastByRegistrationWithin48h(
+    registration: string,
+    aerodrome: string | null,
+    reference: Date,
+  ): Promise<Movement | null> {
+    const windowStart = new Date(reference.getTime() - TOGGLE_WINDOW_MS);
+
+    return this.prisma.movement.findFirst({
+      where: {
+        ...activeWhere,
+        registration,
+        // Estritamente antes de `reference` e dentro das últimas 48h.
+        readingDatetime: { gt: windowStart, lt: reference },
+        // Só restringe por aeródromo quando ele é conhecido.
+        ...(aerodrome !== null ? { aerodrome } : {}),
+      },
+      orderBy: { readingDatetime: 'desc' },
     });
   }
 }
