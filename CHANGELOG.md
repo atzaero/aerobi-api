@@ -1,3 +1,10 @@
+# [2.6.0-beta.13](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.12...v2.6.0-beta.13) (2026-06-10)
+
+
+### Bug Fixes
+
+* **deploy:** retry com backoff na conexão à tailnet (blips transitórios) ([7a08cda](https://github.com/atzaero/aerobi-api/commit/7a08cdaeddf1fd47ecc983b6b05f92881b27b793)), closes [#225](https://github.com/atzaero/aerobi-api/issues/225) [#263](https://github.com/atzaero/aerobi-api/issues/263)
+
 # [2.6.0-beta.12](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.11...v2.6.0-beta.12) (2026-06-10)
 
 
