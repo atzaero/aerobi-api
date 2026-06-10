@@ -6,6 +6,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ErrorMessageModule } from '@/common/error-messages/error-message.module';
 import { AerodromeFeedbacksModule } from '@/modules/aerodrome-feedbacks/aerodrome-feedbacks.module';
 import { AuthModule } from '@/modules/auth/auth.module';
+import { ConformityModule } from '@/modules/conformity/conformity.module';
 import { AerodromeGeojsonsModule } from '@/modules/aerodrome-geojsons/aerodrome-geojsons.module';
 import { AerodromeGroupsModule } from '@/modules/aerodrome-groups/aerodrome-groups.module';
 import { AiswebModule } from '@/modules/aisweb/aisweb.module';
@@ -51,6 +52,7 @@ import { PrismaModule } from '@/prisma/prisma.module';
     TokensModule,
     AuthModule,
     UsersModule,
+    ConformityModule,
   ],
 })
 export class AppModule {}
