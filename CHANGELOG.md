@@ -1,3 +1,14 @@
+# [2.6.0-beta.12](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.11...v2.6.0-beta.12) (2026-06-10)
+
+
+### Features
+
+* **conformity:** @nestjs/event-emitter + emit movement.created ([8ca6587](https://github.com/atzaero/aerobi-api/commit/8ca65879a7493b09d5af6d35009527d01de50bda)), closes [#251](https://github.com/atzaero/aerobi-api/issues/251)
+* **conformity:** ConformityListener — pouso automático sem solicitação registra não-conformidade ([18e6a76](https://github.com/atzaero/aerobi-api/commit/18e6a7619cd1de1c20c0753d6a5e84418fc7903b)), closes [#252](https://github.com/atzaero/aerobi-api/issues/252)
+* **conformity:** integração Firestore (firebase-admin) + port + adapter ([7f51bbb](https://github.com/atzaero/aerobi-api/commit/7f51bbb8ab1e434efffad8ed7b2d5a45eb781274)), closes [#249](https://github.com/atzaero/aerobi-api/issues/249)
+* **conformity:** NotificationListener — e-mail aos coordenadores/operadores do aeródromo (com dedupe) ([91fd4d2](https://github.com/atzaero/aerobi-api/commit/91fd4d2750cab94d3c8b8282f8451f346e4db230)), closes [#253](https://github.com/atzaero/aerobi-api/issues/253)
+* **conformity:** schema operational_event + enums + migration ([9ffa385](https://github.com/atzaero/aerobi-api/commit/9ffa385097d5d4455a425018e3e0e830bab7cfb8)), closes [#250](https://github.com/atzaero/aerobi-api/issues/250)
+
 # [2.6.0-beta.11](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.10...v2.6.0-beta.11) (2026-06-10)
 
 
