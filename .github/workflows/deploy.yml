@@ -70,29 +70,47 @@ jobs:
       # Trava anti-fallback (só quando db_name_guard é fornecido — ex.: staging).
       # Como staging e produção compartilham nomes de secret, um secret NÃO
       # configurado no Environment faz fallback para o repo-level (produção).
-      # Validação POSITIVA por chave: DATABASE_URL deve apontar para o banco
-      # esperado e CORS_ORIGINS deve conter "staging". grep -q não imprime valor.
+      # Validação POSITIVA por chave (grep -q não imprime valor):
+      #   - DATABASE_URL deve apontar para o banco esperado (db_name_guard);
+      #   - chaves com marcador de ambiente no valor (CORS_ORIGINS, FRONTEND_URL)
+      #     devem conter o nome do ambiente (ex.: "staging").
+      # Cobre só chaves cujo valor tem marcador textual de ambiente — secrets
+      # opacos (AEROBI_API_KEY, JWT_*, MAIL_*, MINIO_*, FIREBASE_*) não são
+      # validáveis aqui; sua divergência é auditada na matriz de docs/DEPLOY_STAGING.md.
+      # Acumula todas as falhas antes de abortar (diagnóstico completo num run só).
       - name: Guard — Environment configurado
         if: inputs.db_name_guard != ''
         env:
           DB_GUARD: ${{ inputs.db_name_guard }}
+          # Marcador = nome do próprio ambiente (este guard só roda em staging).
+          ENV_MARKER: ${{ inputs.environment }}
           DB_URL: ${{ secrets.DATABASE_URL }}
           CORS: ${{ secrets.CORS_ORIGINS }}
+          FRONTEND: ${{ secrets.FRONTEND_URL }}
           RT: ${{ vars.REMOTE_TARGET }}
           HP: ${{ vars.HOST_PORT }}
         run: |
+          fail=0
           if [ -z "$RT" ] || [ -z "$HP" ]; then
             echo "::error::vars.REMOTE_TARGET / vars.HOST_PORT ausentes no Environment '${{ inputs.environment }}'."
-            exit 1
+            fail=1
           fi
+          # DATABASE_URL: nome de banco específico (mais forte que o marcador genérico).
           if ! printf '%s' "$DB_URL" | grep -qE "/${DB_GUARD}([?]|$)"; then
             echo "::error::DATABASE_URL não aponta para o banco '${DB_GUARD}' — secret do Environment provavelmente não configurado (fallback para produção). Abortando."
-            exit 1
+            fail=1
           fi
-          if ! printf '%s' "$CORS" | grep -q 'staging'; then
-            echo "::error::CORS_ORIGINS não contém 'staging' — secret do Environment provavelmente em fallback para produção. Abortando."
-            exit 1
-          fi
+          # Chaves cujo valor TEM de conter o marcador do ambiente: ausência do
+          # marcador denuncia fallback silencioso para o valor repo-level (produção).
+          check_marker() {
+            if [ -z "$2" ] || ! printf '%s' "$2" | grep -q "$ENV_MARKER"; then
+              echo "::error::$1 não contém '${ENV_MARKER}' — secret do Environment provavelmente em fallback para produção (ou ausente). Abortando."
+              fail=1
+            fi
+          }
+          check_marker CORS_ORIGINS "$CORS"
+          check_marker FRONTEND_URL "$FRONTEND"
+          [ "$fail" -eq 0 ] || exit 1
 
       # Conecta o runner à tailnet (Headscale) e resolve o host de deploy. O SSH
       # passa a sair pela interface tailscale0 → NÃO toca a porta 22 pública nem
