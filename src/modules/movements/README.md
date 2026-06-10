@@ -1,26 +1,115 @@
-# Módulo `readings`
+# Módulo `movements`
 
-Leituras de matrícula de aeronaves reconhecidas por OCR (pipeline **aviascan-cv** →
-**aerobi-api**). Recebe as leituras, persiste em **Postgres** (model
-`AircraftReading`) e guarda as imagens no **MinIO** (object storage S3), servindo-as
-ao frontend via **presigned URLs**.
+**Movimentos** de aeronaves num aeródromo — cada registro é um **pouso**
+(`LANDING`) ou uma **decolagem** (`TAKEOFF`), no jargão de aviação um
+"movimento". Tem duas origens:
 
-Substitui o antigo proxy `aviascan` (que apenas encaminhava para um backend
-Express/MariaDB externo) por persistência própria.
+- **`AUTOMATIC`**: matrícula reconhecida por OCR a partir de uma imagem de câmera
+  (pipeline **aviascan-cv** → **aerobi-api**), ingerida pelas rotas `/readings`.
+- **`MANUAL`**: preenchido por um usuário pela interface humana (`POST /movements`).
+
+Persiste em **Postgres** (model `Movement`) e guarda as imagens no **MinIO**
+(object storage S3), servindo-as ao frontend via **presigned URLs**.
+
+> O domínio nasceu como `readings` (leituras de matrícula). A epic #229
+> generalizou para `movements`: o registro deixou de ser uma "leitura" e passou a
+> ser um movimento tipado (pouso/decolagem) com origem automática **ou** manual.
+
+## Modelo de dados
+
+`prisma/schema.prisma` (final do ficheiro):
+
+| Elemento | Tabela | Papel |
+|----------|--------|-------|
+| `Movement` | `movement` | O movimento em si: matrícula, `operationType`, `source`, `readingDatetime`, imagem (key MinIO), status de validação, `createdBy` ("inserido por"), `confidence` (opcional), auditoria/soft delete. |
+| `MovementAircraftSnapshot` | `movement_aircraft_snapshot` | Snapshot **1:1** dos dados cadastrais (RAB) da aeronave **congelados** no instante do movimento (+ `rabRowId`/`rabPeriod` para rastreabilidade). |
+
+Enums:
+
+| Enum | Valores | Uso |
+|------|---------|-----|
+| `MovementType` | `LANDING`, `TAKEOFF` | Tipo de operação. |
+| `MovementSource` | `AUTOMATIC`, `MANUAL` | Como o registro entrou no sistema. |
+
+### Snapshot RAB
+
+A `rab_row` (tabela RAB da ANAC) é periódica — chave `(period, marcas)` — e o
+registro "atual" muda a cada período mensal. Por isso, no momento da criação,
+copiamos um subconjunto curado dos campos do `rab_row` para o snapshot. Sem match
+de matrícula, o snapshot é gravado vazio (campos `null`) e o movimento **não
+falha** — apenas registramos um aviso. Detalhes em `mappers/aircraft-snapshot.prisma.mapper.ts`.
+
+## Criação (fonte única: `CreateMovementService`)
+
+Ambas as origens passam pelo mesmo `CreateMovementService` (`services/create-movement.service.ts`),
+que resolve o snapshot RAB e o `operationType` **antes** do upload da imagem
+(para não deixar imagem órfã se um lookup falhar) e compensa removendo a imagem
+se o INSERT falhar.
+
+A diferença está na **origem** (`services/movement-origin.ts`):
+
+| Origem | Rotas | `operationType` | `createdBy` |
+|--------|-------|-----------------|-------------|
+| `AUTOMATIC` | `POST /readings`, `POST /readings/batch` | **inferido** (regra toggle de 48h) | fixo `'aviascan'` |
+| `MANUAL` | `POST /movements` | vem do **formulário** | do corpo (opcional), até a auth humana chegar |
+
+### Regra toggle de 48h (inferência do `operationType` em `AUTOMATIC`)
+
+Só a origem `AUTOMATIC` infere o tipo de operação. Para a matrícula no aeródromo,
+olha-se o **último** movimento ativo nas **48h** anteriores à leitura:
+
+| Último movimento em 48h | `operationType` inferido |
+|-------------------------|--------------------------|
+| nenhum                  | `LANDING`                |
+| `LANDING`               | `TAKEOFF`                |
+| `TAKEOFF`               | `LANDING`                |
+
+**Racional**: a aeronave alterna pouso↔decolagem; o toggle pelo **último** estado
+reflete o ciclo operacional real (inferir só por "existe movimento → decolagem"
+geraria duas decolagens seguidas). A janela de 48h evita encadear com operações
+antigas; o primeiro avistamento (sem histórico em 48h) é `LANDING` — a aeronave
+chegou. Em lote a inferência é best-effort (itens concorrentes usam o estado
+visível no momento da consulta). Decisão registrada na epic #229.
 
 ## Endpoints
 
 Todos sob `@UseGuards(AerobiApiKeyGuard)` (header `X-API-Key`).
 
+### Ingestão automática (aviascan-cv) — `/readings`
+
 | Método | Rota | Descrição |
 |--------|------|-----------|
-| `POST` | `/readings` | Ingestão **single** (multipart). Compatível com o cliente Python. |
+| `POST` | `/readings` | Ingestão **single** (multipart). Origem `AUTOMATIC`. Compatível com o cliente Python. |
 | `POST` | `/readings/batch` | Ingestão em **lote** (multipart, `images[]` + `metadata` JSON). |
-| `GET` | `/readings` | Lista **paginada** (`{ data, meta }`), filtros opcionais. |
-| `GET` | `/readings/:readingId` | Busca por id. |
-| `DELETE` | `/readings/:readingId` | Soft delete. |
 
-### Contrato de entrada (compat Python)
+### Criação manual — `/movements`
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| `POST` | `/movements` | Criação **manual** pela interface (multipart). `operationType` obrigatório no corpo; `createdBy` opcional. |
+
+### Consulta canônica — `/movements`
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| `GET` | `/movements` | Lista **paginada** (`{ data, meta }`), filtros opcionais. |
+| `GET` | `/movements/:movementId` | Busca por id. |
+| `DELETE` | `/movements/:movementId` | Soft delete. |
+
+### Consulta legada (DEPRECADO) — `/readings`
+
+| Método | Rota | Estado |
+|--------|------|--------|
+| `GET` | `/readings` | **DEPRECADO** — alias de `GET /movements`. |
+| `GET` | `/readings/:readingId` | **DEPRECADO** — alias de `GET /movements/:id`. |
+| `DELETE` | `/readings/:readingId` | **DEPRECADO** — alias de `DELETE /movements/:id`. |
+
+> As três rotas de **consulta** `/readings` continuam funcionais como alias do
+> mesmo serviço (`@deprecated` no Swagger). As rotas de **ingestão** `POST /readings`
+> e `POST /readings/batch` **não** são deprecadas — são o canal de entrada do
+> aviascan-cv. Não confundir consulta (deprecada) com ingestão (mantida).
+
+### Contrato de entrada `/readings` (compat Python)
 
 `POST /readings` é `multipart/form-data` com campos em **snake_case** (fiel ao
 `aviascan-cv`): `registration`, `confidence`, `reading_datetime` (obrigatórios),
@@ -31,8 +120,6 @@ Todos sob `@UseGuards(AerobiApiKeyGuard)` (header `X-API-Key`).
 > O `reading_datetime` aceita ISO 8601. O cliente deve enviar com timezone (`Z`)
 > para evitar interpretação no fuso do servidor.
 
-### Lote
-
 `POST /readings/batch`: `images[]` (≤ 50) + `metadata` (string JSON) com um array
 de itens; cada item tem os mesmos campos do single + `image_index` (0-based)
 referenciando `images[]`. Processado com concorrência limitada e resiliente a
@@ -40,17 +127,20 @@ falha parcial — resposta `{ created, failed, items: [{ index, status, id?, ima
 
 ### Saída das consultas (camelCase)
 
-`GET /readings` e `GET /readings/:id` retornam `AircraftReadingResponseDTO` em
-camelCase (`readingDatetime`, `imageUrl` = presigned, etc.). Filtros do `GET`:
-`registration`, `aerodrome`, `reading_status`, `start_date`/`end_date`
-(`YYYY-MM-DD`), `page`/`limit`.
+`GET /movements` (e o alias `GET /readings`) retornam `MovementResponseDTO` em
+camelCase: inclui `operationType`, `source` e o `aircraftSnapshot` (RAB, ou
+`null`), além de `readingDatetime`, `imageUrl` (presigned), etc. **`confidence`
+NÃO é exposto** nas consultas (decisão de produto — só faz sentido para
+movimentos `AUTOMATIC`). Filtros do `GET`: `registration`, `aerodrome`,
+`reading_status`, `start_date`/`end_date` (`YYYY-MM-DD`), `page`/`limit`.
 
 ## Storage (MinIO)
 
 Usa o `StorageModule` (`@/modules/storage`). Keys no layout
-`readings/YYYY/MM/<uuid>.<ext>`; o banco guarda a **key** (`imageKey`), não a URL.
-A presigned URL é derivada sob demanda (best-effort: falha ao assinar → `null`,
-sem derrubar a operação).
+`readings/YYYY/MM/<uuid>.<ext>` — o prefixo `readings/` é **legado** e mantido por
+ora (renomear para `movements/` está fora do escopo desta epic). O banco guarda a
+**key** (`imageKey`), não a URL; a presigned URL é derivada sob demanda
+(best-effort: falha ao assinar → `null`, sem derrubar a operação).
 
 Variáveis (ver `.env.example`): `STORAGE_PROVIDER`, `MINIO_ENDPOINT`,
 `MINIO_PUBLIC_ENDPOINT` (assina presigned com host acessível ao navegador),
@@ -58,6 +148,17 @@ Variáveis (ver `.env.example`): `STORAGE_PROVIDER`, `MINIO_ENDPOINT`,
 
 ## Estrutura
 
-Segue o padrão do projeto (ver `landing-requests`): `controllers/`, `services/`,
-`repositories/`, `dtos/`, `mappers/`, `docs/` (Swagger), `utils/`. Documentação
-HTTP completa em `/api/docs` (tag **Readings**).
+Segue o padrão do projeto: `controllers/`, `services/`, `repositories/`, `dtos/`,
+`mappers/`, `docs/` (Swagger), `utils/`. Documentação HTTP completa em `/api/docs`
+(tags **Movements** para as rotas canônicas e **Readings** para `/readings`).
+
+## Coexistência `/readings` ↔ `/movements` e follow-ups
+
+`/movements` é o caminho **canônico**; as rotas de **consulta** `/readings` são
+**legado deprecado**, mantidas só para não quebrar consumidores atuais. Há
+follow-ups **cross-repo**, fora desta epic:
+
+1. **aviascan-cv**: pode passar a apontar para `/movements` quando conveniente —
+   **hoje desnecessário**, a ingestão `POST /readings` (+ `/batch`) é mantida.
+2. **aerobi-web**: migrar o consumo das consultas para `/movements` e, depois
+   disso, aposentar o alias `/readings`.
