@@ -407,6 +407,9 @@ model Movement {
   /// Snapshot dos dados cadastrais (RAB) da aeronave no instante do movimento.
   aircraftSnapshot MovementAircraftSnapshot?
 
+  /// Eventos operacionais (ex.: não-conformidades) originados deste movimento.
+  operationalEvents OperationalEvent[]
+
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   /// "Inserido por": id do usuário (MANUAL) ou sentinela (ex.: "aviascan") (AUTOMATIC).
   createdBy String?   @map("created_by")
@@ -458,6 +461,48 @@ model MovementAircraftSnapshot {
 
   @@index([rabRowId])
   @@map("movement_aircraft_snapshot")
+}
+
+enum OperationalEventType {
+  NON_CONFORMITY_NO_LANDING_REQUEST
+}
+
+enum OperationalEventStatus {
+  OPEN
+  ACKNOWLEDGED
+  RESOLVED
+}
+
+model OperationalEvent {
+  id     String                 @id @default(uuid()) @db.Uuid
+  type   OperationalEventType   @map("type")
+  status OperationalEventStatus @default(OPEN) @map("status")
+
+  /// Código ICAO do aeródromo do evento.
+  aerodrome  String    @map("aerodrome")
+  /// Movimento que originou o evento (opcional; SetNull para não perder o evento se o movimento sumir).
+  movementId String?   @map("movement_id") @db.Uuid
+  movement   Movement? @relation(fields: [movementId], references: [id], onDelete: SetNull)
+
+  /// Quando o fato ocorreu (= readingDatetime do movimento).
+  occurredAt DateTime  @map("occurred_at") @db.Timestamptz(3)
+  /// Quando o sistema detectou/registrou.
+  detectedAt DateTime  @default(now()) @map("detected_at") @db.Timestamptz(3)
+  /// Quando a notificação foi enviada (null = ainda não notificado).
+  notifiedAt DateTime? @map("notified_at") @db.Timestamptz(3)
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdBy String?   @map("created_by")
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedBy String?   @map("updated_by")
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+  deletedBy String?   @map("deleted_by")
+
+  @@index([aerodrome, occurredAt])
+  @@index([type, status])
+  @@index([movementId])
+  @@index([deletedAt])
+  @@map("operational_event")
 }
 
 /// Visita técnica em aeródromo (`technicalVisit` no Firestore). ICAO, CIAD, pista, nome e município do aeródromo vêm de `operational_aerodromes` via FK (evita duplicar o cadastro).
