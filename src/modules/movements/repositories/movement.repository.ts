@@ -3,6 +3,8 @@ import { Injectable } from '@nestjs/common';
 import { Prisma, type Movement } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 
+import type { MovementWithSnapshot } from '../mappers/movement.mapper';
+
 import type { IMovementRepository } from './movement.repository.interface';
 
 const activeWhere: Pick<Prisma.MovementWhereInput, 'deletedAt'> = {
@@ -17,9 +19,10 @@ export class MovementRepository implements IMovementRepository {
     return this.prisma.movement.create({ data });
   }
 
-  findById(id: string): Promise<Movement | null> {
+  findById(id: string): Promise<MovementWithSnapshot | null> {
     return this.prisma.movement.findFirst({
       where: { id, ...activeWhere },
+      include: { aircraftSnapshot: true },
     });
   }
 
@@ -27,12 +30,13 @@ export class MovementRepository implements IMovementRepository {
     where: Prisma.MovementWhereInput,
     skip: number,
     take: number,
-  ): Promise<Movement[]> {
+  ): Promise<MovementWithSnapshot[]> {
     return this.prisma.movement.findMany({
       where: { AND: [{ ...where }, activeWhere] },
       skip,
       take,
       orderBy: { readingDatetime: 'desc' },
+      include: { aircraftSnapshot: true },
     });
   }
 

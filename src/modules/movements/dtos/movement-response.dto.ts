@@ -1,9 +1,15 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
+import { MovementSource, MovementType } from '@/generated/prisma/enums';
+
+import { MovementAircraftSnapshotResponseDTO } from './movement-aircraft-snapshot-response.dto';
+
 /**
- * Resposta (camelCase) de uma leitura nas rotas de consulta (`GET /readings`,
- * `GET /readings/:id`, `DELETE /readings/:id`). `imageUrl` é uma presigned URL
- * temporária (ou `null`).
+ * Resposta (camelCase) de um movimento nas rotas de consulta canônicas
+ * (`GET /movements`, `GET /movements/:id`, `DELETE /movements/:id`) e nos aliases
+ * deprecados em `/readings`. `imageUrl` é uma presigned URL temporária (ou
+ * `null`). Inclui `operationType`, `source` e o `aircraftSnapshot` (RAB) quando
+ * presente. Não expõe `confidence`.
  */
 export class MovementResponseDTO {
   @ApiProperty({ format: 'uuid' })
@@ -11,6 +17,12 @@ export class MovementResponseDTO {
 
   @ApiProperty({ example: 'PR-ZTT' })
   registration!: string;
+
+  @ApiProperty({ enum: MovementType, example: MovementType.LANDING })
+  operationType!: MovementType;
+
+  @ApiProperty({ enum: MovementSource, example: MovementSource.AUTOMATIC })
+  source!: MovementSource;
 
   @ApiProperty({ type: String, format: 'date-time' })
   readingDatetime!: string;
@@ -33,6 +45,13 @@ export class MovementResponseDTO {
 
   @ApiPropertyOptional({ type: String, nullable: true })
   aerodrome!: string | null;
+
+  @ApiPropertyOptional({
+    type: MovementAircraftSnapshotResponseDTO,
+    nullable: true,
+    description: 'Snapshot RAB da aeronave no instante do movimento, ou null.',
+  })
+  aircraftSnapshot!: MovementAircraftSnapshotResponseDTO | null;
 
   @ApiProperty({ type: String, format: 'date-time' })
   createdAt!: string;

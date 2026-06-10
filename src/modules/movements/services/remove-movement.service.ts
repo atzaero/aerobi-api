@@ -37,6 +37,10 @@ export class RemoveMovementService {
       this.storage,
       deleted.imageKey,
     );
-    return MovementMapper.toApiRow(deleted, imageUrl);
+    // `softDelete` (update) não carrega a relação; reaproveita o snapshot já lido.
+    return MovementMapper.toApiRow(
+      { ...deleted, aircraftSnapshot: existing.aircraftSnapshot },
+      imageUrl,
+    );
   }
 }

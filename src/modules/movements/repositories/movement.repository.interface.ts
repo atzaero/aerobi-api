@@ -1,15 +1,17 @@
 import type { Prisma, Movement } from '@/generated/prisma/client';
 
+import type { MovementWithSnapshot } from '../mappers/movement.mapper';
+
 export interface IMovementRepository {
   create(data: Prisma.MovementCreateInput): Promise<Movement>;
 
-  findById(id: string): Promise<Movement | null>;
+  findById(id: string): Promise<MovementWithSnapshot | null>;
 
   findMany(
     where: Prisma.MovementWhereInput,
     skip: number,
     take: number,
-  ): Promise<Movement[]>;
+  ): Promise<MovementWithSnapshot[]>;
 
   count(where: Prisma.MovementWhereInput): Promise<number>;
 
