@@ -1,4 +1,5 @@
 import { HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
@@ -7,6 +8,10 @@ import { RabRowRepository } from '@/modules/rab/repositories/rab-row.repository'
 import { StorageService } from '@/modules/storage/services/storage.service';
 
 import { CreateMovementResponseDTO } from '../dtos/create-movement-response.dto';
+import {
+  MOVEMENT_CREATED_EVENT,
+  type MovementCreatedEvent,
+} from '../events/movement-created.event';
 import { buildAircraftSnapshotCreateInput } from '../mappers/aircraft-snapshot.prisma.mapper';
 import {
   buildMovementCreateInput,
@@ -35,6 +40,7 @@ export class CreateMovementService {
     private readonly storage: StorageService,
     private readonly errorMessageService: ErrorMessageService,
     private readonly rabRowRepo: RabRowRepository,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async execute(
@@ -74,6 +80,19 @@ export class CreateMovementService {
     }
 
     const created = await this.persist(dto, imageKey, resolvedOrigin, snapshot);
+
+    // Side-effects desacoplados (snapshot/conformidade, notificações) reagem via
+    // listeners (#252/#253). Best-effort e síncrono: a emissão NÃO altera o
+    // retorno nem o erro do `execute` e não pode quebrar a ingestão. Sem
+    // listeners ainda nesta issue; os futuros serão async.
+    this.eventEmitter.emit(MOVEMENT_CREATED_EVENT, {
+      movementId: created.id,
+      registration: dto.registration,
+      aerodrome: dto.aerodrome ?? null,
+      operationType: resolvedOrigin.operationType ?? origin.operationType!,
+      source: origin.source,
+      readingDatetime: dto.reading_datetime,
+    } satisfies MovementCreatedEvent);
 
     return {
       id: created.id,

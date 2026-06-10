@@ -1,3 +1,5 @@
+import type { EventEmitter2 } from '@nestjs/event-emitter';
+
 import { MovementSource, MovementType } from '@/generated/prisma/enums';
 
 import type { ErrorMessageService } from '@/common/error-messages/error-message.service';
@@ -9,6 +11,8 @@ import type { RabRowRepository } from '@/modules/rab/repositories/rab-row.reposi
 
 import type { CreateMovementDTO } from '../dtos/create-movement.dto';
 import type { MovementRepository } from '../repositories/movement.repository';
+
+import { MOVEMENT_CREATED_EVENT } from '../events/movement-created.event';
 
 import type { MovementOrigin } from './movement-origin';
 import { CreateMovementService } from './create-movement.service';
@@ -22,6 +26,7 @@ describe('CreateMovementService', () => {
   let getMessage: jest.Mock;
   let findLatestByMarcas: jest.Mock;
   let findLastByRegistrationWithin48h: jest.Mock;
+  let emit: jest.Mock;
 
   type MovementCreateInput = Prisma.MovementCreateInput;
 
@@ -55,6 +60,7 @@ describe('CreateMovementService', () => {
     findLatestByMarcas = jest.fn().mockResolvedValue(null);
     // Por padrão sem movimento anterior na janela de 48h (→ LANDING).
     findLastByRegistrationWithin48h = jest.fn().mockResolvedValue(null);
+    emit = jest.fn();
 
     const repo = {
       create,
@@ -69,8 +75,15 @@ describe('CreateMovementService', () => {
     const rabRowRepo = {
       findLatestByMarcas,
     } as unknown as RabRowRepository;
+    const eventEmitter = { emit } as unknown as EventEmitter2;
 
-    service = new CreateMovementService(repo, storage, errors, rabRowRepo);
+    service = new CreateMovementService(
+      repo,
+      storage,
+      errors,
+      rabRowRepo,
+      eventEmitter,
+    );
   });
 
   it('cria sem imagem: imageKey null e image_path null', async () => {
@@ -94,6 +107,21 @@ describe('CreateMovementService', () => {
         operationType: MovementType.LANDING,
       }),
     );
+  });
+
+  it('emite movement.created após persistir com o payload do movimento', async () => {
+    create.mockResolvedValue({ id: 'r-evt' });
+
+    await service.execute(baseDto, automaticOrigin);
+
+    expect(emit).toHaveBeenCalledWith(MOVEMENT_CREATED_EVENT, {
+      movementId: 'r-evt',
+      registration: 'PR-ZTT',
+      aerodrome: 'SSCF',
+      operationType: MovementType.LANDING,
+      source: MovementSource.AUTOMATIC,
+      readingDatetime: baseDto.reading_datetime,
+    });
   });
 
   it('cria com imagem: upload na key particionada e presigned URL na resposta', async () => {
