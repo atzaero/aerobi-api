@@ -40,6 +40,17 @@ export const templates = {
       email — sua senha atual continua válida.
     </p>
   `,
+  landing_non_conformity: `
+    <h1>Pouso sem solicitação de aterragem</h1>
+    <p>
+      Foi detectado um pouso da aeronave de matrícula
+      <strong>[REGISTRATION]</strong> no aeródromo <strong>[AERODROME]</strong>
+      em [OCCURRED_AT], sem uma solicitação de pouso correspondente registrada.
+    </p>
+    <p>
+      Verifique a operação e tome as providências de conformidade cabíveis.
+    </p>
+  `,
 } as const;
 
 export type EmailTemplate = keyof typeof templates;
