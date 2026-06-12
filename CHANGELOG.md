@@ -1,3 +1,10 @@
+# [2.6.0-beta.14](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.13...v2.6.0-beta.14) (2026-06-12)
+
+
+### Features
+
+* log de inicialização da API no bootstrap ([#283](https://github.com/atzaero/aerobi-api/issues/283)) ([a7869f4](https://github.com/atzaero/aerobi-api/commit/a7869f4a908c117d53c58b734b579629e0061c26)), closes [#282](https://github.com/atzaero/aerobi-api/issues/282)
+
 # [2.6.0-beta.13](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.12...v2.6.0-beta.13) (2026-06-10)
 
 
