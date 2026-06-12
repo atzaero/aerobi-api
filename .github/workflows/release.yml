@@ -27,6 +27,14 @@ permissions:
   pull-requests: write
   packages: write
 
+# Serializa releases/deploys: pushes próximos em main/develop não correm em
+# paralelo (evita corrida no tag do semantic-release e no `compose up` da VPS).
+# cancel-in-progress: false — NÃO mata um deploy em andamento (evitaria estado
+# parcial na VPS); o run seguinte aguarda e deploya o código mais novo. (#222)
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   release:
     name: Semantic Release
@@ -37,13 +45,13 @@ jobs:
       is_prerelease: ${{ steps.semantic.outputs.is_prerelease }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
           cache: npm
@@ -56,7 +64,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
-          npx semantic-release 2>&1 | tee release-output.log
+          set -o pipefail
+          # `if !` isola o comando do `set -e` do runner: um CRASH do
+          # semantic-release (token/rede/plugin) vira job VERMELHO com mensagem,
+          # em vez de mascarado como "sem release" (o `| tee` engolia o código de
+          # saída). No-release legítimo sai 0 e segue com VERSION vazio. (#166)
+          if ! npx semantic-release 2>&1 | tee release-output.log; then
+            echo "::error::semantic-release falhou — abortando para não mascarar o crash como 'nenhuma versao publicada'."
+            exit 1
+          fi
           # Remove escapes ANSI antes de extrair (robusto a FORCE_COLOR/TTY) e
           # captura a versão COMPLETA, incluindo sufixo de prerelease (-beta.N).
           VERSION=$(sed -r 's/\x1b\[[0-9;]*[A-Za-z]//g' release-output.log \
@@ -84,7 +100,7 @@ jobs:
     if: needs.release.outputs.new_release_published == 'true'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: v${{ needs.release.outputs.new_release_version }}
           fetch-depth: 0

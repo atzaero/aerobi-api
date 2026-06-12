@@ -40,12 +40,12 @@ on:
         required: true
         type: string
       project_name:
-        description: "docker compose -p <project> (vazio = projeto default, usado por produção)"
+        description: 'docker compose -p <project> (vazio = projeto default, usado por produção)'
         required: false
         type: string
         default: ''
       db_name_guard:
-        description: "se não-vazio, exige que DATABASE_URL aponte para este banco (trava anti-fallback)"
+        description: 'se não-vazio, exige que DATABASE_URL aponte para este banco (trava anti-fallback)'
         required: false
         type: string
         default: ''
@@ -112,58 +112,21 @@ jobs:
           check_marker FRONTEND_URL "$FRONTEND"
           [ "$fail" -eq 0 ] || exit 1
 
-      # Conecta o runner à tailnet (Headscale) e resolve o host de deploy. O SSH
-      # passa a sair pela interface tailscale0 → NÃO toca a porta 22 pública nem
-      # o fail2ban (issue #129 do atzaero/aerobi-ansible: runner Azure com IP
-      # reciclado/banido fazia o deploy falhar com 'Connection timed out').
-      # Fallback: sem o secret HEADSCALE_AUTHKEY, usa o IP público (comportamento
-      # anterior) — permite mergear o workflow antes de cadastrar a key.
+      # Conecta o runner à tailnet (Headscale) e resolve DEPLOY_HOST. Lógica
+      # extraída para a composite (retry 3x + prova TCP + fallback IP público),
+      # compartilhada byte-idêntica com atzaero/aerobi.
       - name: Conectar à tailnet e resolver host de deploy
-        env:
-          TS_AUTHKEY: ${{ secrets.HEADSCALE_AUTHKEY }}
-          PUBLIC_HOST: ${{ secrets.REMOTE_HOST }}
-        run: |
-          set -e
-          if [ -n "$TS_AUTHKEY" ]; then
-            curl -fsSL https://tailscale.com/install.sh | sh
-            # `--timeout` faz o `tailscale up` ABORTAR se a authkey estiver
-            # expirada/inválida ou o headscale inacessível — sem ele o comando
-            # fica aguardando login interativo para sempre e o deploy pendura
-            # (issue #225). O retry com backoff cobre blips transitórios do
-            # headscale; se a key estiver de facto expirada/inválida, as 3
-            # tentativas falham e a mensagem aponta a causa (issue #263).
-            ts_ok=0
-            for attempt in 1 2 3; do
-              if sudo tailscale up \
-                --login-server=https://headscale.aerobi.com.br \
-                --authkey="$TS_AUTHKEY" \
-                --hostname="gh-${{ github.event.repository.name }}-${{ github.run_id }}" \
-                --accept-dns=false \
-                --timeout=120s; then
-                ts_ok=1
-                break
-              fi
-              echo "::warning::Tentativa $attempt/3 de conectar à tailnet falhou; novo retry em $((attempt * 15))s."
-              sleep $((attempt * 15))
-            done
-            if [ "$ts_ok" != "1" ]; then
-              echo "::error::Falha ao conectar à tailnet após 3 tentativas. HEADSCALE_AUTHKEY provavelmente expirada/inválida ou headscale.aerobi.com.br inacessível — renove a preauthkey efêmera (docker exec headscale headscale preauthkeys create --user <ID> --reusable --ephemeral --expiration 90d --tags tag:ci) e atualize o secret (issues #225/#263)."
-              exit 1
-            fi
-            sudo tailscale status
-            echo "DEPLOY_HOST=100.64.0.1" >> "$GITHUB_ENV"
-            echo "Deploy via tailnet (100.64.0.1) — SSH não toca a 22 pública."
-          else
-            echo "DEPLOY_HOST=$PUBLIC_HOST" >> "$GITHUB_ENV"
-            echo "::warning::HEADSCALE_AUTHKEY ausente — deploy via IP público (sujeito ao fail2ban, issue #129). Cadastre o secret para usar a tailnet."
-          fi
+        uses: ./.github/actions/tailnet-connect
+        with:
+          headscale-authkey: ${{ secrets.HEADSCALE_AUTHKEY }}
+          public-host: ${{ secrets.REMOTE_HOST }}
 
       - name: Create SSH key
-        run: |
-          mkdir -p ~/.ssh/
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ env.DEPLOY_HOST }} >> ~/.ssh/known_hosts || true
+        uses: ./.github/actions/ssh-setup
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          remote-host: ${{ env.DEPLOY_HOST }}
+          remote-port: ${{ secrets.REMOTE_PORT }}
 
       - name: Check and Create Target Directory
         env:
@@ -214,51 +177,22 @@ jobs:
             "${{ inputs.compose_file }}" "$ENVF" \
             ${{ secrets.REMOTE_USER }}@${{ env.DEPLOY_HOST }}:$RT
 
-      - name: Login to GitHub Container Registry on Remote Server
-        run: |
-          TOKEN="${{ secrets.GH_TOKEN }}"
-          if [ -z "$TOKEN" ]; then
-            echo "ERRO: GH_TOKEN nao disponivel"
-            exit 1
-          fi
-          echo "$TOKEN" | ssh -i ~/.ssh/deploy_key -p ${{ secrets.REMOTE_PORT }} ${{ secrets.REMOTE_USER }}@${{ env.DEPLOY_HOST }} \
-            "docker login ghcr.io -u ${{ github.actor }} --password-stdin"
-
-      - name: Ensure Docker network warpgate exists
-        run: |
-          ssh -i ~/.ssh/deploy_key -p ${{ secrets.REMOTE_PORT }} ${{ secrets.REMOTE_USER }}@${{ env.DEPLOY_HOST }} "
-            if ! docker network inspect warpgate >/dev/null 2>&1; then
-              docker network create warpgate
-            fi
-            docker network inspect warpgate >/dev/null
-          "
-
-      - name: Deploy via SSH
-        env:
-          RT: ${{ vars.REMOTE_TARGET }}
-          COMPOSE_FILE: ${{ inputs.compose_file }}
-          ENVF: ${{ inputs.env_file }}
-          PROJECT: ${{ inputs.project_name }}
-          VERSION: ${{ inputs.image_tag }}
-        run: |
-          PF=""
-          [ -n "$PROJECT" ] && PF="-p $PROJECT"
-          ssh -i ~/.ssh/deploy_key -p ${{ secrets.REMOTE_PORT }} \
-            -o ServerAliveInterval=60 \
-            -o ServerAliveCountMax=3 \
-            -o ConnectTimeout=30 \
-            ${{ secrets.REMOTE_USER }}@${{ env.DEPLOY_HOST }} "
-            cd $RT && \
-            RETRY=0
-            while [ \$RETRY -lt 3 ]; do
-              if docker compose $PF -f $COMPOSE_FILE --env-file $ENVF pull --quiet; then break; fi
-              RETRY=\$((RETRY + 1))
-              sleep 10
-            done
-            docker compose $PF -f $COMPOSE_FILE down --remove-orphans || true && \
-            docker compose $PF -f $COMPOSE_FILE --env-file $ENVF up -d --force-recreate && \
-            echo '${{ inputs.environment }} v$VERSION deployed'
-          "
+      # Login GHCR remoto + ensure network warpgate + compose pull/down/up.
+      # Extraído para a composite, compartilhada byte-idêntica com atzaero/aerobi.
+      - name: Deploy remoto (GHCR + docker compose)
+        uses: ./.github/actions/remote-deploy
+        with:
+          remote-user: ${{ secrets.REMOTE_USER }}
+          remote-host: ${{ env.DEPLOY_HOST }}
+          remote-port: ${{ secrets.REMOTE_PORT }}
+          remote-target: ${{ vars.REMOTE_TARGET }}
+          gh-token: ${{ secrets.GH_TOKEN }}
+          actor: ${{ github.actor }}
+          compose-file: ${{ inputs.compose_file }}
+          env-file: ${{ inputs.env_file }}
+          project-name: ${{ inputs.project_name }}
+          image-tag: ${{ inputs.image_tag }}
+          environment-label: ${{ inputs.environment }}
 
       - name: Cleanup
         if: always()
