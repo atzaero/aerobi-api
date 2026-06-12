@@ -1,0 +1,30 @@
+name: Preparar chave SSH de deploy
+description: >-
+  Grava a chave privada de deploy em ~/.ssh/deploy_key e popula known_hosts para
+  o host alvo. O ssh-keyscan usa sempre `-p <porta>` — sem isso, com REMOTE_PORT
+  ≠ 22, o known_hosts pegaria a host key errada.
+
+inputs:
+  ssh-private-key:
+    description: Conteúdo da chave privada SSH de deploy (secrets.SSH_PRIVATE_KEY).
+    required: true
+  remote-host:
+    description: Host de deploy resolvido (env.DEPLOY_HOST).
+    required: true
+  remote-port:
+    description: Porta SSH do host (secrets.REMOTE_PORT).
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        SSH_KEY: ${{ inputs.ssh-private-key }}
+        RHOST: ${{ inputs.remote-host }}
+        RPORT: ${{ inputs.remote-port }}
+      run: |
+        mkdir -p ~/.ssh
+        printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+        chmod 600 ~/.ssh/deploy_key
+        ssh-keyscan -H -p "$RPORT" "$RHOST" >> ~/.ssh/known_hosts || true
