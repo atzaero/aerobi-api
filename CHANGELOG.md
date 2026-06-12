@@ -1,3 +1,10 @@
+# [2.6.0-beta.15](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.14...v2.6.0-beta.15) (2026-06-12)
+
+
+### Bug Fixes
+
+* incluir ambiente (NODE_ENV) no log de inicialização da API ([#285](https://github.com/atzaero/aerobi-api/issues/285)) ([3591b73](https://github.com/atzaero/aerobi-api/commit/3591b732105ab43bec91f6e0b94c518e7a7fd4ca)), closes [#284](https://github.com/atzaero/aerobi-api/issues/284)
+
 # [2.6.0-beta.14](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.13...v2.6.0-beta.14) (2026-06-12)
 
 
