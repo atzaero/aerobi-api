@@ -1,3 +1,10 @@
+# [2.6.0-beta.17](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.16...v2.6.0-beta.17) (2026-06-13)
+
+
+### Bug Fixes
+
+* **movements:** casar matrícula com forma canônica do RAB no snapshot ([1f0be6f](https://github.com/atzaero/aerobi-api/commit/1f0be6f106454dcd88a61193fa9b4f539123c5e0)), closes [#289](https://github.com/atzaero/aerobi-api/issues/289)
+
 # [2.6.0-beta.16](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.15...v2.6.0-beta.16) (2026-06-13)
 
 
