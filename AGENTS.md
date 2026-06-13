@@ -101,6 +101,14 @@ Camada de autenticação **humana** (login de usuário no painel) — convive co
 
 Produção: imagem no GHCR, Docker Compose prod, rede **`warpgate`** partilhada com Postgres noutro stack (ver README e `docker-compose.prod.yml`). Não documentar valores secretos aqui.
 
+## Convenções de código
+
+- **TypeScript estrito**, sem `any` salvo em integrações com bibliotecas sem tipos. Preferir `unknown` + narrowing.
+- **Documentação de código (convenção canônica, alinhada ao `aerobi-web`):**
+  - **Sempre `/** */` (JSDoc), nunca `//` para documentar.** Comentários explicativos — inclusive notas de implementação no corpo de uma função — vão num bloco `/** */` **acima** da linha/trecho que explicam. O `//` fica reservado **apenas** a diretivas que exigem essa sintaxe (`// eslint-disable-next-line`, `// @ts-expect-error`).
+  - **JSDoc de símbolo fica ACIMA do símbolo** (função, classe, método, tipo, `const`/`export`), descrevendo propósito/comportamento em prosa — nunca espalhado inline.
+  - **Não documentar campos de DTO/interface individualmente** com `/** */` por campo; descreva o tipo num único bloco acima da `class`/`interface`/`type`. Exceção: decorators do Swagger (`@ApiProperty({ description })`) continuam por campo, pois alimentam a doc HTTP. Código **novo ou refatorado** segue isto; o legado migra ao ser tocado de forma relevante.
+
 ## Tooling
 
 - **Prettier**: `npm run format` / `npm run format:check` (`src/**/*.ts`)

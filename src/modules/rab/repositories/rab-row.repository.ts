@@ -106,10 +106,9 @@ export class RabRowRepository implements IRabRowRepository {
    * Retorna a `rab_row` mais recente (maior `period`) para uma matrícula. Usado
    * pelo snapshot de aeronave no momento da criação do movimento.
    *
-   * O match é case-insensitive exato entre `marcas` (matrícula). Hoje assume-se
-   * que `registration` (ex.: "PR-ZTT") e `marcas` da ANAC compartilham o mesmo
-   * formato (hífen/caixa). Se os formatos divergirem no futuro (ex.: ANAC sem
-   * hífen), a normalização precisará de refinamento aqui; por ora o no-match é
+   * Espera `marcas` já na **forma canônica** do banco (sem hífen, ex.: "PTKOB").
+   * A normalização do input é responsabilidade da camada de service (ver
+   * `normalizeMarcas`); aqui só comparamos case-insensitive. O no-match é
    * tratado graciosamente (retorna `null`) e o movimento não falha.
    */
   findLatestByMarcas(marcas: string): Promise<RabRow | null> {
