@@ -24,8 +24,9 @@ async function bootstrap(): Promise<void> {
 
   const port = resolveHttpPort(configService);
   await app.listen(port);
+  const at = new Date().toISOString();
   console.log(
-    `🚀 Aerobi API iniciada na porta ${port} [${process.env.NODE_ENV}]`,
+    `🚀 Aerobi API iniciada na porta ${port} [${process.env.NODE_ENV}] em ${at}`,
   );
 }
 
