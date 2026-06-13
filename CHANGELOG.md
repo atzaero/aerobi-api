@@ -1,3 +1,10 @@
+# [2.6.0-beta.16](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.15...v2.6.0-beta.16) (2026-06-13)
+
+
+### Bug Fixes
+
+* timestamp de boot no log de inicialização da API ([#287](https://github.com/atzaero/aerobi-api/issues/287)) ([80f3326](https://github.com/atzaero/aerobi-api/commit/80f33261d8be77c406fa665f3aeba8f07171bd3f)), closes [#286](https://github.com/atzaero/aerobi-api/issues/286)
+
 # [2.6.0-beta.15](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.14...v2.6.0-beta.15) (2026-06-12)
 
 
