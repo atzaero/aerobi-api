@@ -15,7 +15,11 @@ import {
  * A imagem (`image`) é recebida à parte via `FileInterceptor`.
  */
 export class CreateMovementDTO {
-  @ApiProperty({ example: 'PR-ZTT', description: 'Matrícula lida por OCR.' })
+  @ApiProperty({
+    example: 'PR-ZTT',
+    description:
+      'Matrícula lida por OCR. Aceita com/sem hífen; é normalizada (sem hífen, maiúsculas) antes de ser persistida e retornada.',
+  })
   @IsString()
   @IsNotEmpty()
   @MaxLength(16)

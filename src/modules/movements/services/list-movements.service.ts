@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import type { Prisma } from '@/generated/prisma/client';
 import { resolvePaginationParams } from '@/common/utils/pagination-params.util';
+import { normalizeMarcas } from '@/modules/rab/utils/normalize-marcas';
 import { StorageService } from '@/modules/storage/services/storage.service';
 
 import { MovementsPaginatedResponseDTO } from '../dtos/movements-paginated-response.dto';
@@ -45,7 +46,11 @@ export class ListMovementsService {
   private buildWhere(query: ListMovementsQueryDTO): Prisma.MovementWhereInput {
     const where: Prisma.MovementWhereInput = {};
     if (query.registration) {
-      where.registration = query.registration;
+      /**
+       * `registration` é persistido na forma canônica (sem hífen); normaliza o
+       * filtro para casar independentemente do formato digitado ("PR-ZTT").
+       */
+      where.registration = normalizeMarcas(query.registration);
     }
     if (query.aerodrome) {
       where.aerodrome = query.aerodrome;

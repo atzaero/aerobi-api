@@ -100,7 +100,7 @@ describe('CreateMovementService', () => {
     expect(getPresignedUrl).not.toHaveBeenCalled();
     expect(create).toHaveBeenCalledWith(
       expect.objectContaining({
-        registration: 'PR-ZTT',
+        registration: 'PRZTT',
         imageKey: null,
         source: MovementSource.AUTOMATIC,
         createdBy: 'aviascan',
@@ -116,7 +116,7 @@ describe('CreateMovementService', () => {
 
     expect(emit).toHaveBeenCalledWith(MOVEMENT_CREATED_EVENT, {
       movementId: 'r-evt',
-      registration: 'PR-ZTT',
+      registration: 'PRZTT',
       aerodrome: 'SSCF',
       operationType: MovementType.LANDING,
       source: MovementSource.AUTOMATIC,
@@ -201,7 +201,7 @@ describe('CreateMovementService', () => {
     expect(res.id).toBe('m-1');
     expect(create).toHaveBeenCalledWith(
       expect.objectContaining({
-        registration: 'PR-ABC',
+        registration: 'PRABC',
         source: MovementSource.MANUAL,
         createdBy: 'user-42',
         operationType: MovementType.TAKEOFF,
@@ -268,13 +268,39 @@ describe('CreateMovementService', () => {
     const res = await service.execute(baseDto, automaticOrigin);
 
     expect(res.id).toBe('s-2');
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining('PR-ZTT'));
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('PRZTT'));
     expect(createInputs[0].aircraftSnapshot?.create).toMatchObject({
       rabRowId: null,
       rabPeriod: null,
       marcas: null,
       dsModelo: null,
     });
+  });
+
+  it('normaliza a matrícula recebida (com hífen/caixa) antes de buscar e persistir', async () => {
+    const createInputs: MovementCreateInput[] = [];
+    create.mockImplementation((input: MovementCreateInput) => {
+      createInputs.push(input);
+      return Promise.resolve({ id: 'n-1' });
+    });
+
+    await service.execute(
+      { ...baseDto, registration: ' pt-kob ' },
+      automaticOrigin,
+    );
+
+    /** Fecha os quatro caminhos: lookup RAB, toggle de 48h, persistência e evento. */
+    expect(findLatestByMarcas).toHaveBeenCalledWith('PTKOB');
+    expect(findLastByRegistrationWithin48h).toHaveBeenCalledWith(
+      'PTKOB',
+      'SSCF',
+      baseDto.reading_datetime,
+    );
+    expect(createInputs[0].registration).toBe('PTKOB');
+    expect(emit).toHaveBeenCalledWith(
+      MOVEMENT_CREATED_EVENT,
+      expect.objectContaining({ registration: 'PTKOB' }),
+    );
   });
 
   describe('regra toggle de 48h (AUTOMATIC)', () => {
@@ -288,7 +314,7 @@ describe('CreateMovementService', () => {
       await service.execute(baseDto, automaticOrigin);
 
       expect(findLastByRegistrationWithin48h).toHaveBeenCalledWith(
-        'PR-ZTT',
+        'PRZTT',
         'SSCF',
         baseDto.reading_datetime,
       );
@@ -331,7 +357,7 @@ describe('CreateMovementService', () => {
       await service.execute(dtoSemAerodromo, automaticOrigin);
 
       expect(findLastByRegistrationWithin48h).toHaveBeenCalledWith(
-        'PR-ZTT',
+        'PRZTT',
         null,
         baseDto.reading_datetime,
       );

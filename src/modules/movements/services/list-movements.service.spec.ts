@@ -148,7 +148,8 @@ describe('ListMovementsService', () => {
       end_date: '2026-05-31',
     });
 
-    expect(captured.registration).toBe('PR-ZTT');
+    /** Filtro normalizado para a forma canônica do banco (entrada "PR-ZTT"). */
+    expect(captured.registration).toBe('PRZTT');
     expect(captured.aerodrome).toBe('SSCF');
     expect(captured.readingStatus).toBe('APPROVED');
     expect(captured.readingDatetime?.gte).toEqual(
