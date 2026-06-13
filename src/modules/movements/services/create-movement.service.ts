@@ -5,6 +5,7 @@ import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { RabRowRepository } from '@/modules/rab/repositories/rab-row.repository';
+import { normalizeMarcas } from '@/modules/rab/utils/normalize-marcas';
 import { StorageService } from '@/modules/storage/services/storage.service';
 
 import { CreateMovementResponseDTO } from '../dtos/create-movement-response.dto';
@@ -58,7 +59,9 @@ export class CreateMovementService {
     // vazio) e o movimento NÃO falha — apenas registramos um aviso. Resolvido
     // ANTES do upload da imagem: se o lookup falhar (ex.: timeout de DB), não
     // deixamos imagem órfã no storage.
-    const rabRow = await this.rabRowRepo.findLatestByMarcas(dto.registration);
+    const rabRow = await this.rabRowRepo.findLatestByMarcas(
+      normalizeMarcas(dto.registration),
+    );
     if (!rabRow) {
       this.logger.warn(
         `Matrícula ${dto.registration} sem linha RAB correspondente — snapshot de aeronave gravado vazio.`,

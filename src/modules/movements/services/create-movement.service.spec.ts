@@ -214,7 +214,8 @@ describe('CreateMovementService', () => {
     const rabRow = {
       id: 'rab-1',
       period: '2026-05',
-      marcas: 'PR-ZTT',
+      /** O RAB grava `marcas` na forma canônica (sem hífen), como no banco real. */
+      marcas: 'PRZTT',
       proprietarios: 'Fulano',
       operadores: 'Operador X',
       nrSerie: 'SN-123',
@@ -238,11 +239,15 @@ describe('CreateMovementService', () => {
 
     await service.execute(baseDto, automaticOrigin);
 
-    expect(findLatestByMarcas).toHaveBeenCalledWith('PR-ZTT');
+    /**
+     * O service normaliza a matrícula para a forma canônica do RAB (sem hífen)
+     * antes de consultar o repositório.
+     */
+    expect(findLatestByMarcas).toHaveBeenCalledWith('PRZTT');
     expect(createInputs[0].aircraftSnapshot?.create).toMatchObject({
       rabRowId: 'rab-1',
       rabPeriod: '2026-05',
-      marcas: 'PR-ZTT',
+      marcas: 'PRZTT',
       dsModelo: 'EMB-810D',
       nmFabricante: 'NEIVA',
       cfOperacional: 'TPP',
