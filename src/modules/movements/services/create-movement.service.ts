@@ -54,17 +54,31 @@ export class CreateMovementService {
       this.assertImageMimetype(image.mimetype);
     }
 
+    /**
+     * Normaliza a matrícula para a forma canônica (sem hífen/espaços,
+     * maiúsculas) uma única vez na fronteira do service. Tudo a jusante —
+     * lookup no RAB, toggle de 48h, persistência e evento — opera sobre o mesmo
+     * `dto` canônico, casando com `rab_row.marcas` e garantindo consistência
+     * entre movimentos. A exibição com hífen fica na camada de apresentação.
+     * Idempotente: entrada já canônica (`PRZTT`) não é alterada — o
+     * `BatchCreateMovementService` pode delegar sem pré-normalizar.
+     */
+    const canonicalDto: MovementCreateData = {
+      ...dto,
+      registration: normalizeMarcas(dto.registration),
+    };
+
     // Congela um snapshot dos dados RAB da aeronave no instante do movimento.
     // A `rab_row` é periódica; sem match a matrícula segue sem RAB (snapshot
     // vazio) e o movimento NÃO falha — apenas registramos um aviso. Resolvido
     // ANTES do upload da imagem: se o lookup falhar (ex.: timeout de DB), não
     // deixamos imagem órfã no storage.
     const rabRow = await this.rabRowRepo.findLatestByMarcas(
-      normalizeMarcas(dto.registration),
+      canonicalDto.registration,
     );
     if (!rabRow) {
       this.logger.warn(
-        `Matrícula ${dto.registration} sem linha RAB correspondente — snapshot de aeronave gravado vazio.`,
+        `Matrícula ${canonicalDto.registration} sem linha RAB correspondente — snapshot de aeronave gravado vazio.`,
       );
     }
     const snapshot = buildAircraftSnapshotCreateInput(rabRow);
@@ -74,15 +88,26 @@ export class CreateMovementService {
     // deixamos imagem órfã no storage. No caminho AUTOMATIC (sem operationType
     // na origem) aplica a regra toggle de 48h; no MANUAL a origem já traz o
     // valor do formulário e é preservada como está.
-    const resolvedOrigin = await this.resolveOperationType(dto, origin);
+    const resolvedOrigin = await this.resolveOperationType(
+      canonicalDto,
+      origin,
+    );
 
     let imageKey: string | null = null;
     if (image) {
-      imageKey = buildReadingImageKey(image.mimetype, dto.reading_datetime);
+      imageKey = buildReadingImageKey(
+        image.mimetype,
+        canonicalDto.reading_datetime,
+      );
       await this.storage.upload(image, imageKey);
     }
 
-    const created = await this.persist(dto, imageKey, resolvedOrigin, snapshot);
+    const created = await this.persist(
+      canonicalDto,
+      imageKey,
+      resolvedOrigin,
+      snapshot,
+    );
 
     // Side-effects desacoplados (snapshot/conformidade, notificações) reagem via
     // listeners (#252/#253). Best-effort e síncrono: a emissão NÃO altera o
@@ -90,11 +115,11 @@ export class CreateMovementService {
     // listeners ainda nesta issue; os futuros serão async.
     this.eventEmitter.emit(MOVEMENT_CREATED_EVENT, {
       movementId: created.id,
-      registration: dto.registration,
-      aerodrome: dto.aerodrome ?? null,
+      registration: canonicalDto.registration,
+      aerodrome: canonicalDto.aerodrome ?? null,
       operationType: resolvedOrigin.operationType ?? origin.operationType!,
       source: origin.source,
-      readingDatetime: dto.reading_datetime,
+      readingDatetime: canonicalDto.reading_datetime,
     } satisfies MovementCreatedEvent);
 
     return {

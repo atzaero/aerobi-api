@@ -24,7 +24,11 @@ import { MovementType } from '@/generated/prisma/enums';
  * `createdBy` passará a ser derivado do usuário autenticado, não do body.
  */
 export class CreateManualMovementDTO {
-  @ApiProperty({ example: 'PR-ZTT', description: 'Matrícula da aeronave.' })
+  @ApiProperty({
+    example: 'PR-ZTT',
+    description:
+      'Matrícula da aeronave. Aceita com/sem hífen; é normalizada (sem hífen, maiúsculas) antes de ser persistida e retornada.',
+  })
   @IsString()
   @IsNotEmpty()
   @MaxLength(16)
