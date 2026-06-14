@@ -1,3 +1,10 @@
+# [2.6.0-beta.18](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.17...v2.6.0-beta.18) (2026-06-14)
+
+
+### Bug Fixes
+
+* **movements:** persistir e filtrar registration na forma canônica ([297a3df](https://github.com/atzaero/aerobi-api/commit/297a3df25eca134994f0bf9ad23799f6a81e39ac)), closes [#291](https://github.com/atzaero/aerobi-api/issues/291)
+
 # [2.6.0-beta.17](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.16...v2.6.0-beta.17) (2026-06-13)
 
 
