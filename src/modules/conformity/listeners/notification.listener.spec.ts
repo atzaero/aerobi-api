@@ -43,8 +43,18 @@ describe('NotificationListener', () => {
   };
 
   const contacts: GroupContact[] = [
-    { email: 'coord@example.com', role: 'coordinator', displayName: 'Coord' },
-    { email: 'op@example.com', role: 'operator', displayName: null },
+    {
+      email: 'coord@example.com',
+      role: 'coordinator',
+      displayName: 'Coord',
+      phone: '+55 11 99999-0001',
+    },
+    {
+      email: 'op@example.com',
+      role: 'operator',
+      displayName: null,
+      phone: null,
+    },
   ];
 
   function build(): NotificationListener {

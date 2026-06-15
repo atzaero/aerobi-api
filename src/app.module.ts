@@ -20,6 +20,7 @@ import { PrivateAerodromesModule } from '@/modules/private-aerodromes/private-ae
 import { PublicAerodromesModule } from '@/modules/public-aerodromes/public-aerodromes.module';
 import { RabModule } from '@/modules/rab/rab.module';
 import { MovementsModule } from '@/modules/movements/movements.module';
+import { NotificationsModule } from '@/modules/notifications/notifications.module';
 import { SchedulerModule } from '@/modules/scheduler/scheduler.module';
 import { TechnicalVisitsModule } from '@/modules/technical-visits/technical-visits.module';
 import { TokensModule } from '@/modules/tokens/tokens.module';
@@ -53,6 +54,7 @@ import { PrismaModule } from '@/prisma/prisma.module';
     AuthModule,
     UsersModule,
     ConformityModule,
+    NotificationsModule,
   ],
 })
 export class AppModule {}

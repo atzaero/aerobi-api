@@ -194,6 +194,7 @@ describe('FirestoreDirectoryAdapter', () => {
             role: 'coordinator',
             email: 'coord@example.com',
             display_name: 'Coord',
+            phone: '+55 11 99999-0001',
           }),
           fakeDoc('u2', {
             aerodrome_group_id: 'group-1',
@@ -227,8 +228,14 @@ describe('FirestoreDirectoryAdapter', () => {
           email: 'coord@example.com',
           role: 'coordinator',
           displayName: 'Coord',
+          phone: '+55 11 99999-0001',
         },
-        { email: 'op@example.com', role: 'operator', displayName: null },
+        {
+          email: 'op@example.com',
+          role: 'operator',
+          displayName: null,
+          phone: null,
+        },
       ]);
       expect(whereCalls.users).toEqual([
         ['aerodrome_group_id', '==', 'group-1'],
