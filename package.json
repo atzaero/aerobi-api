@@ -106,9 +106,8 @@
   "overrides": {
     "@hono/node-server": "1.19.13",
     "fast-uri": "3.1.2",
-    "preview-email": {
-      "uuid": "^11.1.1"
-    },
+    "hono": "^4.12.21",
+    "uuid": "^11.1.1",
     "npm": "^11.16.0"
   },
   "jest": {
