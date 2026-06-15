@@ -21,6 +21,7 @@ import { PublicAerodromesModule } from '@/modules/public-aerodromes/public-aerod
 import { RabModule } from '@/modules/rab/rab.module';
 import { MovementsModule } from '@/modules/movements/movements.module';
 import { NotificationsModule } from '@/modules/notifications/notifications.module';
+import { StreamsModule } from '@/modules/streams/streams.module';
 import { SchedulerModule } from '@/modules/scheduler/scheduler.module';
 import { TechnicalVisitsModule } from '@/modules/technical-visits/technical-visits.module';
 import { TokensModule } from '@/modules/tokens/tokens.module';
@@ -55,6 +56,7 @@ import { PrismaModule } from '@/prisma/prisma.module';
     UsersModule,
     ConformityModule,
     NotificationsModule,
+    StreamsModule,
   ],
 })
 export class AppModule {}

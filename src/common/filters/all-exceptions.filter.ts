@@ -31,6 +31,19 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
 
+    /**
+     * Se a resposta já começou a ser enviada (ex.: rota de streaming que faz
+     * pipe via `@Res()` e falha a meio), não dá para reescrever status/headers —
+     * tentar fazê-lo lançaria `ERR_HTTP_HEADERS_SENT`. Encerra a conexão e sai.
+     */
+    if (response.headersSent) {
+      this.logger.warn(
+        'Exceção após headers enviados; encerrando a resposta sem reescrever.',
+      );
+      response.destroy(exception instanceof Error ? exception : undefined);
+      return;
+    }
+
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
       const errorResponse = exception.getResponse();

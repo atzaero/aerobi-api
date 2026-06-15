@@ -101,6 +101,15 @@ Rotas que consultam serviços AISWEB/DECEA (NOTAM, ROTAER, SOL, Infotemp). O **c
 - **`AISWEB_API_KEY`** e **`AISWEB_API_PASS`** — enviadas à AISWEB (obrigatórias para chamadas outbound).
 - **`AISWEB_HTTP_TIMEOUT_MS`** — opcional (ver `.env.example`).
 
+### Câmeras + proxy HLS (`/aerodromes/:icao/cameras`, `/streams/*`)
+
+Módulo **`streams`** (épica #317): listagem de câmeras por aeródromo e **proxy HLS** (passthrough de bytes, sem transcoding) do mediamtx do Raspi via tailnet. Desenho **Firestore-first** — o cadastro de câmeras vive no **Firestore** (gerido pelo frontend), **sem** tabela no Postgres nem CRUD neste backend. O **cliente** usa a mesma **`X-API-Key`** = **`AEROBI_API_KEY`** (a visualização é pública; a chave protege a rota server-to-server, detida pelo BFF Next.js).
+
+- `GET /aerodromes/:icao/cameras` — lista as câmeras ativas do aeródromo (lê o Firestore).
+- `GET /streams/:cameraId/index.m3u8` e `GET /streams/:cameraId/:segment` — proxy da playlist e dos segmentos HLS.
+
+A config da câmera é resolvida no Firestore **com cache** em memória (não consulta a cada segmento). Variáveis opcionais: **`STREAMS_CAMERA_CACHE_TTL_MS`** (default `60000`), **`STREAMS_PROXY_TIMEOUT_MS`** (default `10000`), **`STREAMS_MEDIAMTX_HLS_PORT`** (default `8888`). Detalhes, diagrama e dicas de debug: [`src/modules/streams/README.md`](src/modules/streams/README.md).
+
 ## Project setup
 
 ```bash
