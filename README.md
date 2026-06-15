@@ -25,27 +25,36 @@
 
 API **Aerobi** — NestJS + PostgreSQL (Prisma), sincronização do [RAB histórico ANAC](https://sistemas.anac.gov.br/dadosabertos/Aeronaves/RAB/Historico_RAB/) (CSV), cron diário e rotas para o frontend.
 
-### Rodar com Docker (Postgres + API)
+### Pré-requisito: infra local compartilhada
+
+Os serviços de dado (Postgres, MinIO, Evolution GO) vêm do projeto **[`atzaero/aerobi-local-infra`](https://github.com/atzaero/aerobi-local-infra)** (rede docker `aerobi-local`; portas host `5433`/`9002`/`9003`/`4000`, escolhidas para não colidir com outras infra locais). Suba-a **antes** da API:
+
+```bash
+git clone git@github.com:atzaero/aerobi-local-infra && cd aerobi-local-infra
+cp .env.example .env && make up
+```
+
+### Rodar a API com Docker (watch)
 
 ```bash
 cp .env.example .env
-# Ajuste POSTGRES_* e DATABASE_URL se necessário
 docker compose -f docker-compose.dev.yml up --build
 ```
 
-Na primeira vez o script roda `prisma migrate deploy` e sobe o Nest em `--watch`. API: `http://localhost:3333`, Swagger: `http://localhost:3333/api/docs`.
+A API anexa-se à rede `aerobi-local` e fala com os serviços pelos hostnames internos. Na primeira vez o script roda `prisma migrate deploy` e sobe o Nest em `--watch`. API: `http://localhost:3333`, Swagger: `http://localhost:3333/api/docs`.
 
-### Postgres + API local (imagem de produção, sem watch)
+### API local com a imagem de produção (sem watch)
 
 ```bash
 docker compose -f docker-compose.local.yml up --build
 ```
 
-### Migrações e Postgres local (sem Docker na API)
+### Nest no host (sem Docker na API)
+
+Com a infra local no ar, o Postgres está em `localhost:5433`:
 
 ```bash
-docker compose -f docker-compose.local.yml up -d postgres
-export DATABASE_URL=postgresql://aerobi:aerobi@localhost:5432/aerobi?schema=public
+export DATABASE_URL=postgresql://aerobi:aerobi@localhost:5433/aerobi?schema=public
 npx prisma migrate deploy
 npm run start:dev
 ```
