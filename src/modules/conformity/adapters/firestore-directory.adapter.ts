@@ -115,12 +115,17 @@ export class FirestoreDirectoryAdapter implements FirestoreDirectoryPort {
       if (!email) continue;
 
       const displayName: unknown = data.display_name;
+      const phone: unknown = data.phone;
       contacts.push({
         email,
         role: String(data.role ?? ''),
         displayName:
           typeof displayName === 'string' && displayName.length > 0
             ? displayName
+            : null,
+        phone:
+          typeof phone === 'string' && phone.trim().length > 0
+            ? phone.trim()
             : null,
       });
     }

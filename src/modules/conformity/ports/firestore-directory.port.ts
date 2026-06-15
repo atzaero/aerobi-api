@@ -28,6 +28,11 @@ export interface GroupContact {
   email: string;
   role: string;
   displayName: string | null;
+  /**
+   * Telefone do contacto em formato cru (pode ser `null`). Usado pelo canal de
+   * WhatsApp (#307); o fluxo de e-mail ignora este campo.
+   */
+  phone: string | null;
 }
 
 /** Entrada para procurar um pedido de aterragem aprovado correspondente. */
