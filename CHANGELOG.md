@@ -1,3 +1,12 @@
+# [2.6.0-beta.19](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.18...v2.6.0-beta.19) (2026-06-15)
+
+
+### Features
+
+* **conformity:** expõe telefone no GroupContact do diretório ([cf990ab](https://github.com/atzaero/aerobi-api/commit/cf990ab024a779396fef2661b6c94a209cbf528d)), closes [304/#307](https://github.com/atzaero/aerobi-api/issues/307)
+* **movements:** evento agregado de lote e flag batched para notificações ([5efcec8](https://github.com/atzaero/aerobi-api/commit/5efcec8cf52dc3497266be0608e1dad58a1cc858)), closes [304/#309](https://github.com/atzaero/aerobi-api/issues/309)
+* **notifications:** notificações WhatsApp de movements via Evolution GO ([d4bac47](https://github.com/atzaero/aerobi-api/commit/d4bac477f1b3fcc41f6ac1012a4f2087dae8d5c6)), closes [#305](https://github.com/atzaero/aerobi-api/issues/305) [#306](https://github.com/atzaero/aerobi-api/issues/306) [#307](https://github.com/atzaero/aerobi-api/issues/307) [#308](https://github.com/atzaero/aerobi-api/issues/308) [#309](https://github.com/atzaero/aerobi-api/issues/309) [#310](https://github.com/atzaero/aerobi-api/issues/310)
+
 # [2.6.0-beta.18](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.17...v2.6.0-beta.18) (2026-06-14)
 
 
