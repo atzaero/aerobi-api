@@ -32,6 +32,7 @@ Aplica em:
 - \`/anac/*\`
 - \`/aerodrome-groups\`, \`/operational-aerodromes\`, \`/aerodrome-geojsons\`, \`/aerodrome-feedbacks\`
 - \`/landing-requests\`, \`/technical-visits\`, \`/pilot-landings\`
+- \`/aerodromes/{icao}/cameras\` e \`/streams/*\` (proxy HLS)
 
 ### 2. JWT Bearer (header Authorization)
 
