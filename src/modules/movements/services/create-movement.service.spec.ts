@@ -121,6 +121,7 @@ describe('CreateMovementService', () => {
       operationType: MovementType.LANDING,
       source: MovementSource.AUTOMATIC,
       readingDatetime: baseDto.reading_datetime,
+      batched: false,
     });
   });
 

@@ -1,4 +1,5 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 
@@ -13,6 +14,11 @@ import {
   BatchMovementResultItemDTO,
   CreateMovementBatchResponseDTO,
 } from '../dtos/create-movement-batch.dto';
+import type { MovementCreatedEvent } from '../events/movement-created.event';
+import {
+  MOVEMENTS_BATCH_CREATED_EVENT,
+  type MovementsBatchCreatedEvent,
+} from '../events/movements-batch-created.event';
 import { isAllowedImageMimetype } from '../utils/reading-image';
 import { CreateMovementService } from './create-movement.service';
 
@@ -24,6 +30,7 @@ export class BatchCreateMovementService {
   constructor(
     private readonly createService: CreateMovementService,
     private readonly errorMessageService: ErrorMessageService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async execute(
@@ -31,9 +38,29 @@ export class BatchCreateMovementService {
     images: Express.Multer.File[],
   ): Promise<CreateMovementBatchResponseDTO> {
     const items = await this.parseAndValidate(metadata, images);
-    const results = await this.processInChunks(items, images);
-    const created = results.filter((r) => r.status === 'created').length;
-    return { created, failed: results.length - created, items: results };
+
+    /**
+     * Coletor dos movimentos efetivamente criados (payload já resolvido via
+     * hook `onCreated`). Após o lote, emitimos um único evento agregado para a
+     * notificação despachar um resumo por grupo (em vez de uma mensagem por
+     * item). Os eventos `movement.created` por item continuam sendo emitidos
+     * com `batched: true` (a conformidade reage; a notificação avulsa ignora).
+     */
+    const created: MovementCreatedEvent[] = [];
+    const results = await this.processInChunks(items, images, created);
+
+    if (created.length > 0) {
+      this.eventEmitter.emit(MOVEMENTS_BATCH_CREATED_EVENT, {
+        movements: created,
+      } satisfies MovementsBatchCreatedEvent);
+    }
+
+    const createdCount = results.filter((r) => r.status === 'created').length;
+    return {
+      created: createdCount,
+      failed: results.length - createdCount,
+      items: results,
+    };
   }
 
   /**
@@ -46,13 +73,14 @@ export class BatchCreateMovementService {
   private async processInChunks(
     items: BatchMovementItemDTO[],
     images: Express.Multer.File[],
+    created: MovementCreatedEvent[],
   ): Promise<BatchMovementResultItemDTO[]> {
     const results: BatchMovementResultItemDTO[] = [];
     for (let start = 0; start < items.length; start += CONCURRENCY) {
       const chunk = items.slice(start, start + CONCURRENCY);
       const chunkResults = await Promise.all(
         chunk.map((item, offset) =>
-          this.processItem(item, start + offset, images),
+          this.processItem(item, start + offset, images, created),
         ),
       );
       results.push(...chunkResults);
@@ -64,21 +92,23 @@ export class BatchCreateMovementService {
     item: BatchMovementItemDTO,
     index: number,
     images: Express.Multer.File[],
+    created: MovementCreatedEvent[],
   ): Promise<BatchMovementResultItemDTO> {
     const image =
       item.image_index !== undefined ? images[item.image_index] : undefined;
     try {
       // Lote vem do pipeline aviascan-cv → origem AUTOMATIC (igual ao /readings).
-      const created = await this.createService.execute(
+      const result = await this.createService.execute(
         item,
         { source: MovementSource.AUTOMATIC, createdBy: 'aviascan' },
         image,
+        { batched: true, onCreated: (event) => created.push(event) },
       );
       return {
         index,
         status: 'created',
-        id: created.id,
-        image_path: created.image_path,
+        id: result.id,
+        image_path: result.image_path,
         error: null,
       };
     } catch (err) {

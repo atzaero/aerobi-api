@@ -32,6 +32,17 @@ import type { MovementOrigin } from './movement-origin';
 // Python só checa o status code, mas outros consumidores podem ler `message`).
 const LEGACY_SUCCESS_MESSAGE = 'Reading registered successfully';
 
+/**
+ * Opções de execução do {@link CreateMovementService.execute}. Usadas pelo
+ * caminho de lote (batch): `batched` marca o evento emitido (notificação avulsa
+ * ignora; conformidade processa na mesma) e `onCreated` deixa o caller coletar o
+ * payload já resolvido sem expor esses campos no DTO de resposta.
+ */
+export interface CreateMovementOptions {
+  batched?: boolean;
+  onCreated?: (event: MovementCreatedEvent) => void;
+}
+
 @Injectable()
 export class CreateMovementService {
   private readonly logger = new Logger(CreateMovementService.name);
@@ -48,6 +59,7 @@ export class CreateMovementService {
     dto: MovementCreateData,
     origin: MovementOrigin,
     image?: Express.Multer.File,
+    options?: CreateMovementOptions,
   ): Promise<CreateMovementResponseDTO> {
     // Valida o mimetype antes de qualquer efeito colateral (fail-fast).
     if (image) {
@@ -111,16 +123,25 @@ export class CreateMovementService {
 
     // Side-effects desacoplados (snapshot/conformidade, notificações) reagem via
     // listeners (#252/#253). Best-effort e síncrono: a emissão NÃO altera o
-    // retorno nem o erro do `execute` e não pode quebrar a ingestão. Sem
-    // listeners ainda nesta issue; os futuros serão async.
-    this.eventEmitter.emit(MOVEMENT_CREATED_EVENT, {
+    // retorno nem o erro do `execute` e não pode quebrar a ingestão.
+    const createdEvent: MovementCreatedEvent = {
       movementId: created.id,
       registration: canonicalDto.registration,
       aerodrome: canonicalDto.aerodrome ?? null,
       operationType: resolvedOrigin.operationType ?? origin.operationType!,
       source: origin.source,
       readingDatetime: canonicalDto.reading_datetime,
-    } satisfies MovementCreatedEvent);
+      batched: options?.batched ?? false,
+    };
+    this.eventEmitter.emit(MOVEMENT_CREATED_EVENT, createdEvent);
+
+    /**
+     * Hook opcional para o caller coletar o payload já resolvido (usado pelo
+     * batch para montar o resumo agregado). Não substitui o evento acima — a
+     * conformidade continua reagindo por item; o hook só evita expor os campos
+     * resolvidos no DTO de resposta da rota.
+     */
+    options?.onCreated?.(createdEvent);
 
     return {
       id: created.id,
