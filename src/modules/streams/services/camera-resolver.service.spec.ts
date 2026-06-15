@@ -75,7 +75,7 @@ describe('CameraResolverService', () => {
     expect(findById).toHaveBeenCalledTimes(1);
   });
 
-  it('reconsulta após o TTL expirar', async () => {
+  it('reconsulta após o TTL positivo expirar', async () => {
     findById.mockResolvedValue(camera());
     const now = jest.spyOn(Date, 'now').mockReturnValue(1_000_000);
 
@@ -83,6 +83,22 @@ describe('CameraResolverService', () => {
     now.mockReturnValue(1_000_000 + 60_001);
     await service.resolve('cam-1');
 
+    expect(findById).toHaveBeenCalledTimes(2);
+  });
+
+  it('resultado negativo expira no TTL curto (≤10s), não no TTL positivo', async () => {
+    findById.mockResolvedValue(null);
+    const now = jest.spyOn(Date, 'now').mockReturnValue(1_000_000);
+
+    await service.resolve('ghost');
+    /** Ainda dentro do TTL negativo (10s): usa cache. */
+    now.mockReturnValue(1_000_000 + 9_000);
+    await service.resolve('ghost');
+    expect(findById).toHaveBeenCalledTimes(1);
+
+    /** Passou os 10s mas ainda dentro do TTL positivo (60s): deve reconsultar. */
+    now.mockReturnValue(1_000_000 + 10_001);
+    await service.resolve('ghost');
     expect(findById).toHaveBeenCalledTimes(2);
   });
 

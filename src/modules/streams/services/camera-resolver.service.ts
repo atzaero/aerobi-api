@@ -9,6 +9,14 @@ import { parsePositiveInt } from '../utils/parse-positive-int';
 const DEFAULT_CACHE_TTL_MS = 60_000;
 
 /**
+ * Teto do TTL para resultados **negativos** (`null`). Mais curto que o positivo
+ * para que uma câmera recém-cadastrada/reativada apareça pelo proxy em segundos,
+ * não no TTL inteiro. Limitado ao TTL positivo (nunca maior). Não cacheia menos
+ * que isto sob ataque de ids aleatórios — cada id distinto é lido uma vez.
+ */
+const NEGATIVE_CACHE_TTL_CAP_MS = 10_000;
+
+/**
  * Teto de entradas no cache. O `cameraId` vem da rota pública (via BFF) e é só
  * fracamente limitado pela regex do DTO, então sem teto um atacante poderia
  * inflar o cache com ids aleatórios (cada miss cacheia um negativo por um TTL).
@@ -31,15 +39,16 @@ interface CacheEntry {
  * esse tráfego, e um mapa de promessas in-flight deduplica leituras concorrentes
  * do mesmo id (evita "thundering herd" no cache miss).
  *
- * Trade-off: uma câmera recém-criada/reativada pode levar até um TTL para
- * aparecer pelo proxy. A listagem (`findEnabledByIcao`) **não** passa por aqui —
- * lê sempre fresco.
+ * Trade-off: uma câmera recém-criada/reativada aparece pelo proxy em até o TTL
+ * **negativo** (≤10s), mais curto que o positivo para reduzir essa espera. A
+ * listagem (`findEnabledByIcao`) **não** passa por aqui — lê sempre fresco.
  */
 @Injectable()
 export class CameraResolverService {
   private readonly cache = new Map<string, CacheEntry>();
   private readonly inflight = new Map<string, Promise<Camera | null>>();
   private readonly ttlMs: number;
+  private readonly negativeTtlMs: number;
 
   constructor(
     private readonly repository: CameraRepository,
@@ -49,6 +58,7 @@ export class CameraResolverService {
       config.get<string | number>('STREAMS_CAMERA_CACHE_TTL_MS'),
       DEFAULT_CACHE_TTL_MS,
     );
+    this.negativeTtlMs = Math.min(this.ttlMs, NEGATIVE_CACHE_TTL_CAP_MS);
   }
 
   /**
@@ -75,9 +85,10 @@ export class CameraResolverService {
       .findById(cameraId)
       .then((camera) => {
         this.evictIfFull();
+        const ttl = camera ? this.ttlMs : this.negativeTtlMs;
         this.cache.set(cameraId, {
           camera,
-          expiresAt: Date.now() + this.ttlMs,
+          expiresAt: Date.now() + ttl,
         });
         return camera;
       })
