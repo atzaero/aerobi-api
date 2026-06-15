@@ -1,3 +1,17 @@
+# [2.6.0-beta.20](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.19...v2.6.0-beta.20) (2026-06-15)
+
+
+### Bug Fixes
+
+* AllExceptionsFilter respeita headersSent ([2173c5d](https://github.com/atzaero/aerobi-api/commit/2173c5dd51cd9ef2f5599e36aa6f53d40a92c631)), closes [#317](https://github.com/atzaero/aerobi-api/issues/317)
+* **streams:** TTL negativo curto no cache do resolver ([f533f0d](https://github.com/atzaero/aerobi-api/commit/f533f0da6cfdcbf9a66fdeb37bd64f896fd9a9ab)), closes [#74](https://github.com/atzaero/aerobi-api/issues/74)
+
+
+### Features
+
+* **streams:** resolver câmera no Firestore (cache) + HlsProxyService ([7c434ab](https://github.com/atzaero/aerobi-api/commit/7c434ab909bd1d01058273b03f8efd6b75c90251)), closes [#317](https://github.com/atzaero/aerobi-api/issues/317) [#74](https://github.com/atzaero/aerobi-api/issues/74)
+* **streams:** rotas de listagem e proxy HLS (AerobiApiKeyGuard) ([a9f89b8](https://github.com/atzaero/aerobi-api/commit/a9f89b8df9beea47bafa9397a16e5669b5cef97f)), closes [#74](https://github.com/atzaero/aerobi-api/issues/74) [#75](https://github.com/atzaero/aerobi-api/issues/75)
+
 # [2.6.0-beta.19](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.18...v2.6.0-beta.19) (2026-06-15)
 
 
