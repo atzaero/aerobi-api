@@ -1,60 +1,15 @@
+# Ambiente de dev do aerobi-api.
+#
+# Os serviços de dado (Postgres, MinIO, Evolution GO) NÃO sobem aqui — vêm da
+# infra local compartilhada `atzaero/aerobi-local-infra` (rede `aerobi-local`),
+# espelhando a VPS. Suba-a ANTES:
+#   git clone git@github.com:atzaero/aerobi-local-infra && cd aerobi-local-infra && make up
+#
+# Este compose sobe apenas a `api`, anexada à rede `aerobi-local`, falando com os
+# serviços pelo hostname interno (aerobi-postgres / aerobi-minio / aerobi-evolution-go).
+# As credenciais/portas devem casar com o .env do aerobi-local-infra.
+
 services:
-  postgres:
-    image: postgres:18
-    container_name: aerobi-api-postgres-dev
-    ports:
-      - "${POSTGRES_EXTERNAL_PORT:-5432}:5432"
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-aerobi}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aerobi}
-      POSTGRES_DB: ${POSTGRES_DB:-aerobi}
-    volumes:
-      - aerobi_api_pg_data_dev:/var/lib/postgresql
-    healthcheck:
-      test:
-        [
-          'CMD-SHELL',
-          'pg_isready -U ${POSTGRES_USER:-aerobi} -d ${POSTGRES_DB:-aerobi}',
-        ]
-      interval: 10s
-      retries: 5
-      start_period: 30s
-      timeout: 5s
-    restart: unless-stopped
-
-  # Object storage (S3) para as imagens das leituras. Mesma imagem/versão da
-  # infra real (aerobi-ansible) para paridade com staging/prod.
-  minio:
-    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
-    container_name: aerobi-api-minio-dev
-    command: server /data --console-address ":9001"
-    ports:
-      - "${MINIO_API_PORT:-9000}:9000"
-      - "${MINIO_CONSOLE_PORT:-9001}:9001"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-aerobi-admin}
-      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minio_dev_only}
-    volumes:
-      - aerobi_api_minio_data_dev:/data
-    restart: unless-stopped
-
-  # Cria o bucket dedicado no boot (idempotente). Faz retry no alias até o MinIO
-  # aceitar conexões — não depende de healthcheck (a imagem server não traz mc/curl).
-  createbuckets:
-    image: minio/mc
-    container_name: aerobi-api-createbuckets-dev
-    depends_on:
-      - minio
-    entrypoint: >
-      /bin/sh -c "
-      until mc alias set local http://minio:9000 '${MINIO_ACCESS_KEY:-aerobi-admin}' '${MINIO_SECRET_KEY:-minio_dev_only}'; do
-        echo 'aguardando minio...'; sleep 2;
-      done;
-      mc mb --ignore-existing local/${MINIO_BUCKET_READINGS:-aerobi-dev-readings};
-      echo 'bucket pronto: ${MINIO_BUCKET_READINGS:-aerobi-dev-readings}';
-      "
-    restart: "no"
-
   api:
     build:
       context: .
@@ -72,26 +27,31 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-aerobi}:${POSTGRES_PASSWORD:-aerobi}@postgres:5432/${POSTGRES_DB:-aerobi}?schema=public
+      # Hostnames internos da rede aerobi-local (não as portas host).
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aerobi}:${POSTGRES_PASSWORD:-aerobi}@aerobi-postgres:5432/${POSTGRES_DB:-aerobi}?schema=public
       NODE_ENV: development
-      # Endpoint interno (rede do compose) para upload/delete/download.
-      MINIO_ENDPOINT: http://minio:9000
+      # Endpoint interno (rede aerobi-local) para upload/delete/download.
+      MINIO_ENDPOINT: http://aerobi-minio:9000
       # Endpoint público para assinar presigned URLs (acessível pelo navegador do host).
-      MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:-http://localhost:9000}
+      MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:-http://localhost:9002}
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-aerobi-admin}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minio_dev_only}
       MINIO_BUCKET_READINGS: ${MINIO_BUCKET_READINGS:-aerobi-dev-readings}
-    depends_on:
-      postgres:
-        condition: service_healthy
-      minio:
-        condition: service_started
+      # Evolution GO (notificações WhatsApp). EVOLUTION_GO_API_KEY = token da
+      # instância (definido após linkar o número no manager :4000) — ver
+      # aerobi-local-infra/README.md. Vazio = envio falha best-effort (sem linkar).
+      EVOLUTION_GO_BASE_URL: ${EVOLUTION_GO_BASE_URL:-http://aerobi-evolution-go:4000}
+      EVOLUTION_GO_API_KEY: ${EVOLUTION_GO_API_KEY:-}
     restart: unless-stopped
+    networks:
+      - aerobi-local
 
 volumes:
-  aerobi_api_pg_data_dev:
-    driver: local
   aerobi_api_node_modules_dev:
     driver: local
-  aerobi_api_minio_data_dev:
-    driver: local
+
+# Rede compartilhada provida pelo aerobi-local-infra (`make network` / `make up`).
+networks:
+  aerobi-local:
+    name: aerobi-local
+    external: true

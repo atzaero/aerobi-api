@@ -1,30 +1,9 @@
-# Stack local: Postgres + API (build a partir do Dockerfile de produção).
-# Não usar no servidor de produção — aí use docker-compose.prod.yml + rede Docker `warpgate` + Postgres partilhado.
+# Stack local "prod-like": API a partir da imagem de PRODUÇÃO (Dockerfile, sem watch),
+# consumindo a infra local compartilhada `atzaero/aerobi-local-infra` (rede `aerobi-local`).
+# Suba a infra ANTES: (no aerobi-local-infra) make up
+# Não usar no servidor de produção — aí use docker-compose.prod.yml (rede `warpgate`).
 
 services:
-  postgres:
-    image: postgres:18
-    container_name: aerobi-api-postgres
-    ports:
-      - "${POSTGRES_EXTERNAL_PORT:-5432}:5432"
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-aerobi}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aerobi}
-      POSTGRES_DB: ${POSTGRES_DB:-aerobi}
-    volumes:
-      - aerobi_api_pg_data:/var/lib/postgresql
-    healthcheck:
-      test:
-        [
-          'CMD-SHELL',
-          'pg_isready -U ${POSTGRES_USER:-aerobi} -d ${POSTGRES_DB:-aerobi}',
-        ]
-      interval: 10s
-      retries: 5
-      start_period: 30s
-      timeout: 5s
-    restart: unless-stopped
-
   api:
     build:
       context: .
@@ -35,13 +14,22 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-aerobi}:${POSTGRES_PASSWORD:-aerobi}@postgres:5432/${POSTGRES_DB:-aerobi}?schema=public
+      # Hostnames internos da rede aerobi-local (não as portas host).
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aerobi}:${POSTGRES_PASSWORD:-aerobi}@aerobi-postgres:5432/${POSTGRES_DB:-aerobi}?schema=public
       NODE_ENV: production
-    depends_on:
-      postgres:
-        condition: service_healthy
+      MINIO_ENDPOINT: http://aerobi-minio:9000
+      MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:-http://localhost:9002}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-aerobi-admin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minio_dev_only}
+      MINIO_BUCKET_READINGS: ${MINIO_BUCKET_READINGS:-aerobi-dev-readings}
+      EVOLUTION_GO_BASE_URL: ${EVOLUTION_GO_BASE_URL:-http://aerobi-evolution-go:4000}
+      EVOLUTION_GO_API_KEY: ${EVOLUTION_GO_API_KEY:-}
     restart: unless-stopped
+    networks:
+      - aerobi-local
 
-volumes:
-  aerobi_api_pg_data:
-    driver: local
+# Rede compartilhada provida pelo aerobi-local-infra (`make up`).
+networks:
+  aerobi-local:
+    name: aerobi-local
+    external: true
