@@ -1,3 +1,10 @@
+# [2.6.0-beta.22](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.21...v2.6.0-beta.22) (2026-06-16)
+
+
+### Bug Fixes
+
+* **streams:** variante .m3u8 + LL-HLS + rotas públicas ([#321](https://github.com/atzaero/aerobi-api/issues/321)) ([a629d51](https://github.com/atzaero/aerobi-api/commit/a629d5153e17a8c30bc4b32b2e87a3ac1086182a))
+
 # [2.6.0-beta.21](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.20...v2.6.0-beta.21) (2026-06-16)
 
 
