@@ -19,13 +19,12 @@ CADASTRO (sem backend):
         atzaero/aerobi#1008          { icao, name, mediamtxNode, mediamtxPath, enabled }
 
 PÁGINA PÚBLICA:
-  [browser]
-     │  (sem X-API-Key — visualização é pública)
+  [browser] ──► [Next.js] GET /aerodromes/:icao/cameras  (lista via server action)
+     │
+     │  (o player aponta DIRETO para a aerobi-api — rotas públicas, sem
+     │   X-API-Key; cross-origin via CORS)
      ▼
-  [Next.js / BFF]  ── detém a X-API-Key ──┐
-     │                                     │
-     ▼                                     ▼
-  [aerobi-api  @UseGuards(AerobiApiKeyGuard)]
+  [aerobi-api  (público)]
      ├─ GET /aerodromes/:icao/cameras ─────► [Firestore]   (lê config; só enabled=true)
      └─ GET /streams/:cameraId/...    ─────► [Firestore]   (resolve config, com CACHE)
                                           └─► [mediamtx no Raspi :8888]  (HLS via tailnet)
@@ -36,9 +35,11 @@ PÁGINA PÚBLICA:
 
 Pontos do desenho:
 
-- **Visualização pública.** O browser nunca vê a `X-API-Key`; ela protege a rota
-  **server-to-server** (o BFF Next.js a detém). Por isso todas as rotas usam
-  `@UseGuards(AerobiApiKeyGuard)`.
+- **Visualização pública.** As rotas do módulo são **públicas** (sem
+  `AerobiApiKeyGuard`): o conteúdo do vídeo é público, então o player aponta
+  direto para a aerobi-api (cross-origin via CORS) — sem proxy/BFF intermediário
+  no caminho quente. Abuso/banda ficam para a borda nginx (rate-limit/Referer) se
+  necessário.
 - **Sem credencial de câmera no backend.** O mediamtx no Raspi já entrega o HLS
   pronto; a senha RTSP nunca sai do Raspi. O Firestore guarda só o **ponteiro**:
   `{ icao, name, mediamtxNode, mediamtxPath, enabled }`.
@@ -49,15 +50,13 @@ Pontos do desenho:
 
 ## Endpoints
 
-Todos sob `@UseGuards(AerobiApiKeyGuard)` (header `X-API-Key` = `AEROBI_API_KEY`;
-bypass em `NODE_ENV=development` salvo `AEROBI_REQUIRE_AUTH=true`). Tag Swagger
-**Streams** em `/api/docs`.
+Rotas **públicas** (sem `X-API-Key`). Tag Swagger **Streams** em `/api/docs`.
 
-| Método | Rota | Descrição |
-|--------|------|-----------|
-| `GET` | `/aerodromes/:icao/cameras` | Lista câmeras **ativas** (`enabled=true`) do aeródromo, lendo o Firestore. |
-| `GET` | `/streams/:cameraId/index.m3u8` | Playlist HLS (proxy). |
-| `GET` | `/streams/:cameraId/:segment` | Segmento HLS (`*.m4s`, `*.mp4`, `init.mp4`) — pipe direto. |
+| Método | Rota                            | Descrição                                                                  |
+| ------ | ------------------------------- | -------------------------------------------------------------------------- |
+| `GET`  | `/aerodromes/:icao/cameras`     | Lista câmeras **ativas** (`enabled=true`) do aeródromo, lendo o Firestore. |
+| `GET`  | `/streams/:cameraId/index.m3u8` | Playlist HLS (proxy).                                                      |
+| `GET`  | `/streams/:cameraId/:segment`   | Segmento HLS (`*.m4s`, `*.mp4`, `init.mp4`) — pipe direto.                 |
 
 ### Resposta da listagem
 
@@ -74,24 +73,25 @@ bypass em `NODE_ENV=development` salvo `AEROBI_REQUIRE_AUTH=true`). Tag Swagger
 ]
 ```
 
-`streamUrl` é o **path relativo** da playlist no próprio aerobi-api — o front só
-prefixa o host do BFF e entrega ao player HLS. **Não** expomos `mediamtxNode`/
+`streamUrl` é o **path relativo** da playlist no próprio aerobi-api — o front
+prefixa o host **público** da API e entrega ao player HLS (as URLs relativas
+dentro da playlist resolvem contra essa base). **Não** expomos `mediamtxNode`/
 `mediamtxPath` (topologia interna da tailnet).
 
 ### Headers do proxy
 
-| Sufixo | `Content-Type` | `Cache-Control` |
-|--------|----------------|------------------|
+| Sufixo  | `Content-Type`                  | `Cache-Control`                   |
+| ------- | ------------------------------- | --------------------------------- |
 | `.m3u8` | `application/vnd.apple.mpegurl` | `no-store` (playlist muda sempre) |
-| `.m4s` | `video/iso.segment` | `max-age=10` (segmento imutável) |
-| `.mp4` | `video/mp4` | `max-age=10` |
+| `.m4s`  | `video/iso.segment`             | `max-age=10` (segmento imutável)  |
+| `.mp4`  | `video/mp4`                     | `max-age=10`                      |
 
 ### Erros
 
-| Status | Quando |
-|--------|--------|
-| `404` | Câmera inexistente, `enabled=false`, ou o mediamtx devolveu 404 (path offline). |
-| `502` | mediamtx inacessível (fora do ar) ou timeout (`STREAMS_PROXY_TIMEOUT_MS`). |
+| Status | Quando                                                                          |
+| ------ | ------------------------------------------------------------------------------- |
+| `404`  | Câmera inexistente, `enabled=false`, ou o mediamtx devolveu 404 (path offline). |
+| `502`  | mediamtx inacessível (fora do ar) ou timeout (`STREAMS_PROXY_TIMEOUT_MS`).      |
 
 ## Cache da config da câmera
 
@@ -113,13 +113,12 @@ a cada segmento geraria uma consulta por segmento por espectador. Por isso o
 
 ## Configuração (env)
 
-| Variável | Default | Papel |
-|----------|---------|-------|
-| `AEROBI_API_KEY` | — | `X-API-Key` do guard (server-to-server). |
-| `FIREBASE_PROJECT_ID` / `FIREBASE_CLIENT_EMAIL` / `FIREBASE_PRIVATE_KEY` | — | Credenciais do Firebase Admin (leitura do Firestore). |
-| `STREAMS_CAMERA_CACHE_TTL_MS` | `60000` | TTL do cache da config da câmera. |
-| `STREAMS_PROXY_TIMEOUT_MS` | `10000` | Timeout do `GET` ao mediamtx. |
-| `STREAMS_MEDIAMTX_HLS_PORT` | `8888` | Porta do servidor HLS do mediamtx no Raspi. |
+| Variável                                                                 | Default | Papel                                                 |
+| ------------------------------------------------------------------------ | ------- | ----------------------------------------------------- |
+| `FIREBASE_PROJECT_ID` / `FIREBASE_CLIENT_EMAIL` / `FIREBASE_PRIVATE_KEY` | —       | Credenciais do Firebase Admin (leitura do Firestore). |
+| `STREAMS_CAMERA_CACHE_TTL_MS`                                            | `60000` | TTL do cache da config da câmera.                     |
+| `STREAMS_PROXY_TIMEOUT_MS`                                               | `10000` | Timeout do `GET` ao mediamtx.                         |
+| `STREAMS_MEDIAMTX_HLS_PORT`                                              | `8888`  | Porta do servidor HLS do mediamtx no Raspi.           |
 
 A câmera vive no Firestore (collection `cameras`) com os campos
 `{ icao, name, mediamtxNode, mediamtxPath, enabled }` (o repositório tolera tanto
@@ -128,21 +127,17 @@ camelCase quanto snake_case). O cadastro é gerido pelo frontend
 
 ## Como debugar
 
-A `X-API-Key` só é exigida fora do bypass de `development`. Em dev, com
-`AEROBI_REQUIRE_AUTH=true`, envie o header como em produção.
+As rotas são **públicas** — sem header de autenticação.
 
 ```bash
 # 1. Listar as câmeras de um aeródromo
-curl -s -H "X-API-Key: $AEROBI_API_KEY" \
-  http://localhost:3333/aerodromes/SBSP/cameras | jq
+curl -s http://localhost:3333/aerodromes/SBSP/cameras | jq
 
 # 2. Baixar a playlist (deve vir Content-Type application/vnd.apple.mpegurl)
-curl -i -H "X-API-Key: $AEROBI_API_KEY" \
-  http://localhost:3333/streams/aero-mvp-cam-1/index.m3u8
+curl -i http://localhost:3333/streams/aero-mvp-cam-1/index.m3u8
 
 # 3. Baixar um segmento referenciado pela playlist
-curl -i -H "X-API-Key: $AEROBI_API_KEY" \
-  http://localhost:3333/streams/aero-mvp-cam-1/seg7.m4s -o /dev/null
+curl -i http://localhost:3333/streams/aero-mvp-cam-1/seg7.m4s -o /dev/null
 
 # Diagnóstico: 404 → câmera não existe/disabled, ou path offline no mediamtx.
 #              502 → mediamtx fora do ar / timeout (cheque a tailnet e o Raspi).

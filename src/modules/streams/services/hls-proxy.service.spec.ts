@@ -136,6 +136,28 @@ describe('HlsProxyService', () => {
     expect(upstream.pipe).toHaveBeenCalledWith(res.res);
   });
 
+  it('repassa a query string (blocking reload LL-HLS) na URL upstream', async () => {
+    resolve.mockResolvedValue(camera());
+    get.mockResolvedValue({
+      status: 200,
+      data: fakeStream().stream,
+      headers: {},
+    });
+    const res = fakeRes();
+
+    await service.proxyHls(
+      'cam-1',
+      'video1_stream.m3u8',
+      res.res,
+      '?_HLS_msn=5&_HLS_part=2',
+    );
+
+    expect(get).toHaveBeenCalledWith(
+      'http://aerobi-edge-mvp:8888/aero-mvp-cam-1/video1_stream.m3u8?_HLS_msn=5&_HLS_part=2',
+      expect.objectContaining({ responseType: 'stream' }),
+    );
+  });
+
   it('segmento .m4s: content-type de segmento e cache curto', async () => {
     resolve.mockResolvedValue(camera());
     get.mockResolvedValue({

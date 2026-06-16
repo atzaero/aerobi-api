@@ -61,11 +61,20 @@ export class HlsProxyService {
 
   /**
    * Resolve a câmera, busca `path` no mediamtx e faz pipe da resposta em `res`.
-   * `path` é a playlist (`index.m3u8`) ou um segmento (`*.m4s`/`*.mp4`), já
-   * validado na rota. Lança {@link CustomHttpException} antes de qualquer byte
-   * ser escrito (404/502); falha já no meio do stream apenas destrói o `res`.
+   * `path` é a playlist (`index.m3u8`), uma variante (`*.m3u8`) ou um segmento
+   * (`*.m4s`/`*.mp4`), já validado na rota. `search` é a query string original
+   * (ex.: `?_HLS_msn=…&_HLS_part=…`), repassada **verbatim** ao mediamtx — é o
+   * que faz o *blocking reload* do LL-HLS funcionar (o mediamtx segura a resposta
+   * até o segmento/parte existir, evitando o churn de 404 na borda do ao vivo).
+   * Lança {@link CustomHttpException} antes de qualquer byte ser escrito
+   * (404/502); falha já no meio do stream apenas destrói o `res`.
    */
-  async proxyHls(cameraId: string, path: string, res: Response): Promise<void> {
+  async proxyHls(
+    cameraId: string,
+    path: string,
+    res: Response,
+    search = '',
+  ): Promise<void> {
     /**
      * Erro ao resolver no Firestore (conectividade/credenciais) é uma falha de
      * serviço externo → 502, não 500. Câmera inexistente/desativada (resolve
@@ -81,7 +90,7 @@ export class HlsProxyService {
       throw this.notFound(cameraId);
     }
 
-    const url = `http://${camera.mediamtxNode}:${this.hlsPort}/${camera.mediamtxPath}/${path}`;
+    const url = `http://${camera.mediamtxNode}:${this.hlsPort}/${camera.mediamtxPath}/${path}${search}`;
 
     let upstream: AxiosResponse<Readable>;
     try {

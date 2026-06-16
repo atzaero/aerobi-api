@@ -4,15 +4,13 @@ import {
   ApiOperation,
   ApiParam,
   ApiResponse,
-  ApiSecurity,
 } from '@nestjs/swagger';
 
 import { CameraResponseDTO } from '../dtos/camera-response.dto';
 
-/** Swagger de `GET /aerodromes/:icao/cameras`. */
+/** Swagger de `GET /aerodromes/:icao/cameras` (pública). */
 export function ListAerodromeCamerasDocs() {
   return applyDecorators(
-    ApiSecurity('api_key'),
     ApiOperation({
       summary: 'Lista as câmeras ativas de um aeródromo (lê o Firestore).',
       description:
@@ -26,10 +24,6 @@ export function ListAerodromeCamerasDocs() {
       description: 'ICAO (4 letras).',
     }),
     ApiOkResponse({ type: CameraResponseDTO, isArray: true }),
-    ApiResponse({
-      status: 401,
-      description: 'Fora de bypass: `X-API-Key` em falta ou incorreto.',
-    }),
     ApiResponse({
       status: 502,
       description: 'Firestore indisponível ao listar as câmeras.',
