@@ -198,5 +198,10 @@ jobs:
         if: always()
         run: |
           rm -f ~/.ssh/deploy_key
-          # Desconecta o nó efêmero (Headscale também o remove após inatividade).
-          command -v tailscale >/dev/null 2>&1 && sudo tailscale logout || true
+          # Sem `tailscale logout`: o logout só era necessário para nós efêmeros.
+          # A authkey tag:ci é NÃO-efêmera de propósito — com nó efêmero, o logout
+          # (ou a remoção automática por inatividade) deleta o nó e dispara um
+          # deadlock no control-plane do Headscale 0.28.0 (poll.go:339, "node not
+          # found"), congelando o registro de novos nós e quebrando o deploy
+          # seguinte. Os nós de CI ficam offline e são limpos pelo cron de
+          # inativos (aerobi-ansible#47). Ver atzaero/aerobi#961.
