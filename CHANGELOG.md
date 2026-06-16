@@ -1,3 +1,10 @@
+# [2.6.0-beta.21](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.20...v2.6.0-beta.21) (2026-06-16)
+
+
+### Bug Fixes
+
+* **deploy:** authkey tag:ci não-efêmera + remove tailscale logout do Cleanup ([#320](https://github.com/atzaero/aerobi-api/issues/320)) ([c236815](https://github.com/atzaero/aerobi-api/commit/c2368158b5400c4d289ec49aa44207631b2678d3)), closes [aerobi-ansible#47](https://github.com/aerobi-ansible/issues/47) [#319](https://github.com/atzaero/aerobi-api/issues/319) [atzaero/aerobi#961](https://github.com/atzaero/aerobi/issues/961)
+
 # [2.6.0-beta.20](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.19...v2.6.0-beta.20) (2026-06-15)
 
 
