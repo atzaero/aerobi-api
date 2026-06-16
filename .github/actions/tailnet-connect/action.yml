@@ -8,7 +8,10 @@ description: >-
 
 inputs:
   headscale-authkey:
-    description: Preauthkey efêmera do Headscale (tag:ci). Vazio → usa o IP público.
+    description: >-
+      Preauthkey reutilizável NÃO-efêmera do Headscale (tag:ci). Vazio → usa o IP
+      público. Não-efêmera de propósito: nó efêmero + logout dispara deadlock no
+      control-plane do Headscale 0.28.0 (poll.go:339). Ver atzaero/aerobi#961.
     required: false
     default: ''
   public-host:
@@ -52,7 +55,7 @@ runs:
           sleep $((attempt * 15))
         done
         if [ "$ts_ok" != "1" ]; then
-          echo "::warning::tailnet não conectou após 3 tentativas (HEADSCALE_AUTHKEY expirada/inválida ou headscale inacessível) — fallback ao IP público ($PUBLIC_HOST). Renove a preauthkey efêmera (docker exec headscale headscale preauthkeys create --user <ID> --reusable --ephemeral --expiration 90d --tags tag:ci) e atualize o secret (issues #225/#263)."
+          echo "::warning::tailnet não conectou após 3 tentativas (HEADSCALE_AUTHKEY expirada/inválida ou headscale inacessível/travado) — fallback ao IP público ($PUBLIC_HOST). Renove a preauthkey NÃO-efêmera (docker exec headscale headscale preauthkeys create --user <ID> --reusable --expiration 90d --tags tag:ci — SEM --ephemeral, ver atzaero/aerobi#961) e atualize o secret. Se a authkey estiver válida, o headscale pode estar em deadlock: docker restart headscale (issues #225/#263/#961)."
           echo "DEPLOY_HOST=$PUBLIC_HOST" >> "$GITHUB_ENV"
           exit 0
         fi
