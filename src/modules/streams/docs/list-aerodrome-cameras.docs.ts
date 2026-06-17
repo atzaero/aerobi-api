@@ -21,7 +21,7 @@ export function ListAerodromeCamerasDocs() {
     ApiParam({
       name: 'icao',
       example: 'SBSP',
-      description: 'ICAO (4 letras).',
+      description: 'ICAO (4 caracteres alfanuméricos).',
     }),
     ApiOkResponse({ type: CameraResponseDTO, isArray: true }),
     ApiResponse({
