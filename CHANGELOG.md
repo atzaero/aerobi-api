@@ -1,3 +1,10 @@
+# [2.6.0-beta.23](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.22...v2.6.0-beta.23) (2026-06-17)
+
+
+### Bug Fixes
+
+* **streams:** aceita ICAO alfanumérico no endpoint de câmeras ([dd90e94](https://github.com/atzaero/aerobi-api/commit/dd90e945f84b4a18afdf4849e4ca32416857ed68)), closes [#323](https://github.com/atzaero/aerobi-api/issues/323)
+
 # [2.6.0-beta.22](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.21...v2.6.0-beta.22) (2026-06-16)
 
 
