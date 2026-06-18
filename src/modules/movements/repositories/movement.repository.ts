@@ -56,6 +56,29 @@ export class MovementRepository implements IMovementRepository {
     });
   }
 
+  updateRegistration(
+    id: string,
+    registration: string,
+    snapshot: Prisma.MovementAircraftSnapshotCreateWithoutMovementInput,
+    updatedBy: string,
+  ): Promise<MovementWithSnapshot> {
+    return this.prisma.movement.update({
+      where: { id, ...activeWhere },
+      data: {
+        registration,
+        updatedBy,
+        /**
+         * Substitui o snapshot 1:1 re-resolvido para a matrícula corrigida. O
+         * snapshot sempre existe (invariante 1:1 garantida na criação), então
+         * `update` aninhado é seguro — atômico na mesma transação do movimento.
+         * Reusa o input de criação (campos escalares idênticos aos do create).
+         */
+        aircraftSnapshot: { update: snapshot },
+      },
+      include: { aircraftSnapshot: true },
+    });
+  }
+
   findLastByRegistrationWithin48h(
     registration: string,
     aerodrome: string | null,
