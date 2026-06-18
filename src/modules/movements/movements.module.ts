@@ -14,12 +14,14 @@ import { ListMovementsCanonicalController } from './controllers/list-movements-c
 import { ListMovementsController } from './controllers/list-movements.controller';
 import { RemoveMovementCanonicalController } from './controllers/remove-movement-canonical.controller';
 import { RemoveMovementController } from './controllers/remove-movement.controller';
+import { UpdateMovementCanonicalController } from './controllers/update-movement-canonical.controller';
 import { MovementRepository } from './repositories/movement.repository';
 import { BatchCreateMovementService } from './services/batch-create-movement.service';
 import { CreateMovementService } from './services/create-movement.service';
 import { FindMovementByIdService } from './services/find-movement-by-id.service';
 import { ListMovementsService } from './services/list-movements.service';
 import { RemoveMovementService } from './services/remove-movement.service';
+import { UpdateMovementService } from './services/update-movement.service';
 
 /**
  * Módulo de movimentos (movements) — pousos e decolagens de aeronaves. Recebe os
@@ -35,6 +37,7 @@ import { RemoveMovementService } from './services/remove-movement.service';
     ListMovementsCanonicalController,
     FindMovementByIdCanonicalController,
     RemoveMovementCanonicalController,
+    UpdateMovementCanonicalController,
     ListMovementsController,
     FindMovementByIdController,
     RemoveMovementController,
@@ -47,6 +50,7 @@ import { RemoveMovementService } from './services/remove-movement.service';
     ListMovementsService,
     FindMovementByIdService,
     RemoveMovementService,
+    UpdateMovementService,
   ],
 })
 export class MovementsModule {}

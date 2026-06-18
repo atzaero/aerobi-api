@@ -94,7 +94,17 @@ Todos sob `@UseGuards(AerobiApiKeyGuard)` (header `X-API-Key`).
 |--------|------|-----------|
 | `GET` | `/movements` | Lista **paginada** (`{ data, meta }`), filtros opcionais. |
 | `GET` | `/movements/:movementId` | Busca por id. |
+| `PATCH` | `/movements/:movementId` | Corrige a **matrícula** (único campo editável). |
 | `DELETE` | `/movements/:movementId` | Soft delete. |
+
+> **Edição da matrícula** (`UpdateMovementService`): caso de uso para corrigir
+> leituras OCR equivocadas (imagem nítida, matrícula errada). Aceita a matrícula
+> de forma tolerante (`PR-ZTT`, `PRZTT`, `PR ZTT`) e persiste na forma canônica
+> (`PRZTT`) via `normalizeMarcas` — mesma decisão de domínio da criação. O
+> **snapshot RAB é re-resolvido** para a matrícula corrigida (mantém a
+> consistência matrícula↔aeronave). O `operationType` **não** é recomputado
+> (a regra toggle de 48h só vale na ingestão). Sem alias legado em `/readings` —
+> edição é funcionalidade nova; o cliente legado apenas cria.
 
 ### Consulta legada (DEPRECADO) — `/readings`
 

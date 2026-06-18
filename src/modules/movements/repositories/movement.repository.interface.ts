@@ -19,6 +19,18 @@ export interface IMovementRepository {
   softDelete(id: string, deletedBy: string): Promise<Movement>;
 
   /**
+   * Corrige a matrícula (já canônica) de um movimento ativo e substitui, na
+   * mesma transação, o snapshot RAB 1:1 re-resolvido para a matrícula corrigida.
+   * Atualiza também `updatedBy`. Retorna o movimento com o snapshot carregado.
+   */
+  updateRegistration(
+    id: string,
+    registration: string,
+    snapshot: Prisma.MovementAircraftSnapshotCreateWithoutMovementInput,
+    updatedBy: string,
+  ): Promise<MovementWithSnapshot>;
+
+  /**
    * Último movimento ativo da matrícula dentro da janela de 48h anterior a
    * `reference` (estritamente antes de `reference`). Usado pela regra toggle de
    * inferência de pouso/decolagem na ingestão AUTOMATIC. Quando `aerodrome` é
