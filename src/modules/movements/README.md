@@ -127,12 +127,17 @@ falha parcial — resposta `{ created, failed, items: [{ index, status, id?, ima
 
 ### Saída das consultas (camelCase)
 
-`GET /movements` (e o alias `GET /readings`) retornam `MovementResponseDTO` em
-camelCase: inclui `operationType`, `source` e o `aircraftSnapshot` (RAB, ou
-`null`), além de `readingDatetime`, `imageUrl` (presigned), etc. **`confidence`
-NÃO é exposto** nas consultas (decisão de produto — só faz sentido para
-movimentos `AUTOMATIC`). Filtros do `GET`: `registration`, `aerodrome`,
-`reading_status`, `start_date`/`end_date` (`YYYY-MM-DD`), `page`/`limit`.
+A **lista** `GET /movements` (e o alias `GET /readings`) retorna o item enxuto
+`MovementListItemDTO` em camelCase — só o que o card mostra: `id`,
+`registration`, `aerodrome` (ICAO), `readingDatetime`, `imageUrl` (presigned),
+`operationType` e `source`. Não inclui `aircraftSnapshot`, `readingStatus`,
+`revisorId`, `comments` nem `createdAt`/`updatedAt`. O **detalhe**
+`GET /movements/:id` retorna o `MovementResponseDTO` completo (com o
+`aircraftSnapshot` RAB, ou `null`). **`confidence` NÃO é exposto** em nenhuma das
+consultas (decisão de produto — só faz sentido para movimentos `AUTOMATIC`).
+Filtros do `GET` da lista: `registration`, `aerodrome`, `reading_status`,
+`operation_type` (`LANDING`|`TAKEOFF`), `source` (`AUTOMATIC`|`MANUAL`),
+`start_date`/`end_date` (`YYYY-MM-DD`), `page`/`limit`.
 
 ## Storage (MinIO)
 
