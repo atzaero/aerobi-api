@@ -1,3 +1,10 @@
+# [2.6.0-beta.25](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.24...v2.6.0-beta.25) (2026-06-18)
+
+
+### Bug Fixes
+
+* **deps:** corrige advisories HIGH de nodemailer e undici ([d1c9049](https://github.com/atzaero/aerobi-api/commit/d1c9049f205a28ded79c2949547b91d32f12d370))
+
 # [2.6.0-beta.24](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.23...v2.6.0-beta.24) (2026-06-18)
 
 
