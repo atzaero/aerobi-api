@@ -1,12 +1,14 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsOptional, IsString } from 'class-validator';
 
 import { BasePaginationQueryDTO } from '@/common/dtos/base-pagination-query.dto';
 import { IsYmdDate } from '@/common/validators/is-ymd-date.validator';
+import { MovementSource, MovementType } from '@/generated/prisma/enums';
 
 /**
  * Query de `GET /readings`. Herda `page`/`limit` e adiciona os mesmos filtros do
- * proxy AviaScan legado (registration, aerodrome, intervalo de datas) + status.
+ * proxy AviaScan legado (registration, aerodrome, intervalo de datas) + status,
+ * mais os filtros do card slim (tipo de operação e origem).
  */
 export class ListMovementsQueryDTO extends BasePaginationQueryDTO {
   @ApiPropertyOptional({ example: 'PR-ZTT' })
@@ -23,6 +25,22 @@ export class ListMovementsQueryDTO extends BasePaginationQueryDTO {
   @IsOptional()
   @IsString()
   reading_status?: string;
+
+  @ApiPropertyOptional({
+    enum: MovementType,
+    description: 'Filtra pelo tipo de operação (LANDING | TAKEOFF).',
+  })
+  @IsOptional()
+  @IsEnum(MovementType)
+  operation_type?: MovementType;
+
+  @ApiPropertyOptional({
+    enum: MovementSource,
+    description: 'Filtra pela origem do registro (AUTOMATIC | MANUAL).',
+  })
+  @IsOptional()
+  @IsEnum(MovementSource)
+  source?: MovementSource;
 
   @ApiPropertyOptional({
     example: '2026-05-01',

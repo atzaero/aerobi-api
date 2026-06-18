@@ -9,7 +9,7 @@ export function ListMovementsDocs() {
     ApiOperation({
       deprecated: true,
       summary:
-        'DEPRECADO: use GET /movements. Lista movimentos (paginado, filtros opcionais).',
+        'DEPRECADO: use GET /movements. Lista movimentos (item enxuto, paginado, filtros opcionais incl. operation_type e source).',
     }),
     ApiOkResponse({ type: MovementsPaginatedResponseDTO }),
   );
