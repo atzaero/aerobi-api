@@ -132,9 +132,27 @@ describe('parse-rab-people', () => {
   });
 
   describe('legacy pipe-delimited tolerance', () => {
-    it('parses a single KEY=VALUE pipe record', () => {
+    it('parses a single KEY=VALUE pipe record (proprietarios)', () => {
       expect(parseProprietarios('NOME=FULANO|DOCUMENTO=123|UF=PR')).toEqual([
         { NOME: 'FULANO', DOCUMENTO: '123', PERCENTUAL: null, UF: 'PR' },
+      ]);
+    });
+
+    it('parses a single KEY=VALUE pipe record (operadores)', () => {
+      expect(parseOperadores('NOME=EMPRESA|OPERACAO135=S|UF=RS')).toEqual([
+        {
+          NOME: 'EMPRESA',
+          DOCUMENTO: null,
+          OPERACAO135: 'S',
+          TRANSPREGULAR135: null,
+          AUTORIZACAOPMAC135: null,
+          OPERACAO121: null,
+          TRANSPREGULAR121: null,
+          AUTORIZACAOPMAC121: null,
+          SAE: null,
+          AUTHISTRUT: null,
+          UF: 'RS',
+        },
       ]);
     });
 
@@ -142,6 +160,12 @@ describe('parse-rab-people', () => {
       expect(parseProprietarios('just some free text without pairs')).toEqual(
         [],
       );
+    });
+
+    it('does not treat a `:`-only pipe segment (e.g. a URL) as a pair', () => {
+      expect(parseProprietarios('https://example.com|NOME=X')).toEqual([
+        { NOME: 'X', DOCUMENTO: null, PERCENTUAL: null, UF: null },
+      ]);
     });
   });
 });

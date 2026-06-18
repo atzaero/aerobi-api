@@ -34,27 +34,28 @@ describe('MovementMapper.toApiRow — normalização do snapshot', () => {
 
   const snapshot = (
     overrides: Partial<MovementAircraftSnapshot>,
-  ): MovementAircraftSnapshot =>
-    ({
-      rabRowId: 'rab-1',
-      rabPeriod: '2026-06',
-      marcas: 'PR-ZTT',
-      proprietarios: null,
-      operadores: null,
-      nrSerie: null,
-      dsModelo: null,
-      nmFabricante: null,
-      cdTipoIcao: null,
-      nrPmd: null,
-      nrAssentos: null,
-      nrAnoFabricacao: null,
-      tpMotor: null,
-      qtMotor: null,
-      cfOperacional: null,
-      tpOperacao: null,
-      createdAt: new Date('2026-06-08T16:52:39.000Z'),
-      ...overrides,
-    }) as unknown as MovementAircraftSnapshot;
+  ): MovementAircraftSnapshot => ({
+    id: 'snap-1',
+    movementId: 'mov-1',
+    rabRowId: 'rab-1',
+    rabPeriod: '2026-06',
+    marcas: 'PR-ZTT',
+    proprietarios: null,
+    operadores: null,
+    nrSerie: null,
+    dsModelo: null,
+    nmFabricante: null,
+    cdTipoIcao: null,
+    nrPmd: null,
+    nrAssentos: null,
+    nrAnoFabricacao: null,
+    tpMotor: null,
+    qtMotor: null,
+    cfOperacional: null,
+    tpOperacao: null,
+    createdAt: new Date('2026-06-08T16:52:39.000Z'),
+    ...overrides,
+  });
 
   it('parses operadores/proprietarios JSON-como-texto em arrays tipados', () => {
     const entity = baseMovement(

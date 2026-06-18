@@ -20,10 +20,18 @@ export class MovementAircraftSnapshotResponseDTO {
   @ApiPropertyOptional({ type: String, nullable: true })
   marcas!: string | null;
 
-  @ApiProperty({ type: [RabProprietarioDTO] })
+  @ApiProperty({
+    type: [RabProprietarioDTO],
+    description:
+      'Proprietários da aeronave, normalizados do RAB. `[]` quando ausente ou ilegível.',
+  })
   proprietarios!: RabProprietarioDTO[];
 
-  @ApiProperty({ type: [RabOperadorDTO] })
+  @ApiProperty({
+    type: [RabOperadorDTO],
+    description:
+      'Operadores da aeronave, normalizados do RAB. `[]` quando ausente ou ilegível.',
+  })
   operadores!: RabOperadorDTO[];
 
   @ApiPropertyOptional({ type: String, nullable: true })

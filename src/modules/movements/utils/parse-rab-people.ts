@@ -5,7 +5,10 @@ import {
 
 /**
  * Chaves contratuais de cada operador, na ordem do contrato do detalhe
- * `GET /movements/:id`. O front coda contra exatamente este conjunto.
+ * `GET /movements/:id` (epic #327). O front coda contra exatamente este
+ * conjunto, fiel aos nomes do payload JSON do campo `operadores` do RAB ANAC.
+ * O `satisfies` garante, em tempo de compilação, que cada chave existe em
+ * {@link RabOperadorDTO} — um typo aqui quebra o build.
  */
 const OPERADOR_KEYS = [
   'NOME',
@@ -19,10 +22,15 @@ const OPERADOR_KEYS = [
   'SAE',
   'AUTHISTRUT',
   'UF',
-] as const;
+] as const satisfies readonly (keyof RabOperadorDTO)[];
 
 /** Chaves contratuais de cada proprietário (ver {@link OPERADOR_KEYS}). */
-const PROPRIETARIO_KEYS = ['NOME', 'DOCUMENTO', 'PERCENTUAL', 'UF'] as const;
+const PROPRIETARIO_KEYS = [
+  'NOME',
+  'DOCUMENTO',
+  'PERCENTUAL',
+  'UF',
+] as const satisfies readonly (keyof RabProprietarioDTO)[];
 
 /**
  * Normaliza um valor cru de campo para `string | null`, preservando o conteúdo
@@ -50,9 +58,10 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 
 /**
  * Tolera o formato legado `pipe-delimitado` de um único registro no padrão
- * `CHAVE=VALOR|CHAVE=VALOR` (também aceita `:` como separador de par). Retorna
- * `[]` quando nenhum par reconhecível é encontrado, garantindo que texto
- * ilegível nunca quebre a resposta.
+ * `CHAVE=VALOR|CHAVE=VALOR`. Retorna `[]` quando nenhum par `CHAVE=VALOR` é
+ * encontrado, garantindo que texto ilegível nunca quebre a resposta. Só `=` é
+ * aceito como separador de par — manter restrito evita que pontuação comum
+ * (ex.: `:` de uma URL) seja interpretada como par.
  */
 function parseLegacyPipe(text: string): Record<string, unknown>[] {
   const record: Record<string, string> = {};
@@ -62,8 +71,7 @@ function parseLegacyPipe(text: string): Record<string, unknown>[] {
     if (!trimmed) {
       continue;
     }
-    const separator = trimmed.includes('=') ? '=' : ':';
-    const idx = trimmed.indexOf(separator);
+    const idx = trimmed.indexOf('=');
     if (idx <= 0) {
       continue;
     }
