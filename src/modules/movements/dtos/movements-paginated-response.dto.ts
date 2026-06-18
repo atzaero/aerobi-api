@@ -2,9 +2,9 @@ import { ApiProperty } from '@nestjs/swagger';
 
 import { BasePaginatedResponseDTO } from '@/common/dtos/base-paginated-response.dto';
 
-import { MovementResponseDTO } from './movement-response.dto';
+import { MovementListItemDTO } from './movement-list-item.dto';
 
-export class MovementsPaginatedResponseDTO extends BasePaginatedResponseDTO<MovementResponseDTO> {
-  @ApiProperty({ type: [MovementResponseDTO] })
-  declare data: MovementResponseDTO[];
+export class MovementsPaginatedResponseDTO extends BasePaginatedResponseDTO<MovementListItemDTO> {
+  @ApiProperty({ type: [MovementListItemDTO] })
+  declare data: MovementListItemDTO[];
 }

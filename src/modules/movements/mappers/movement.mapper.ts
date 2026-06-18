@@ -5,6 +5,7 @@ import type {
 
 import { MovementAircraftSnapshotResponseDTO } from '../dtos/movement-aircraft-snapshot-response.dto';
 import { MovementResponseDTO } from '../dtos/movement-response.dto';
+import { parseOperadores, parseProprietarios } from '../utils/parse-rab-people';
 
 /** Entidade `Movement` com a relação 1:1 `aircraftSnapshot` carregada via `include`. */
 export type MovementWithSnapshot = Movement & {
@@ -47,8 +48,8 @@ export class MovementMapper {
     dto.rabRowId = snapshot.rabRowId;
     dto.rabPeriod = snapshot.rabPeriod;
     dto.marcas = snapshot.marcas;
-    dto.proprietarios = snapshot.proprietarios;
-    dto.operadores = snapshot.operadores;
+    dto.proprietarios = parseProprietarios(snapshot.proprietarios);
+    dto.operadores = parseOperadores(snapshot.operadores);
     dto.nrSerie = snapshot.nrSerie;
     dto.dsModelo = snapshot.dsModelo;
     dto.nmFabricante = snapshot.nmFabricante;

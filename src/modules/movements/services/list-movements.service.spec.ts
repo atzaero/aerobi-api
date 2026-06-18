@@ -71,7 +71,7 @@ describe('ListMovementsService', () => {
     service = new ListMovementsService(repo, storage);
   });
 
-  it('paginação padrão, envelope meta e presigned resolvido por item', async () => {
+  it('paginação padrão, envelope meta, item enxuto e presigned por item', async () => {
     findMany.mockResolvedValue([entity()]);
     count.mockResolvedValue(1);
     getPresignedUrl.mockResolvedValue('https://signed/a');
@@ -87,44 +87,34 @@ describe('ListMovementsService', () => {
       hasNextPage: false,
       hasPreviousPage: false,
     });
-    expect(res.data[0].imageUrl).toBe('https://signed/a');
-    expect(res.data[0].readingDatetime).toBe('2026-06-08T16:52:39.000Z');
-    expect(res.data[0].operationType).toBe('LANDING');
-    expect(res.data[0].source).toBe('AUTOMATIC');
-    expect(res.data[0].aircraftSnapshot).toBeNull();
-    expect(res.data[0]).not.toHaveProperty('confidence');
+    expect(res.data[0]).toEqual({
+      id: 'r-1',
+      registration: 'PR-ZTT',
+      aerodrome: 'SSCF',
+      readingDatetime: '2026-06-08T16:52:39.000Z',
+      imageUrl: 'https://signed/a',
+      operationType: 'LANDING',
+      source: 'AUTOMATIC',
+    });
   });
 
-  it('projeta aircraftSnapshot quando presente', async () => {
+  it('item enxuto não expõe snapshot, status, revisor, comments nem timestamps', async () => {
     findMany.mockResolvedValue([entity({ aircraftSnapshot: snapshot() })]);
     count.mockResolvedValue(1);
     getPresignedUrl.mockResolvedValue('https://signed/a');
 
     const res = await service.execute({});
 
-    expect(res.data[0].aircraftSnapshot).toEqual({
-      rabRowId: 'rab-1',
-      rabPeriod: '2026-06',
-      marcas: 'PR-ZTT',
-      proprietarios: 'ACME',
-      operadores: 'ACME',
-      nrSerie: '12345',
-      dsModelo: 'EMB-110',
-      nmFabricante: 'EMBRAER',
-      cdTipoIcao: 'E110',
-      nrPmd: '5900',
-      nrAssentos: '21',
-      nrAnoFabricacao: '1985',
-      tpMotor: 'TURBOPROP',
-      qtMotor: '2',
-      cfOperacional: 'SIM',
-      tpOperacao: 'TPP',
-      createdAt: '2026-06-08T16:52:40.000Z',
-    });
-    expect(res.data[0].aircraftSnapshot).not.toHaveProperty('confidence');
+    expect(res.data[0]).not.toHaveProperty('aircraftSnapshot');
+    expect(res.data[0]).not.toHaveProperty('readingStatus');
+    expect(res.data[0]).not.toHaveProperty('revisorId');
+    expect(res.data[0]).not.toHaveProperty('comments');
+    expect(res.data[0]).not.toHaveProperty('createdAt');
+    expect(res.data[0]).not.toHaveProperty('updatedAt');
+    expect(res.data[0]).not.toHaveProperty('confidence');
   });
 
-  it('monta where com filtros e intervalo de datas', async () => {
+  it('monta where com filtros (incl. operation_type/source) e intervalo de datas', async () => {
     findMany.mockResolvedValue([]);
     count.mockResolvedValue(0);
 
@@ -132,6 +122,8 @@ describe('ListMovementsService', () => {
       registration?: string;
       aerodrome?: string;
       readingStatus?: string;
+      operationType?: string;
+      source?: string;
       readingDatetime?: { gte?: Date; lte?: Date };
     };
     let captured: ReadingWhere = {};
@@ -144,6 +136,8 @@ describe('ListMovementsService', () => {
       registration: 'PR-ZTT',
       aerodrome: 'SSCF',
       reading_status: 'APPROVED',
+      operation_type: 'TAKEOFF',
+      source: 'MANUAL',
       start_date: '2026-05-01',
       end_date: '2026-05-31',
     });
@@ -152,12 +146,28 @@ describe('ListMovementsService', () => {
     expect(captured.registration).toBe('PRZTT');
     expect(captured.aerodrome).toBe('SSCF');
     expect(captured.readingStatus).toBe('APPROVED');
+    expect(captured.operationType).toBe('TAKEOFF');
+    expect(captured.source).toBe('MANUAL');
     expect(captured.readingDatetime?.gte).toEqual(
       new Date('2026-05-01T00:00:00.000Z'),
     );
     expect(captured.readingDatetime?.lte).toEqual(
       new Date('2026-05-31T23:59:59.999Z'),
     );
+  });
+
+  it('não aplica operation_type/source no where quando ausentes', async () => {
+    let captured: Record<string, unknown> = {};
+    findMany.mockImplementation((where: Record<string, unknown>) => {
+      captured = where;
+      return Promise.resolve([]);
+    });
+    count.mockResolvedValue(0);
+
+    await service.execute({});
+
+    expect(captured).not.toHaveProperty('operationType');
+    expect(captured).not.toHaveProperty('source');
   });
 
   it('imageUrl null quando o item não tem imageKey', async () => {

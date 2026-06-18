@@ -7,7 +7,7 @@ import { StorageService } from '@/modules/storage/services/storage.service';
 
 import { MovementsPaginatedResponseDTO } from '../dtos/movements-paginated-response.dto';
 import { ListMovementsQueryDTO } from '../dtos/list-movements-query.dto';
-import { MovementMapper } from '../mappers/movement.mapper';
+import { MovementListItemMapper } from '../mappers/movement-list-item.mapper';
 import { MovementRepository } from '../repositories/movement.repository';
 import { resolveReadingImageUrl } from '../utils/resolve-reading-image-url';
 
@@ -33,7 +33,7 @@ export class ListMovementsService {
 
     const rows = await Promise.all(
       items.map(async (item) =>
-        MovementMapper.toApiRow(
+        MovementListItemMapper.toListItem(
           item,
           await resolveReadingImageUrl(this.storage, item.imageKey),
         ),
@@ -57,6 +57,12 @@ export class ListMovementsService {
     }
     if (query.reading_status) {
       where.readingStatus = query.reading_status;
+    }
+    if (query.operation_type) {
+      where.operationType = query.operation_type;
+    }
+    if (query.source) {
+      where.source = query.source;
     }
     if (query.start_date || query.end_date) {
       const readingDatetime: Prisma.DateTimeFilter = {};
