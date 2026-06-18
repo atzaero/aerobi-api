@@ -1,3 +1,10 @@
+# [2.6.0-beta.26](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.25...v2.6.0-beta.26) (2026-06-18)
+
+
+### Features
+
+* **movements:** permite editar a matrícula (registration) com normalização canônica ([#336](https://github.com/atzaero/aerobi-api/issues/336)) ([0b222c1](https://github.com/atzaero/aerobi-api/commit/0b222c1f0210870accc2e1007a73532d5680012c)), closes [#335](https://github.com/atzaero/aerobi-api/issues/335)
+
 # [2.6.0-beta.25](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.24...v2.6.0-beta.25) (2026-06-18)
 
 
