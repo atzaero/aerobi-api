@@ -7,7 +7,8 @@ export function ListMovementsCanonicalDocs() {
   return applyDecorators(
     ApiSecurity('api_key'),
     ApiOperation({
-      summary: 'Lista movimentos (paginado, filtros opcionais).',
+      summary:
+        'Lista movimentos (item enxuto p/ card, paginado, filtros opcionais incl. operation_type e source).',
     }),
     ApiOkResponse({ type: MovementsPaginatedResponseDTO }),
   );
