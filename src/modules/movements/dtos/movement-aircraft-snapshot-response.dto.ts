@@ -1,10 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
+import { RabOperadorDTO, RabProprietarioDTO } from './rab-people-response.dto';
+
 /**
  * Snapshot 1:1 dos dados cadastrais (RAB) da aeronave congelados no instante do
- * movimento. Aninhado em {@link MovementResponseDTO.aircraftSnapshot}. Todos os
- * campos curados são `String | null` (fiéis à origem RAB); `rabRowId`/`rabPeriod`
- * dão rastreabilidade até a `rab_row`. Não expõe `confidence`.
+ * movimento. Aninhado em {@link MovementResponseDTO.aircraftSnapshot}. Os campos
+ * curados são `String | null` (fiéis à origem RAB); `rabRowId`/`rabPeriod` dão
+ * rastreabilidade até a `rab_row`. `proprietarios`/`operadores` são normalizados
+ * de JSON-como-texto para arrays tipados antes de sair da API (vazio/ilegível →
+ * `[]`). Não expõe `confidence`.
  */
 export class MovementAircraftSnapshotResponseDTO {
   @ApiPropertyOptional({ type: String, nullable: true })
@@ -16,11 +20,11 @@ export class MovementAircraftSnapshotResponseDTO {
   @ApiPropertyOptional({ type: String, nullable: true })
   marcas!: string | null;
 
-  @ApiPropertyOptional({ type: String, nullable: true })
-  proprietarios!: string | null;
+  @ApiProperty({ type: [RabProprietarioDTO] })
+  proprietarios!: RabProprietarioDTO[];
 
-  @ApiPropertyOptional({ type: String, nullable: true })
-  operadores!: string | null;
+  @ApiProperty({ type: [RabOperadorDTO] })
+  operadores!: RabOperadorDTO[];
 
   @ApiPropertyOptional({ type: String, nullable: true })
   nrSerie!: string | null;
