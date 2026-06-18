@@ -1,3 +1,11 @@
+# [2.6.0-beta.24](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.23...v2.6.0-beta.24) (2026-06-18)
+
+
+### Features
+
+* **movements:** enxuga GET /movements e adiciona filtros operation_type/source ([c2d55d9](https://github.com/atzaero/aerobi-api/commit/c2d55d977f2d9526a8b37d41e590f210514218c4)), closes [#328](https://github.com/atzaero/aerobi-api/issues/328) [#327](https://github.com/atzaero/aerobi-api/issues/327)
+* **movements:** normaliza operadores/proprietarios em GET /movements/:id ([3542aa7](https://github.com/atzaero/aerobi-api/commit/3542aa7dc2c1e9f157bcef13feb66a92ac524d38)), closes [#327](https://github.com/atzaero/aerobi-api/issues/327) [#329](https://github.com/atzaero/aerobi-api/issues/329) [#328](https://github.com/atzaero/aerobi-api/issues/328)
+
 # [2.6.0-beta.23](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.22...v2.6.0-beta.23) (2026-06-17)
 
 
