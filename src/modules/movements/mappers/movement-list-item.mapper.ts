@@ -22,6 +22,7 @@ export class MovementListItemMapper {
     row.imageUrl = imageUrl;
     row.operationType = entity.operationType;
     row.source = entity.source;
+    row.conformityStatus = entity.conformityStatus;
     return row;
   }
 }

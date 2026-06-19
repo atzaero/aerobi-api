@@ -32,6 +32,7 @@ export class MovementMapper {
     row.imageUrl = imageUrl;
     row.comments = entity.comments;
     row.aerodrome = entity.aerodrome;
+    row.conformityStatus = entity.conformityStatus;
     row.aircraftSnapshot = MovementMapper.toSnapshot(entity.aircraftSnapshot);
     row.createdAt = entity.createdAt.toISOString();
     row.updatedAt = entity.updatedAt.toISOString();

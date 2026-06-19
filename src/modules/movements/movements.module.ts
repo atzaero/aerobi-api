@@ -15,6 +15,7 @@ import { ListMovementsController } from './controllers/list-movements.controller
 import { RemoveMovementCanonicalController } from './controllers/remove-movement-canonical.controller';
 import { RemoveMovementController } from './controllers/remove-movement.controller';
 import { UpdateMovementCanonicalController } from './controllers/update-movement-canonical.controller';
+import { MovementConformityListener } from './listeners/movement-conformity.listener';
 import { MovementRepository } from './repositories/movement.repository';
 import { BatchCreateMovementService } from './services/batch-create-movement.service';
 import { CreateMovementService } from './services/create-movement.service';
@@ -51,6 +52,7 @@ import { UpdateMovementService } from './services/update-movement.service';
     FindMovementByIdService,
     RemoveMovementService,
     UpdateMovementService,
+    MovementConformityListener,
   ],
 })
 export class MovementsModule {}

@@ -64,6 +64,9 @@ export class ListMovementsService {
     if (query.source) {
       where.source = query.source;
     }
+    if (query.conformity_status) {
+      where.conformityStatus = query.conformity_status;
+    }
     if (query.start_date || query.end_date) {
       const readingDatetime: Prisma.DateTimeFilter = {};
       if (query.start_date) {

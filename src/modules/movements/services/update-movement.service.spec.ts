@@ -1,6 +1,11 @@
 import { HttpStatus } from '@nestjs/common';
+import type { EventEmitter2 } from '@nestjs/event-emitter';
 
-import { MovementSource, MovementType } from '@/generated/prisma/enums';
+import {
+  ConformityStatus,
+  MovementSource,
+  MovementType,
+} from '@/generated/prisma/enums';
 
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import type { ErrorMessageService } from '@/common/error-messages/error-message.service';
@@ -10,6 +15,7 @@ import type { StorageService } from '@/modules/storage/services/storage.service'
 import type { RabRow } from '@/generated/prisma/client';
 import type { RabRowRepository } from '@/modules/rab/repositories/rab-row.repository';
 
+import { MOVEMENT_CONFORMITY_REQUESTED_EVENT } from '../events/movement-conformity-requested.event';
 import type { MovementWithSnapshot } from '../mappers/movement.mapper';
 import type { MovementRepository } from '../repositories/movement.repository';
 
@@ -22,10 +28,13 @@ describe('UpdateMovementService', () => {
   let getPresignedUrl: jest.Mock;
   let getMessage: jest.Mock;
   let findLatestByMarcas: jest.Mock;
+  let emit: jest.Mock;
 
   const existing = {
     id: 'm-1',
     registration: 'PRXXX',
+    operationType: MovementType.LANDING,
+    aerodrome: 'SSCF',
     imageKey: null,
     aircraftSnapshot: null,
   } as unknown as MovementWithSnapshot;
@@ -41,6 +50,7 @@ describe('UpdateMovementService', () => {
     imageKey: null,
     comments: null,
     aerodrome: 'SSCF',
+    conformityStatus: ConformityStatus.PENDING,
     aircraftSnapshot: null,
     createdAt: new Date('2026-06-08T16:52:39Z'),
     updatedAt: new Date('2026-06-08T17:00:00Z'),
@@ -53,6 +63,7 @@ describe('UpdateMovementService', () => {
     getMessage = jest.fn().mockReturnValue('não encontrado');
     /** Por padrão sem match RAB; testes específicos sobrescrevem. */
     findLatestByMarcas = jest.fn().mockResolvedValue(null);
+    emit = jest.fn();
 
     const repo = {
       findById,
@@ -61,11 +72,18 @@ describe('UpdateMovementService', () => {
     const storage = { getPresignedUrl } as unknown as StorageService;
     const errors = { getMessage } as unknown as ErrorMessageService;
     const rabRowRepo = { findLatestByMarcas } as unknown as RabRowRepository;
+    const eventEmitter = { emit } as unknown as EventEmitter2;
 
-    service = new UpdateMovementService(repo, storage, errors, rabRowRepo);
+    service = new UpdateMovementService(
+      repo,
+      storage,
+      errors,
+      rabRowRepo,
+      eventEmitter,
+    );
   });
 
-  it('normaliza a matrícula para a forma canônica antes de persistir', async () => {
+  it('normaliza a matrícula para a forma canônica e reseta a conformidade para PENDING', async () => {
     await service.execute({
       id: 'm-1',
       registration: 'pr ztt',
@@ -78,7 +96,66 @@ describe('UpdateMovementService', () => {
       'PRZTT',
       expect.any(Object),
       'system',
+      ConformityStatus.PENDING,
     );
+  });
+
+  it('dispara a reavaliação de conformidade quando a matrícula muda (pouso com ICAO)', async () => {
+    await service.execute({
+      id: 'm-1',
+      registration: 'PR-ZTT',
+      updatedBy: 'system',
+    });
+
+    expect(emit).toHaveBeenCalledWith(MOVEMENT_CONFORMITY_REQUESTED_EVENT, {
+      movementId: 'm-1',
+      registration: 'PRZTT',
+      aerodrome: 'SSCF',
+      operationType: MovementType.LANDING,
+      source: MovementSource.AUTOMATIC,
+      readingDatetime: updated.readingDatetime,
+    });
+  });
+
+  it('não reavalia quando a matrícula não muda', async () => {
+    findById.mockResolvedValue({ ...existing, registration: 'PRZTT' });
+
+    await service.execute({
+      id: 'm-1',
+      registration: 'PR-ZTT',
+      updatedBy: 'system',
+    });
+
+    expect(updateRegistration).toHaveBeenCalledWith(
+      'm-1',
+      'PRZTT',
+      expect.any(Object),
+      'system',
+      undefined,
+    );
+    expect(emit).not.toHaveBeenCalled();
+  });
+
+  it('não reavalia quando a regra não se aplica (decolagem)', async () => {
+    findById.mockResolvedValue({
+      ...existing,
+      operationType: MovementType.TAKEOFF,
+    });
+
+    await service.execute({
+      id: 'm-1',
+      registration: 'PR-ZTT',
+      updatedBy: 'system',
+    });
+
+    expect(updateRegistration).toHaveBeenCalledWith(
+      'm-1',
+      'PRZTT',
+      expect.any(Object),
+      'system',
+      undefined,
+    );
+    expect(emit).not.toHaveBeenCalled();
   });
 
   it('re-resolve o snapshot RAB para a matrícula corrigida', async () => {

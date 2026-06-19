@@ -1,6 +1,8 @@
 import type { Prisma, Movement } from '@/generated/prisma/client';
+import type { ConformityStatus } from '@/generated/prisma/enums';
 
 import type { MovementWithSnapshot } from '../mappers/movement.mapper';
+import type { ResolvedConformityStatus } from '../utils/conformity-status.util';
 
 export interface IMovementRepository {
   create(data: Prisma.MovementCreateInput): Promise<Movement>;
@@ -28,7 +30,18 @@ export interface IMovementRepository {
     registration: string,
     snapshot: Prisma.MovementAircraftSnapshotCreateWithoutMovementInput,
     updatedBy: string,
+    conformityStatus?: ConformityStatus,
   ): Promise<MovementWithSnapshot>;
+
+  /**
+   * Persiste o status de conformidade resolvido de um movimento ativo (ação de
+   * sistema do fluxo de conformidade). Idempotente e silenciosa se o movimento
+   * já não existir; não altera `updatedBy`.
+   */
+  updateConformityStatus(
+    id: string,
+    conformityStatus: ResolvedConformityStatus,
+  ): Promise<void>;
 
   /**
    * Último movimento ativo da matrícula dentro da janela de 48h anterior a

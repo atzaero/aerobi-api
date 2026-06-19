@@ -15,10 +15,12 @@ import { OperationalEventRepository } from './repositories/operational-event.rep
  *
  * Provê o {@link FirestoreDirectoryPort} via token, vinculado ao adapter
  * Firestore, e exporta o token. Registra o {@link ConformityListener} (#252),
- * que reage a `movement.created` e regista não-conformidades de pouso
- * automático sem solicitação aprovada, e o {@link NotificationListener}
- * (#253), que notifica por e-mail os coordenadores/operadores do aeródromo
- * (com dedupe). Nenhum detalhe do Firestore é exposto — só o port.
+ * que reage a `movement.created`/`movement.conformity_requested`, resolve a
+ * conformidade de **pousos com aeródromo conhecido (AUTOMATIC ou MANUAL)** e
+ * regista não-conformidades sem solicitação aprovada, e o
+ * {@link NotificationListener} (#253), que notifica por e-mail os
+ * coordenadores/operadores do aeródromo (com dedupe). Nenhum detalhe do
+ * Firestore é exposto — só o port.
  */
 @Module({
   imports: [FirestoreModule, PrismaModule, EmailModule],
