@@ -28,6 +28,8 @@ describe('MovementMapper.toApiRow — normalização do snapshot', () => {
       conformityStatus: 'CONFORMANT',
       createdAt: new Date('2026-06-08T16:52:39.000Z'),
       updatedAt: new Date('2026-06-08T16:52:39.000Z'),
+      deletedAt: null,
+      deletedBy: null,
       aircraftSnapshot,
     }) as unknown as Movement & {
       aircraftSnapshot: MovementAircraftSnapshot | null;
@@ -121,5 +123,24 @@ describe('MovementMapper.toApiRow — normalização do snapshot', () => {
   it('propaga o conformityStatus do movimento', () => {
     const row = MovementMapper.toApiRow(baseMovement(null), null);
     expect(row.conformityStatus).toBe('CONFORMANT');
+  });
+
+  it('expõe deletedAt/deletedBy como null para um movimento ativo', () => {
+    const row = MovementMapper.toApiRow(baseMovement(null), null);
+    expect(row.deletedAt).toBeNull();
+    expect(row.deletedBy).toBeNull();
+  });
+
+  it('serializa deletedAt em ISO e propaga deletedBy de um movimento removido', () => {
+    const entity = {
+      ...baseMovement(null),
+      deletedAt: new Date('2026-06-09T10:00:00.000Z'),
+      deletedBy: 'user-42',
+    };
+
+    const row = MovementMapper.toApiRow(entity, null);
+
+    expect(row.deletedAt).toBe('2026-06-09T10:00:00.000Z');
+    expect(row.deletedBy).toBe('user-42');
   });
 });

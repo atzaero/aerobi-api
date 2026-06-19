@@ -13,7 +13,8 @@ import { MovementAircraftSnapshotResponseDTO } from './movement-aircraft-snapsho
  * (`GET /movements`, `GET /movements/:id`, `DELETE /movements/:id`) e nos aliases
  * deprecados em `/readings`. `imageUrl` é uma presigned URL temporária (ou
  * `null`). Inclui `operationType`, `source` e o `aircraftSnapshot` (RAB) quando
- * presente. Não expõe `confidence`.
+ * presente. Não expõe `confidence`. Inclui `deletedAt`/`deletedBy` (nulos para
+ * movimentos ativos) para o frontend exibir o estado de exclusão lógica.
  */
 export class MovementResponseDTO {
   @ApiProperty({ format: 'uuid' })
@@ -70,4 +71,19 @@ export class MovementResponseDTO {
 
   @ApiProperty({ type: String, format: 'date-time' })
   updatedAt!: string;
+
+  @ApiProperty({
+    type: String,
+    format: 'date-time',
+    nullable: true,
+    description: 'Instante da exclusão lógica (soft delete), ou null se ativo.',
+  })
+  deletedAt!: string | null;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'Quem realizou a exclusão lógica, ou null se ativo.',
+  })
+  deletedBy!: string | null;
 }
