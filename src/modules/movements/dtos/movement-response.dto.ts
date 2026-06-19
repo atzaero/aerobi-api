@@ -70,4 +70,19 @@ export class MovementResponseDTO {
 
   @ApiProperty({ type: String, format: 'date-time' })
   updatedAt!: string;
+
+  @ApiPropertyOptional({
+    type: String,
+    format: 'date-time',
+    nullable: true,
+    description: 'Instante da exclusão lógica (soft delete), ou null se ativo.',
+  })
+  deletedAt!: string | null;
+
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    description: 'Quem realizou a exclusão lógica, ou null se ativo.',
+  })
+  deletedBy!: string | null;
 }

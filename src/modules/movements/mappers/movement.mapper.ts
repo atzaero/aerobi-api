@@ -36,6 +36,8 @@ export class MovementMapper {
     row.aircraftSnapshot = MovementMapper.toSnapshot(entity.aircraftSnapshot);
     row.createdAt = entity.createdAt.toISOString();
     row.updatedAt = entity.updatedAt.toISOString();
+    row.deletedAt = entity.deletedAt?.toISOString() ?? null;
+    row.deletedBy = entity.deletedBy;
     return row;
   }
 
