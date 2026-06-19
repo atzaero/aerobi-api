@@ -1,3 +1,10 @@
+# [2.6.0-beta.27](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.26...v2.6.0-beta.27) (2026-06-19)
+
+
+### Features
+
+* **movements:** adiciona conformity_status ao movimento (coluna, filtro e fluxo) ([badc1d0](https://github.com/atzaero/aerobi-api/commit/badc1d0c692b951b3cd3dd87bd83baa2e8a3efd3))
+
 # [2.6.0-beta.26](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.25...v2.6.0-beta.26) (2026-06-18)
 
 
