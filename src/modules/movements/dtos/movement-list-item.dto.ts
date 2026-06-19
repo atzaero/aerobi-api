@@ -1,6 +1,10 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-import { MovementSource, MovementType } from '@/generated/prisma/enums';
+import {
+  ConformityStatus,
+  MovementSource,
+  MovementType,
+} from '@/generated/prisma/enums';
 
 /**
  * Item enxuto de `GET /movements` (e do alias deprecado `GET /readings`) — só os
@@ -38,4 +42,12 @@ export class MovementListItemDTO {
 
   @ApiProperty({ enum: MovementSource, example: MovementSource.AUTOMATIC })
   source!: MovementSource;
+
+  @ApiProperty({
+    enum: ConformityStatus,
+    example: ConformityStatus.PENDING,
+    description:
+      'Conformidade do movimento perante o pedido de aterragem aprovado.',
+  })
+  conformityStatus!: ConformityStatus;
 }

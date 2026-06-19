@@ -2,6 +2,7 @@ import type { Prisma } from '@/generated/prisma/client';
 import { MovementType } from '@/generated/prisma/enums';
 
 import type { MovementOrigin } from '../services/movement-origin';
+import { resolveInitialConformityStatus } from '../utils/conformity-status.util';
 
 /**
  * Campos do DTO consumidos pela projeção. Estrutural de propósito: tanto a
@@ -33,6 +34,14 @@ export function buildMovementCreateInput(
   origin: MovementOrigin,
   snapshot: Prisma.MovementAircraftSnapshotCreateWithoutMovementInput,
 ): Prisma.MovementCreateInput {
+  /**
+   * O service (fonte única) já resolve `operationType` antes de chamar este
+   * mapper: AUTOMATIC pela regra toggle de 48h, MANUAL pelo formulário. O
+   * fallback LANDING é apenas defensivo e não deve ser atingido na prática.
+   * Reutilizado abaixo para classificar a conformidade inicial.
+   */
+  const operationType = origin.operationType ?? MovementType.LANDING;
+
   return {
     registration: dto.registration,
     confidence: dto.confidence,
@@ -44,10 +53,16 @@ export function buildMovementCreateInput(
     aerodrome: dto.aerodrome,
     source: origin.source,
     createdBy: origin.createdBy,
-    // O service (fonte única) já resolve `operationType` antes de chamar este
-    // mapper: AUTOMATIC pela regra toggle de 48h, MANUAL pelo formulário. O
-    // fallback LANDING é apenas defensivo e não deve ser atingido na prática.
-    operationType: origin.operationType ?? MovementType.LANDING,
+    operationType,
+    /**
+     * Status de conformidade inicial: `PENDING` quando a regra se aplica (a
+     * decisão real é assíncrona, via fluxo de conformidade), senão
+     * `NOT_APPLICABLE`. Decolagens e movimentos sem ICAO já nascem resolvidos.
+     */
+    conformityStatus: resolveInitialConformityStatus({
+      operationType,
+      aerodrome: dto.aerodrome ?? null,
+    }),
     aircraftSnapshot: { create: snapshot },
   };
 }

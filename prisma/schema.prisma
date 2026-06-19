@@ -369,6 +369,20 @@ enum MovementSource {
   MANUAL
 }
 
+/// Status de conformidade de um movimento perante a regra de pedido de aterragem
+/// aprovado. `PENDING` = aplicável mas ainda não avaliado (a avaliação é
+/// assíncrona/best-effort); `CONFORMANT` = pouso com pedido aprovado
+/// correspondente; `NON_CONFORMANT` = pouso sem pedido correspondente (gera
+/// `OperationalEvent`); `NOT_APPLICABLE` = a regra não se aplica (decolagem ou
+/// movimento sem ICAO de aeródromo). A regra cobre pousos de ambas as origens
+/// (AUTOMATIC e MANUAL).
+enum ConformityStatus {
+  PENDING
+  CONFORMANT
+  NON_CONFORMANT
+  NOT_APPLICABLE
+}
+
 /// Movimento de aeronave em um aeródromo — um pouso ou uma decolagem. Quando a
 /// origem é `AUTOMATIC`, a matrícula é reconhecida por OCR a partir de uma
 /// imagem de câmera (pipeline aviascan-cv → aerobi-api). Quando `MANUAL`, é
@@ -404,6 +418,11 @@ model Movement {
   /// Código ICAO do aeródromo onde o movimento ocorreu (ex.: SSCF).
   aerodrome     String? @map("aerodrome")
 
+  /// Conformidade do movimento perante o pedido de aterragem aprovado. Definida
+  /// na criação (`PENDING` quando aplicável; senão `NOT_APPLICABLE`) e resolvida
+  /// pelo fluxo de conformidade (`CONFORMANT`/`NON_CONFORMANT`).
+  conformityStatus ConformityStatus @default(PENDING) @map("conformity_status")
+
   /// Snapshot dos dados cadastrais (RAB) da aeronave no instante do movimento.
   aircraftSnapshot MovementAircraftSnapshot?
 
@@ -421,6 +440,7 @@ model Movement {
   @@index([registration])
   @@index([aerodrome, readingDatetime])
   @@index([readingDatetime])
+  @@index([conformityStatus])
   @@index([deletedAt])
   @@map("movement")
 }

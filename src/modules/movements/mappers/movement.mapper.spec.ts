@@ -25,6 +25,7 @@ describe('MovementMapper.toApiRow — normalização do snapshot', () => {
       imageKey: null,
       comments: null,
       aerodrome: 'SSCF',
+      conformityStatus: 'CONFORMANT',
       createdAt: new Date('2026-06-08T16:52:39.000Z'),
       updatedAt: new Date('2026-06-08T16:52:39.000Z'),
       aircraftSnapshot,
@@ -115,5 +116,10 @@ describe('MovementMapper.toApiRow — normalização do snapshot', () => {
   it('mantém aircraftSnapshot null quando ausente', () => {
     const row = MovementMapper.toApiRow(baseMovement(null), null);
     expect(row.aircraftSnapshot).toBeNull();
+  });
+
+  it('propaga o conformityStatus do movimento', () => {
+    const row = MovementMapper.toApiRow(baseMovement(null), null);
+    expect(row.conformityStatus).toBe('CONFORMANT');
   });
 });

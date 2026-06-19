@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 
 import { type OperationalEvent } from '@/generated/prisma/client';
-import { OperationalEventType } from '@/generated/prisma/enums';
+import {
+  OperationalEventStatus,
+  OperationalEventType,
+} from '@/generated/prisma/enums';
 import { PrismaService } from '@/prisma/prisma.service';
 
 /**
@@ -25,6 +28,17 @@ export interface FindRecentNotifiedInput {
   registration: string;
   since: Date;
 }
+
+/**
+ * Status considerados "em aberto" (não resolvidos) de uma não-conformidade —
+ * usados tanto na deduplicação (não criar evento se já há um ativo) quanto na
+ * resolução (encerrar os ativos quando o movimento volta a ser conforme).
+ * Fonte única para os dois métodos não divergirem.
+ */
+const ACTIVE_STATUSES: OperationalEventStatus[] = [
+  OperationalEventStatus.OPEN,
+  OperationalEventStatus.ACKNOWLEDGED,
+];
 
 /** Acesso ao Prisma para `OperationalEvent` (tabela `operational_event`). */
 @Injectable()
@@ -59,6 +73,46 @@ export class OperationalEventRepository {
     await this.prisma.operationalEvent.update({
       where: { id },
       data: { notifiedAt: when },
+    });
+  }
+
+  /**
+   * Devolve a não-conformidade ainda **em aberto** (status não resolvido, não
+   * eliminada) de um movimento para o `type` indicado, ou `null`. Usado para
+   * evitar duplicar o evento quando a conformidade é reavaliada.
+   */
+  findOpenByMovement(
+    movementId: string,
+    type: OperationalEventType,
+  ): Promise<OperationalEvent | null> {
+    return this.prisma.operationalEvent.findFirst({
+      where: {
+        movementId,
+        type,
+        status: { in: ACTIVE_STATUSES },
+        deletedAt: null,
+      },
+      orderBy: { detectedAt: 'desc' },
+    });
+  }
+
+  /**
+   * Resolve (`status: RESOLVED`) as não-conformidades em aberto de um movimento.
+   * Usado quando uma reavaliação passa a `CONFORMANT` (ex.: matrícula corrigida)
+   * e a não-conformidade anterior deixa de valer. Idempotente.
+   */
+  async resolveOpenByMovement(
+    movementId: string,
+    type: OperationalEventType,
+  ): Promise<void> {
+    await this.prisma.operationalEvent.updateMany({
+      where: {
+        movementId,
+        type,
+        status: { in: ACTIVE_STATUSES },
+        deletedAt: null,
+      },
+      data: { status: OperationalEventStatus.RESOLVED },
     });
   }
 }

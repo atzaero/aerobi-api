@@ -10,6 +10,7 @@ describe('MovementListItemMapper', () => {
     readingDatetime: new Date('2026-06-08T16:52:39Z'),
     operationType: 'LANDING',
     source: 'AUTOMATIC',
+    conformityStatus: 'PENDING',
     readingStatus: 'APPROVED',
     revisorId: 'rev-1',
     imageKey: 'readings/2026/06/a.jpg',
@@ -35,6 +36,7 @@ describe('MovementListItemMapper', () => {
       imageUrl: 'https://signed/a',
       operationType: 'LANDING',
       source: 'AUTOMATIC',
+      conformityStatus: 'PENDING',
     });
   });
 

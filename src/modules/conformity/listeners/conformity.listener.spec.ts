@@ -1,10 +1,15 @@
 import type { ConfigService } from '@nestjs/config';
 import type { EventEmitter2 } from '@nestjs/event-emitter';
 
-import { MovementSource, MovementType } from '@/generated/prisma/enums';
+import {
+  ConformityStatus,
+  MovementSource,
+  MovementType,
+} from '@/generated/prisma/enums';
 
 import type { OperationalEvent } from '@/generated/prisma/client';
 import type { MovementCreatedEvent } from '@/modules/movements/events/movement-created.event';
+import { MOVEMENT_CONFORMITY_RESOLVED_EVENT } from '@/modules/movements/events/movement-conformity-resolved.event';
 
 import { MOVEMENT_NON_CONFORMITY_EVENT } from '../events/movement-non-conformity.event';
 import type { FirestoreDirectoryPort } from '../ports/firestore-directory.port';
@@ -16,6 +21,8 @@ describe('ConformityListener', () => {
   let listener: ConformityListener;
   let findApprovedLandingRequestMatch: jest.Mock;
   let create: jest.Mock;
+  let findOpenByMovement: jest.Mock;
+  let resolveOpenByMovement: jest.Mock;
   let emit: jest.Mock;
   let configGet: jest.Mock;
 
@@ -38,6 +45,8 @@ describe('ConformityListener', () => {
     } as unknown as FirestoreDirectoryPort;
     const repository = {
       create,
+      findOpenByMovement,
+      resolveOpenByMovement,
     } as unknown as OperationalEventRepository;
     const eventEmitter = { emit } as unknown as EventEmitter2;
     const config = { get: configGet } as unknown as ConfigService;
@@ -47,6 +56,8 @@ describe('ConformityListener', () => {
   beforeEach(() => {
     findApprovedLandingRequestMatch = jest.fn().mockResolvedValue(null);
     create = jest.fn().mockResolvedValue(createdEvent);
+    findOpenByMovement = jest.fn().mockResolvedValue(null);
+    resolveOpenByMovement = jest.fn().mockResolvedValue(undefined);
     emit = jest.fn();
     configGet = jest.fn().mockReturnValue(undefined);
     listener = build();
@@ -63,15 +74,24 @@ describe('ConformityListener', () => {
     expect(emit).not.toHaveBeenCalled();
   });
 
-  it('(b) ignora movimento manual sem consultar o port', async () => {
+  it('(b) avalia também pouso manual (consulta o port)', async () => {
     await listener.handleMovementCreated({
       ...baseEvent,
       source: MovementSource.MANUAL,
     });
 
-    expect(findApprovedLandingRequestMatch).not.toHaveBeenCalled();
-    expect(create).not.toHaveBeenCalled();
-    expect(emit).not.toHaveBeenCalled();
+    expect(findApprovedLandingRequestMatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        registration: 'PR-ZTT',
+        aerodromeIcao: 'SSCF',
+      }),
+    );
+    // Sem match → resolve NON_CONFORMANT e cria a não-conformidade.
+    expect(emit).toHaveBeenCalledWith(MOVEMENT_CONFORMITY_RESOLVED_EVENT, {
+      movementId: 'mov-1',
+      status: ConformityStatus.NON_CONFORMANT,
+    });
+    expect(create).toHaveBeenCalled();
   });
 
   it('(c) ignora aeródromo null e loga, sem consultar o port', async () => {
@@ -87,7 +107,7 @@ describe('ConformityListener', () => {
     expect(warn).toHaveBeenCalled();
   });
 
-  it('(d) com match encontrado não cria evento nem emite', async () => {
+  it('(d) com match resolve CONFORMANT, resolve não-conformidade aberta e não cria evento', async () => {
     findApprovedLandingRequestMatch.mockResolvedValue({
       id: 'lr-1',
       aircraftRegistration: 'PR-ZTT',
@@ -104,11 +124,18 @@ describe('ConformityListener', () => {
       reference: baseEvent.readingDatetime,
       windowHours: 24,
     });
+    expect(resolveOpenByMovement).toHaveBeenCalledWith(
+      'mov-1',
+      'NON_CONFORMITY_NO_LANDING_REQUEST',
+    );
     expect(create).not.toHaveBeenCalled();
-    expect(emit).not.toHaveBeenCalled();
+    expect(emit).toHaveBeenCalledWith(MOVEMENT_CONFORMITY_RESOLVED_EVENT, {
+      movementId: 'mov-1',
+      status: ConformityStatus.CONFORMANT,
+    });
   });
 
-  it('(e) sem match cria OperationalEvent e emite MOVEMENT_NON_CONFORMITY_EVENT', async () => {
+  it('(e) sem match cria OperationalEvent, resolve NON_CONFORMANT e emite MOVEMENT_NON_CONFORMITY_EVENT', async () => {
     await listener.handleMovementCreated(baseEvent);
 
     expect(create).toHaveBeenCalledWith({
@@ -117,6 +144,10 @@ describe('ConformityListener', () => {
       movementId: 'mov-1',
       occurredAt: baseEvent.readingDatetime,
     });
+    expect(emit).toHaveBeenCalledWith(MOVEMENT_CONFORMITY_RESOLVED_EVENT, {
+      movementId: 'mov-1',
+      status: ConformityStatus.NON_CONFORMANT,
+    });
     expect(emit).toHaveBeenCalledWith(MOVEMENT_NON_CONFORMITY_EVENT, {
       operationalEventId: 'oe-1',
       movementId: 'mov-1',
@@ -124,6 +155,28 @@ describe('ConformityListener', () => {
       aerodrome: 'SSCF',
       occurredAt: baseEvent.readingDatetime,
     });
+  });
+
+  it('(e2) sem match mas com não-conformidade já em aberto não duplica nem reemite e-mail', async () => {
+    findOpenByMovement.mockResolvedValue({ id: 'oe-existente' });
+
+    await listener.handleMovementCreated(baseEvent);
+
+    expect(create).not.toHaveBeenCalled();
+    expect(emit).toHaveBeenCalledWith(MOVEMENT_CONFORMITY_RESOLVED_EVENT, {
+      movementId: 'mov-1',
+      status: ConformityStatus.NON_CONFORMANT,
+    });
+    expect(emit).not.toHaveBeenCalledWith(
+      MOVEMENT_NON_CONFORMITY_EVENT,
+      expect.anything(),
+    );
+  });
+
+  it('(g) reavaliação usa o mesmo núcleo de avaliação', async () => {
+    await listener.handleConformityRequested(baseEvent);
+
+    expect(findApprovedLandingRequestMatch).toHaveBeenCalled();
   });
 
   it('usa CONFORMITY_MATCH_WINDOW_HOURS do env (string) quando válido', async () => {
@@ -150,6 +203,7 @@ describe('ConformityListener', () => {
     ).resolves.toBeUndefined();
 
     expect(create).not.toHaveBeenCalled();
+    // Erro antes de qualquer resolução: nenhum evento deve ser emitido.
     expect(emit).not.toHaveBeenCalled();
     expect(error).toHaveBeenCalled();
   });

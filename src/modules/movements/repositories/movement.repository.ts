@@ -1,9 +1,11 @@
 import { Injectable } from '@nestjs/common';
 
 import { Prisma, type Movement } from '@/generated/prisma/client';
+import type { ConformityStatus } from '@/generated/prisma/enums';
 import { PrismaService } from '@/prisma/prisma.service';
 
 import type { MovementWithSnapshot } from '../mappers/movement.mapper';
+import type { ResolvedConformityStatus } from '../utils/conformity-status.util';
 
 import type { IMovementRepository } from './movement.repository.interface';
 
@@ -61,12 +63,19 @@ export class MovementRepository implements IMovementRepository {
     registration: string,
     snapshot: Prisma.MovementAircraftSnapshotCreateWithoutMovementInput,
     updatedBy: string,
+    conformityStatus?: ConformityStatus,
   ): Promise<MovementWithSnapshot> {
     return this.prisma.movement.update({
       where: { id, ...activeWhere },
       data: {
         registration,
         updatedBy,
+        /**
+         * Quando informado, redefine a conformidade na mesma transação da
+         * correção da matrícula: a decisão calculada para a matrícula anterior
+         * fica obsoleta, então o caller passa `PENDING` (reavaliação pendente).
+         */
+        ...(conformityStatus !== undefined ? { conformityStatus } : {}),
         /**
          * Substitui o snapshot 1:1 re-resolvido para a matrícula corrigida. O
          * snapshot sempre existe (invariante 1:1 garantida na criação), então
@@ -76,6 +85,23 @@ export class MovementRepository implements IMovementRepository {
         aircraftSnapshot: { update: snapshot },
       },
       include: { aircraftSnapshot: true },
+    });
+  }
+
+  /**
+   * Persiste o status de conformidade resolvido (`CONFORMANT`/`NON_CONFORMANT`)
+   * de um movimento ativo. Ação de sistema disparada pelo fluxo de conformidade
+   * (assíncrono); usa `updateMany` para ser idempotente e silenciosa caso o
+   * movimento já tenha sido removido (não relança). Não toca em `updatedBy`. O
+   * tipo restrito impede resolver para `PENDING`/`NOT_APPLICABLE`.
+   */
+  async updateConformityStatus(
+    id: string,
+    conformityStatus: ResolvedConformityStatus,
+  ): Promise<void> {
+    await this.prisma.movement.updateMany({
+      where: { id, ...activeWhere },
+      data: { conformityStatus },
     });
   }
 

@@ -1,4 +1,7 @@
 import { HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+
+import { ConformityStatus } from '@/generated/prisma/enums';
 
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
@@ -8,9 +11,14 @@ import { normalizeMarcas } from '@/modules/rab/utils/normalize-marcas';
 import { StorageService } from '@/modules/storage/services/storage.service';
 
 import { MovementResponseDTO } from '../dtos/movement-response.dto';
+import {
+  MOVEMENT_CONFORMITY_REQUESTED_EVENT,
+  type MovementConformityRequestedEvent,
+} from '../events/movement-conformity-requested.event';
 import { buildAircraftSnapshotCreateInput } from '../mappers/aircraft-snapshot.prisma.mapper';
 import { MovementMapper } from '../mappers/movement.mapper';
 import { MovementRepository } from '../repositories/movement.repository';
+import { isConformityApplicable } from '../utils/conformity-status.util';
 import { resolveReadingImageUrl } from '../utils/resolve-reading-image-url';
 
 /**
@@ -37,6 +45,7 @@ export class UpdateMovementService {
     private readonly storage: StorageService,
     private readonly errorMessageService: ErrorMessageService,
     private readonly rabRowRepo: RabRowRepository,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async execute(input: UpdateMovementInput): Promise<MovementResponseDTO> {
@@ -75,12 +84,45 @@ export class UpdateMovementService {
     }
     const snapshot = buildAircraftSnapshotCreateInput(rabRow);
 
+    /**
+     * Corrigir a matrícula invalida a conformidade calculada para a matrícula
+     * anterior. Quando a matrícula muda e a regra se aplica (pouso com ICAO),
+     * o status volta a `PENDING` na mesma transação e a reavaliação é disparada
+     * abaixo. Sem mudança de matrícula (ou regra não aplicável), preservamos o
+     * status atual.
+     */
+    const registrationChanged = registration !== existing.registration;
+    const applicable = isConformityApplicable({
+      operationType: existing.operationType,
+      aerodrome: existing.aerodrome,
+    });
+    const shouldReevaluate = registrationChanged && applicable;
+
     const updated = await this.repo.updateRegistration(
       input.id,
       registration,
       snapshot,
       input.updatedBy,
+      shouldReevaluate ? ConformityStatus.PENDING : undefined,
     );
+
+    if (shouldReevaluate) {
+      /**
+       * Dispara apenas a reavaliação de conformidade (não as notificações de
+       * criação): o `ConformityListener` reavalia contra a nova matrícula e
+       * resolve o status final. Emissão fire-and-forget — o handler é assíncrono
+       * e desacoplado, não bloqueia nem altera a resposta desta edição.
+       */
+      const payload: MovementConformityRequestedEvent = {
+        movementId: updated.id,
+        registration: updated.registration,
+        aerodrome: updated.aerodrome,
+        operationType: updated.operationType,
+        source: updated.source,
+        readingDatetime: updated.readingDatetime,
+      };
+      this.eventEmitter.emit(MOVEMENT_CONFORMITY_REQUESTED_EVENT, payload);
+    }
 
     const imageUrl = await resolveReadingImageUrl(
       this.storage,

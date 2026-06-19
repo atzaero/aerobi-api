@@ -3,7 +3,11 @@ import { IsEnum, IsOptional, IsString } from 'class-validator';
 
 import { BasePaginationQueryDTO } from '@/common/dtos/base-pagination-query.dto';
 import { IsYmdDate } from '@/common/validators/is-ymd-date.validator';
-import { MovementSource, MovementType } from '@/generated/prisma/enums';
+import {
+  ConformityStatus,
+  MovementSource,
+  MovementType,
+} from '@/generated/prisma/enums';
 
 /**
  * Query de `GET /readings`. Herda `page`/`limit` e adiciona os mesmos filtros do
@@ -41,6 +45,14 @@ export class ListMovementsQueryDTO extends BasePaginationQueryDTO {
   @IsOptional()
   @IsEnum(MovementSource)
   source?: MovementSource;
+
+  @ApiPropertyOptional({
+    enum: ConformityStatus,
+    description: 'Filtra pela conformidade do movimento.',
+  })
+  @IsOptional()
+  @IsEnum(ConformityStatus)
+  conformity_status?: ConformityStatus;
 
   @ApiPropertyOptional({
     example: '2026-05-01',

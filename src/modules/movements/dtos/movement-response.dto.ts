@@ -1,6 +1,10 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-import { MovementSource, MovementType } from '@/generated/prisma/enums';
+import {
+  ConformityStatus,
+  MovementSource,
+  MovementType,
+} from '@/generated/prisma/enums';
 
 import { MovementAircraftSnapshotResponseDTO } from './movement-aircraft-snapshot-response.dto';
 
@@ -45,6 +49,14 @@ export class MovementResponseDTO {
 
   @ApiPropertyOptional({ type: String, nullable: true })
   aerodrome!: string | null;
+
+  @ApiProperty({
+    enum: ConformityStatus,
+    example: ConformityStatus.PENDING,
+    description:
+      'Conformidade do movimento perante o pedido de aterragem aprovado.',
+  })
+  conformityStatus!: ConformityStatus;
 
   @ApiPropertyOptional({
     type: MovementAircraftSnapshotResponseDTO,

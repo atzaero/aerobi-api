@@ -1,19 +1,22 @@
 # Módulo `conformity`
 
 **Conformidade operacional** entre **movimentos** (pousos) e **solicitações de
-pouso**. A cada **pouso automático** (origem `AUTOMATIC`, reconhecido por OCR
-pelo pipeline aviascan), o módulo verifica se existia uma **solicitação de pouso
-autorizada** para aquela aeronave naquele aeródromo. Não havendo, regista uma
-**não-conformidade** (`OperationalEvent`) e **notifica** por e-mail os
-coordenadores/operadores do aeródromo.
+pouso**. A cada **pouso com aeródromo conhecido** (origem `AUTOMATIC` ou
+`MANUAL`), o módulo verifica se existia uma **solicitação de pouso autorizada**
+para aquela aeronave naquele aeródromo. Havendo, resolve o movimento como
+**conforme** (`CONFORMANT`); não havendo, como **não conforme**
+(`NON_CONFORMANT`), regista uma **não-conformidade** (`OperationalEvent`) e
+**notifica** por e-mail os coordenadores/operadores do aeródromo. O resultado é
+persistido em `Movement.conformityStatus` (módulo `movements`) via evento.
 
 É relevante para o registro de movimentos e para a operação junto à **ANAC**:
 sinaliza pousos que ocorreram sem a autorização prévia esperada, dando aos
 responsáveis do aeródromo a oportunidade de verificar e tomar as providências de
 conformidade cabíveis.
 
-> Pousos **manuais** (`MANUAL`) e **decolagens** (`TAKEOFF`) não entram na regra:
-> a verificação só faz sentido para pousos detectados automaticamente.
+> **Decolagens** (`TAKEOFF`) e pousos **sem ICAO de aeródromo** não entram na
+> regra (nascem `NOT_APPLICABLE`). Pousos **manuais** (`MANUAL`) **entram** na
+> regra, tal como os automáticos.
 
 ## Fluxo
 
@@ -23,24 +26,29 @@ movimento (os handlers capturam e não relançam — no MVP não há retry).
 
 ```mermaid
 flowchart TD
-  create[CreateMovementService] -->|emite movement.created| cl[ConformityListener]
-  cl -->|filtra LANDING + AUTOMATIC| q{Solicitação aprovada<br/>no Firestore?}
-  q -->|sim, dentro da janela| ok[conforme: nada a fazer]
+  create[CreateMovementService / edição] -->|movement.created / movement.conformity_requested| cl[ConformityListener]
+  cl -->|filtra LANDING + ICAO| q{Solicitação aprovada<br/>no Firestore?}
+  q -->|sim, dentro da janela| ok[CONFORMANT + resolve não-conformidade aberta]
   q -->|não| oe[(operational_event<br/>NON_CONFORMITY)]
-  oe -->|emite movement.non_conformity| nl[NotificationListener]
+  ok -->|movement.conformity_resolved| ml[MovementConformityListener]
+  oe -->|movement.conformity_resolved| ml
+  oe -->|movement.non_conformity| nl[NotificationListener]
+  ml -->|persiste conformity_status| mv[(movement)]
   nl -->|dedupe + resolve contactos| mail[EmailService<br/>landing_non_conformity]
 ```
 
 | Evento | Emitido por | Consumido por |
 |--------|-------------|---------------|
 | `movement.created` | `CreateMovementService` (módulo `movements`) | `ConformityListener` |
+| `movement.conformity_requested` | `UpdateMovementService` (reavaliação na edição de matrícula) | `ConformityListener` |
+| `movement.conformity_resolved` | `ConformityListener` | `MovementConformityListener` (módulo `movements`) |
 | `movement.non_conformity` | `ConformityListener` | `NotificationListener` |
 
 Ficheiros:
 
 | Elemento | Papel |
 |----------|--------|
-| `listeners/conformity.listener.ts` | Reage a `movement.created`; aplica a regra de matching; regista a não-conformidade e emite `movement.non_conformity`. |
+| `listeners/conformity.listener.ts` | Reage a `movement.created`/`movement.conformity_requested`; aplica a regra de matching; resolve a conformidade (`movement.conformity_resolved`), regista a não-conformidade (deduplicada) e emite `movement.non_conformity`. |
 | `listeners/notification.listener.ts` | Reage a `movement.non_conformity`; faz dedupe, resolve destinatários e envia o e-mail. |
 | `ports/firestore-directory.port.ts` | Contrato de leitura do diretório (matching + grupo + contactos). |
 | `adapters/firestore-directory.adapter.ts` | Implementação Firestore do port (**único** ponto que conhece coleções/campos). |
@@ -50,9 +58,9 @@ Ficheiros:
 
 ## Regra de matching
 
-O `ConformityListener` só processa o evento quando o movimento é
-**`LANDING` + `AUTOMATIC`** (e tem ICAO de aeródromo). Caso contrário, retorna
-sem efeito.
+O `ConformityListener` só processa o evento quando o movimento é **`LANDING` com
+ICAO de aeródromo** (de qualquer origem — `AUTOMATIC` ou `MANUAL`). Caso
+contrário, retorna sem efeito (o movimento já nasce `NOT_APPLICABLE`).
 
 Procura no Firestore uma solicitação de pouso que satisfaça **todas** as condições:
 
@@ -95,9 +103,12 @@ port e os listeners intactos (ver proposta **#255**).
 ## Persistência
 
 A não-conformidade vive na tabela **`operational_event`** (model
-`OperationalEvent`, final de `prisma/schema.prisma`). **Não** há campo novo no
-`Movement` — a relação é por `movement_id` (opcional, `SetNull` para não perder o
-evento se o movimento sumir).
+`OperationalEvent`, final de `prisma/schema.prisma`); a relação com o movimento é
+por `movement_id` (opcional, `SetNull` para não perder o evento se o movimento
+sumir). Além disso, o **resultado da avaliação** é persistido em
+**`Movement.conformityStatus`** (`PENDING` → `CONFORMANT`/`NON_CONFORMANT`; ou
+`NOT_APPLICABLE`), escrito pelo `MovementConformityListener` do módulo
+`movements` ao reagir a `movement.conformity_resolved`.
 
 | Campo | Papel |
 |-------|--------|

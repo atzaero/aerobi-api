@@ -47,6 +47,7 @@ describe('ListMovementsService', () => {
     readingDatetime: new Date('2026-06-08T16:52:39Z'),
     operationType: 'LANDING',
     source: 'AUTOMATIC',
+    conformityStatus: 'PENDING',
     readingStatus: null,
     revisorId: null,
     imageKey: 'readings/2026/06/a.jpg',
@@ -95,6 +96,7 @@ describe('ListMovementsService', () => {
       imageUrl: 'https://signed/a',
       operationType: 'LANDING',
       source: 'AUTOMATIC',
+      conformityStatus: 'PENDING',
     });
   });
 
@@ -124,6 +126,7 @@ describe('ListMovementsService', () => {
       readingStatus?: string;
       operationType?: string;
       source?: string;
+      conformityStatus?: string;
       readingDatetime?: { gte?: Date; lte?: Date };
     };
     let captured: ReadingWhere = {};
@@ -138,6 +141,7 @@ describe('ListMovementsService', () => {
       reading_status: 'APPROVED',
       operation_type: 'TAKEOFF',
       source: 'MANUAL',
+      conformity_status: 'NON_CONFORMANT',
       start_date: '2026-05-01',
       end_date: '2026-05-31',
     });
@@ -148,6 +152,7 @@ describe('ListMovementsService', () => {
     expect(captured.readingStatus).toBe('APPROVED');
     expect(captured.operationType).toBe('TAKEOFF');
     expect(captured.source).toBe('MANUAL');
+    expect(captured.conformityStatus).toBe('NON_CONFORMANT');
     expect(captured.readingDatetime?.gte).toEqual(
       new Date('2026-05-01T00:00:00.000Z'),
     );
@@ -168,6 +173,7 @@ describe('ListMovementsService', () => {
 
     expect(captured).not.toHaveProperty('operationType');
     expect(captured).not.toHaveProperty('source');
+    expect(captured).not.toHaveProperty('conformityStatus');
   });
 
   it('imageUrl null quando o item não tem imageKey', async () => {
