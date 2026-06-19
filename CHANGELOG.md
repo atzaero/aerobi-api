@@ -1,3 +1,10 @@
+# [2.6.0-beta.28](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.27...v2.6.0-beta.28) (2026-06-19)
+
+
+### Features
+
+* **movements:** expõe metadados de exclusão lógica (deletedAt/deletedBy) ([406c4ee](https://github.com/atzaero/aerobi-api/commit/406c4ee59334f34842935a3de0b40d435773a6f6)), closes [atzaero/aerobi-api#339](https://github.com/atzaero/aerobi-api/issues/339)
+
 # [2.6.0-beta.27](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.26...v2.6.0-beta.27) (2026-06-19)
 
 
