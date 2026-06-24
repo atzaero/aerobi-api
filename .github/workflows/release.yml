@@ -69,7 +69,12 @@ jobs:
           # semantic-release (token/rede/plugin) vira job VERMELHO com mensagem,
           # em vez de mascarado como "sem release" (o `| tee` engolia o código de
           # saída). No-release legítimo sai 0 e segue com VERSION vazio. (#166)
-          if ! npx semantic-release 2>&1 | tee release-output.log; then
+          # semantic-release e plugins externos não ficam em devDependencies
+          # (arrastavam o pacote `npm` + undici vulnerável para o npm audit do
+          # projeto). São baixados efemeramente aqui — só o job de release
+          # precisa deles. changelog/git não vêm do core; github/npm/
+          # commit-analyzer/release-notes-generator sim.
+          if ! npx -p semantic-release -p @semantic-release/changelog -p @semantic-release/git semantic-release 2>&1 | tee release-output.log; then
             echo "::error::semantic-release falhou — abortando para não mascarar o crash como 'nenhuma versao publicada'."
             exit 1
           fi
