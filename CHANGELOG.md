@@ -1,3 +1,10 @@
+# [2.6.0-beta.29](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.28...v2.6.0-beta.29) (2026-06-24)
+
+
+### Bug Fixes
+
+* **deps:** elimina cascata js-yaml do npm audit (23 -> 1, prod -> 0) ([27905b8](https://github.com/atzaero/aerobi-api/commit/27905b80f066d8facdee7b92a611e485e62750cd))
+
 # [2.6.0-beta.28](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.27...v2.6.0-beta.28) (2026-06-19)
 
 
