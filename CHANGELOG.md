@@ -1,3 +1,10 @@
+# [2.6.0-beta.30](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.29...v2.6.0-beta.30) (2026-06-24)
+
+
+### Bug Fixes
+
+* **deps:** remove semantic-release das devDeps para zerar o npm audit ([31e6638](https://github.com/atzaero/aerobi-api/commit/31e663880caa1d938824ef0761c169dcb7c5bcbe))
+
 # [2.6.0-beta.29](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.28...v2.6.0-beta.29) (2026-06-24)
 
 
