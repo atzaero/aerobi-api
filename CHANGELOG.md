@@ -1,3 +1,10 @@
+# [2.6.0-beta.31](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.30...v2.6.0-beta.31) (2026-06-25)
+
+
+### Features
+
+* **aerodrome-groups:** PR1/3 — auth real, escopo e paridade de CRUD ([#350](https://github.com/atzaero/aerobi-api/issues/350)) ([18f748f](https://github.com/atzaero/aerobi-api/commit/18f748fdcea11cdabce0dd0f17684161810620da))
+
 # [2.6.0-beta.30](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.29...v2.6.0-beta.30) (2026-06-24)
 
 
