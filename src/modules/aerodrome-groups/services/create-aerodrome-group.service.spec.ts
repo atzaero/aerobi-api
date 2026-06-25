@@ -1,4 +1,5 @@
-import { Uf } from '@/generated/prisma/client';
+import { Uf, UserRole } from '@/generated/prisma/client';
+import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
 import type { CreateAerodromeGroupDTO } from '../dtos/create-aerodrome-group.dto';
 import { buildAerodromeGroupCreateInput } from '../mappers/aerodrome-group.prisma.mapper';
@@ -6,6 +7,12 @@ import type { AerodromeGroupRepository } from '../repositories/aerodrome-group.r
 import { buildAerodromeGroupFixture } from '../testing/aerodrome-group.entity.fixture';
 
 import { CreateAerodromeGroupService } from './create-aerodrome-group.service';
+
+const actor: AuthenticatedUser = {
+  id: 'actor-1',
+  email: 'admin@e',
+  role: UserRole.ADMIN,
+};
 
 describe('CreateAerodromeGroupService', () => {
   let service: CreateAerodromeGroupService;
@@ -17,18 +24,25 @@ describe('CreateAerodromeGroupService', () => {
     service = new CreateAerodromeGroupService(repo);
   });
 
-  it('persistência com prisma mapper', async () => {
+  it('persiste com createdBy = ator autenticado', async () => {
     const dto: CreateAerodromeGroupDTO = {
       uf: Uf.RJ,
       groupName: 'Sul',
     };
-    const saved = buildAerodromeGroupFixture({ uf: Uf.RJ, groupName: 'Sul' });
+    const saved = buildAerodromeGroupFixture({
+      uf: Uf.RJ,
+      groupName: 'Sul',
+      createdBy: actor.id,
+    });
     create.mockResolvedValue(saved);
 
-    const out = await service.execute(dto);
+    const out = await service.execute(dto, actor);
 
-    expect(create).toHaveBeenCalledWith(buildAerodromeGroupCreateInput(dto));
+    expect(create).toHaveBeenCalledWith(
+      buildAerodromeGroupCreateInput(dto, actor.id),
+    );
     expect(out.groupName).toBe('Sul');
     expect(out.uf).toBe(Uf.RJ);
+    expect(out.createdBy).toBe(actor.id);
   });
 });

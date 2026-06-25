@@ -3,14 +3,12 @@ import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
+import { resolveActorGroupScope } from '@/common/utils/group-scope.util';
 import { RefreshTokenRepository } from '@/modules/auth/repositories/refresh-token.repository';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
 import { UserRepository } from '../repositories/user.repository';
-import {
-  isTargetManageableInGroup,
-  resolveActorGroupScope,
-} from '../utils/group-scope.util';
+import { isTargetManageableInGroup } from '../utils/group-scope.util';
 
 /**
  * Soft-delete de User (`deletedAt`). Garante que todos os refresh tokens do user

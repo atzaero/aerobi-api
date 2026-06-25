@@ -6,6 +6,8 @@
  * permitir uso como valor de metadata e como union de string ao mesmo tempo.
  */
 export const GroupScopeSubject = {
+  /** `AerodromeGroup` — o recurso **é** o próprio grupo (`groupId === id`). */
+  AERODROME_GROUP: 'aerodromeGroup',
   /** `OperationalAerodrome` — dono direto do `groupId`. */
   OPERATIONAL_AERODROME: 'operationalAerodrome',
   /** `LandingRequest` — resolve o `groupId` via FK para o aeródromo. */

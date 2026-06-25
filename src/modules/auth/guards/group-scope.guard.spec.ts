@@ -29,20 +29,24 @@ function buildContext(
 
 function buildPrisma(): {
   prisma: PrismaService;
+  aerodromeGroup: { findFirst: jest.Mock };
   operationalAerodrome: { findFirst: jest.Mock };
   landingRequest: { findFirst: jest.Mock };
   user: { findFirst: jest.Mock };
 } {
+  const aerodromeGroup = { findFirst: jest.fn() };
   const operationalAerodrome = { findFirst: jest.fn() };
   const landingRequest = { findFirst: jest.fn() };
   const user = { findFirst: jest.fn() };
 
   return {
     prisma: {
+      aerodromeGroup,
       operationalAerodrome,
       landingRequest,
       user,
     } as unknown as PrismaService,
+    aerodromeGroup,
     operationalAerodrome,
     landingRequest,
     user,
@@ -120,6 +124,30 @@ describe('GroupScopeGuard', () => {
       where: { id: RESOURCE_ID, deletedAt: null },
       select: { groupId: true },
     });
+  });
+
+  it('resolve o próprio grupo quando o recurso É o grupo (AerodromeGroup)', async () => {
+    mockSubject(GroupScopeSubject.AERODROME_GROUP);
+    deps.aerodromeGroup.findFirst.mockResolvedValue({ id: RESOURCE_ID });
+    // O grupo do recurso é o próprio id; o coordinator deve pertencer a ele.
+    deps.user.findFirst.mockResolvedValue({ aerodromeGroupId: RESOURCE_ID });
+
+    await expect(guard.canActivate(buildContext(operator))).resolves.toBe(true);
+    expect(deps.aerodromeGroup.findFirst).toHaveBeenCalledWith({
+      where: { id: RESOURCE_ID, deletedAt: null },
+      select: { id: true },
+    });
+  });
+
+  it('lança FORBIDDEN quando o grupo-alvo não é o do coordinator (AerodromeGroup)', async () => {
+    mockSubject(GroupScopeSubject.AERODROME_GROUP);
+    deps.aerodromeGroup.findFirst.mockResolvedValue({ id: RESOURCE_ID });
+    deps.user.findFirst.mockResolvedValue({ aerodromeGroupId: GROUP_B });
+
+    await expectErrorCode(
+      guard.canActivate(buildContext(operator)),
+      ErrorCode.FORBIDDEN,
+    );
   });
 
   it('resolve o grupo de um recurso filho via FK (LandingRequest)', async () => {

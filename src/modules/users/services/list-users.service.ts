@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 
 import { resolvePaginationParams } from '@/common/utils/pagination-params.util';
+import { resolveActorGroupScope } from '@/common/utils/group-scope.util';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
 import type { ListUsersQueryDto } from '../dtos/list-users-query.dto';
 import { UsersPaginatedResponseDto } from '../dtos/users-paginated-response.dto';
 import { toUserResponse } from '../mappers/user.mapper';
 import { UserRepository } from '../repositories/user.repository';
-import { resolveActorGroupScope } from '../utils/group-scope.util';
 
 @Injectable()
 export class ListUsersService {

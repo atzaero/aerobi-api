@@ -1,34 +1,19 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsBoolean,
-  IsEnum,
-  IsOptional,
-  IsString,
-  MaxLength,
-} from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
 
-import { Uf } from '@/generated/prisma/client';
+import { TrimString } from '@/common/transform';
 
+/**
+ * Edição de grupo alinhada ao `aerobi-web`: apenas `groupName` é mutável. `uf`
+ * é o source-of-truth do estado e permanece imutável aqui (as colunas
+ * `owner_id`/`deletion_requested` continuam no schema, mas saem do contrato de
+ * edição).
+ */
 export class UpdateAerodromeGroupDTO {
-  @ApiPropertyOptional({ enum: Uf })
-  @IsOptional()
-  @IsEnum(Uf)
-  uf?: Uf;
-
-  @ApiPropertyOptional()
-  @IsOptional()
+  @ApiProperty({ description: 'Nome do grupo', example: 'Interior SP' })
+  @TrimString()
   @IsString()
+  @IsNotEmpty()
   @MaxLength(500)
-  groupName?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  ownerId?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsBoolean()
-  deletionRequested?: boolean;
+  groupName!: string;
 }

@@ -24,13 +24,13 @@ describe('FindAerodromeGroupByIdService', () => {
 
   it('sucesso quando existe', async () => {
     findById.mockResolvedValue(buildAerodromeGroupFixture({ id }));
-    await expect(service.execute({ id })).resolves.toMatchObject({ id });
+    await expect(service.execute(id)).resolves.toMatchObject({ id });
   });
 
   it('404 quando falta registo', async () => {
     findById.mockResolvedValue(null);
     try {
-      await service.execute({ id });
+      await service.execute(id);
       throw new Error('expected');
     } catch (e) {
       expect(e).toBeInstanceOf(CustomHttpException);

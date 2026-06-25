@@ -8,8 +8,6 @@ import { AerodromeGroupResponseDTO } from '../dtos/aerodrome-group-response.dto'
 import { AerodromeGroupMapper } from '../mappers/aerodrome-group.mapper';
 import { AerodromeGroupRepository } from '../repositories/aerodrome-group.repository';
 
-export type FindAerodromeGroupByIdServiceInput = { id: string };
-
 @Injectable()
 export class FindAerodromeGroupByIdService {
   constructor(
@@ -17,15 +15,13 @@ export class FindAerodromeGroupByIdService {
     private readonly errorMessageService: ErrorMessageService,
   ) {}
 
-  async execute(
-    input: FindAerodromeGroupByIdServiceInput,
-  ): Promise<AerodromeGroupResponseDTO> {
-    const entity = await this.repo.findById(input.id);
+  async execute(id: string): Promise<AerodromeGroupResponseDTO> {
+    const entity = await this.repo.findById(id);
     if (!entity) {
       throw new CustomHttpException(
         this.errorMessageService.getMessage(ErrorCode.RESOURCE_NOT_FOUND, {
           RESOURCE: 'Grupo de aeródromos',
-          ID: input.id,
+          ID: id,
         }),
         HttpStatus.NOT_FOUND,
         ErrorCode.RESOURCE_NOT_FOUND,

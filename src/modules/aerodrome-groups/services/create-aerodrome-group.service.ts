@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
+import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
+
 import { AerodromeGroupResponseDTO } from '../dtos/aerodrome-group-response.dto';
 import { CreateAerodromeGroupDTO } from '../dtos/create-aerodrome-group.dto';
 import { AerodromeGroupMapper } from '../mappers/aerodrome-group.mapper';
@@ -12,8 +14,11 @@ export class CreateAerodromeGroupService {
 
   async execute(
     dto: CreateAerodromeGroupDTO,
+    actor: AuthenticatedUser,
   ): Promise<AerodromeGroupResponseDTO> {
-    const created = await this.repo.create(buildAerodromeGroupCreateInput(dto));
+    const created = await this.repo.create(
+      buildAerodromeGroupCreateInput(dto, actor.id),
+    );
     return AerodromeGroupMapper.toApiRow(created);
   }
 }

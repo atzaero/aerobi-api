@@ -1,13 +1,20 @@
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
-import { Uf } from '@/generated/prisma/client';
+import { UserRole } from '@/generated/prisma/client';
+import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
 import { patchAerodromeGroupToPrisma } from '../mappers/aerodrome-group.prisma.mapper';
 import type { AerodromeGroupRepository } from '../repositories/aerodrome-group.repository';
 import { buildAerodromeGroupFixture } from '../testing/aerodrome-group.entity.fixture';
 
 import { UpdateAerodromeGroupService } from './update-aerodrome-group.service';
+
+const actor: AuthenticatedUser = {
+  id: 'actor-1',
+  email: 'admin@e',
+  role: UserRole.ADMIN,
+};
 
 describe('UpdateAerodromeGroupService', () => {
   let service: UpdateAerodromeGroupService;
@@ -26,7 +33,7 @@ describe('UpdateAerodromeGroupService', () => {
   it('404 sem registo', async () => {
     findById.mockResolvedValue(null);
     try {
-      await service.execute({ id, groupName: 'X' });
+      await service.execute(id, { groupName: 'X' }, actor);
       throw new Error('expected');
     } catch (e) {
       expect(e).toBeInstanceOf(CustomHttpException);
@@ -37,22 +44,18 @@ describe('UpdateAerodromeGroupService', () => {
     expect(update).not.toHaveBeenCalled();
   });
 
-  it('patch prisma', async () => {
+  it('edita só groupName e grava updatedBy = ator', async () => {
     findById.mockResolvedValue(buildAerodromeGroupFixture({ id }));
     const updated = buildAerodromeGroupFixture({
       id,
       groupName: 'Novo nome',
-      uf: Uf.MG,
+      updatedBy: actor.id,
     });
     update.mockResolvedValue(updated);
-    await service.execute({
-      id,
-      groupName: 'Novo nome',
-      uf: Uf.MG,
-    });
+    await service.execute(id, { groupName: 'Novo nome' }, actor);
     expect(update).toHaveBeenCalledWith(
       id,
-      patchAerodromeGroupToPrisma({ groupName: 'Novo nome', uf: Uf.MG }),
+      patchAerodromeGroupToPrisma({ groupName: 'Novo nome' }, actor.id),
     );
   });
 });
