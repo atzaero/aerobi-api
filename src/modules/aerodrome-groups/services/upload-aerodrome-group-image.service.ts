@@ -13,6 +13,7 @@ import { AerodromeGroupImageRepository } from '../repositories/aerodrome-group-i
 import { AerodromeGroupRepository } from '../repositories/aerodrome-group.repository';
 import {
   buildAerodromeGroupImageKey,
+  detectImageMimetype,
   isAllowedImageMimetype,
   MAX_GROUP_IMAGE_SIZE_BYTES,
 } from '../utils/aerodrome-group-image';
@@ -43,11 +44,24 @@ export class UploadAerodromeGroupImageService {
     if (!image) {
       throw this.validation('a imagem é obrigatória (campo `image`)');
     }
+    if (image.size === 0) {
+      throw this.validation('a imagem não pode estar vazia (0 bytes)');
+    }
     if (!isAllowedImageMimetype(image.mimetype)) {
       throw this.validation('a imagem deve ser jpg, png ou webp');
     }
     if (image.size > MAX_GROUP_IMAGE_SIZE_BYTES) {
       throw this.validation('a imagem excede o limite de 5 MB');
+    }
+    /**
+     * O `mimetype` do Multer vem do header `Content-Type` da parte multipart e é
+     * forjável; valida o conteúdo real por magic bytes e cruza com o declarado.
+     * Rejeita bytes arbitrários, polyglots e extensão/tipo divergente.
+     */
+    if (detectImageMimetype(image.buffer) !== image.mimetype) {
+      throw this.validation(
+        'o conteúdo do arquivo não corresponde a uma imagem jpg, png ou webp',
+      );
     }
 
     const key = buildAerodromeGroupImageKey(groupId, image.mimetype);
