@@ -1,3 +1,10 @@
+# [2.6.0-beta.33](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.32...v2.6.0-beta.33) (2026-06-25)
+
+
+### Features
+
+* **aerodrome-groups:** PR3/3 — imagem do grupo via MinIO ([#350](https://github.com/atzaero/aerobi-api/issues/350)) ([e42e83c](https://github.com/atzaero/aerobi-api/commit/e42e83c37c0b7a251bcb3ac1e13b812ddef41634))
+
 # [2.6.0-beta.32](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.31...v2.6.0-beta.32) (2026-06-25)
 
 
