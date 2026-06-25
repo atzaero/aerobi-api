@@ -40,4 +40,39 @@ describe('csv.util', () => {
     expect(toCsv([{ v: 'a"b' }], c)).toBe(`${BOM}V\r\n"a""b"`);
     expect(toCsv([{ v: 'a\nb' }], c)).toBe(`${BOM}V\r\n"a\nb"`);
   });
+
+  describe('neutraliza CSV/formula injection', () => {
+    const c: CsvColumn<{ v: string }>[] = [
+      { header: 'V', accessor: (r) => r.v },
+    ];
+
+    it('prefixa com apóstrofo strings iniciando com = + - @', () => {
+      expect(toCsv([{ v: '=HYPERLINK("http://evil","x")' }], c)).toBe(
+        `${BOM}V\r\n"'=HYPERLINK(""http://evil"",""x"")"`,
+      );
+      expect(toCsv([{ v: '+1' }], c)).toBe(`${BOM}V\r\n'+1`);
+      expect(toCsv([{ v: '-1+2' }], c)).toBe(`${BOM}V\r\n'-1+2`);
+      expect(toCsv([{ v: '@cmd' }], c)).toBe(`${BOM}V\r\n'@cmd`);
+    });
+
+    it('prefixa strings iniciando com tab ou CR', () => {
+      expect(toCsv([{ v: '\t=1' }], c)).toBe(`${BOM}V\r\n'\t=1`);
+      expect(toCsv([{ v: '\rfoo' }], c)).toBe(`${BOM}V\r\n"'\rfoo"`);
+    });
+
+    it('combina neutralização com escape RFC 4180 (vírgula)', () => {
+      expect(toCsv([{ v: '=cmd(),x' }], c)).toBe(`${BOM}V\r\n"'=cmd(),x"`);
+    });
+
+    it('não prefixa números negativos (vêm de String(number), seguros)', () => {
+      const nc: CsvColumn<{ n: number }>[] = [
+        { header: 'N', accessor: (r) => r.n },
+      ];
+      expect(toCsv([{ n: -5 }], nc)).toBe(`${BOM}N\r\n-5`);
+    });
+
+    it('não prefixa strings sem gatilho de fórmula', () => {
+      expect(toCsv([{ v: 'foo=bar' }], c)).toBe(`${BOM}V\r\nfoo=bar`);
+    });
+  });
 });
