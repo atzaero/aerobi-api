@@ -32,14 +32,38 @@ const UTF8_BOM = '\uFEFF';
 const ROW_SEPARATOR = '\r\n';
 
 /**
- * Escapa uma célula conforme RFC 4180: envolve em aspas duplas quando contém
- * vírgula, aspas ou quebra de linha, e duplica as aspas internas.
- * `null`/`undefined` viram string vazia; números viram sua representação
- * decimal.
+ * Caracteres que, no início de uma célula de texto, levam Excel/LibreOffice/
+ * Google Sheets a interpretarem o conteúdo como fórmula (CSV/formula
+ * injection): os gatilhos clássicos `= + - @` e os whitespaces de controle
+ * `\t`/`\r`, que alguns parsers também tratam como prefixo de fórmula.
+ */
+const FORMULA_INJECTION_TRIGGERS = ['=', '+', '-', '@', '\t', '\r'];
+
+/**
+ * Neutraliza CSV/formula injection: quando a string começa com um gatilho de
+ * fórmula, prefixa com apóstrofo (`'`) — convenção que faz o spreadsheet
+ * tratar a célula como texto literal, anulando a avaliação sem alterar o valor
+ * visível. Aplicado apenas a strings (campos de texto livre vindos da API, ex.:
+ * `name`, `ownerId`, `createdBy`); os números vêm da nossa própria
+ * `String(number)` e nunca são vetor de injeção.
+ */
+function neutralizeFormulaInjection(str: string): string {
+  if (str.length > 0 && FORMULA_INJECTION_TRIGGERS.includes(str[0])) {
+    return `'${str}`;
+  }
+  return str;
+}
+
+/**
+ * Escapa uma célula: primeiro neutraliza formula injection (strings), depois
+ * aplica RFC 4180 — envolve em aspas duplas quando contém vírgula, aspas ou
+ * quebra de linha, e duplica as aspas internas. `null`/`undefined` viram string
+ * vazia; números viram sua representação decimal (sem guard, pois são seguros).
  */
 function escapeCell(value: CsvCellValue): string {
   if (value === null || value === undefined) return '';
-  const str = typeof value === 'number' ? String(value) : value;
+  if (typeof value === 'number') return String(value);
+  const str = neutralizeFormulaInjection(value);
   if (/[",\r\n]/.test(str)) {
     return `"${str.replace(/"/g, '""')}"`;
   }
