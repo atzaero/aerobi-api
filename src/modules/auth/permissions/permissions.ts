@@ -55,13 +55,16 @@ export const PERMISSIONS: Record<
   AuthzSubject,
   Partial<Record<AuthzAction, readonly UserRole[]>>
 > = {
-  // Grupos: criados/editados/removidos só por admin; coordinator apenas lê.
+  // Grupos: criados/editados/removidos só por admin; coordinator lê e exporta
+  // (export espelha o list — coordinator exporta apenas o próprio grupo, com o
+  // escopo resolvido no service).
   group: {
     list: [UserRole.ADMIN, UserRole.COORDINATOR],
     read: [UserRole.ADMIN, UserRole.COORDINATOR],
     create: [UserRole.ADMIN],
     update: [UserRole.ADMIN],
     delete: [UserRole.ADMIN],
+    export: [UserRole.ADMIN, UserRole.COORDINATOR],
   },
   // Usuários: admin cadastra admin/coordinator; coordinator adiciona/remove
   // operator/técnico — o recorte por **role-alvo** é validado na action, não

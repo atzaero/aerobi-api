@@ -42,6 +42,7 @@ const EXPECTED: Record<
     create: [UserRole.ADMIN],
     update: [UserRole.ADMIN],
     delete: [UserRole.ADMIN],
+    export: [UserRole.ADMIN, UserRole.COORDINATOR],
   },
   user: {
     list: [UserRole.ADMIN, UserRole.COORDINATOR],
@@ -288,6 +289,7 @@ describe('permissionsForRole — projeção da matriz por papel', () => {
       'create',
       'update',
       'delete',
+      'export',
     ]);
   });
 });
