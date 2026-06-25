@@ -27,11 +27,11 @@ describe('CreateAerodromeGroupService', () => {
   it('persiste com createdBy = ator autenticado', async () => {
     const dto: CreateAerodromeGroupDTO = {
       uf: Uf.RJ,
-      groupName: 'Sul',
+      name: 'Sul',
     };
     const saved = buildAerodromeGroupFixture({
       uf: Uf.RJ,
-      groupName: 'Sul',
+      name: 'Sul',
       createdBy: actor.id,
     });
     create.mockResolvedValue(saved);
@@ -41,7 +41,7 @@ describe('CreateAerodromeGroupService', () => {
     expect(create).toHaveBeenCalledWith(
       buildAerodromeGroupCreateInput(dto, actor.id),
     );
-    expect(out.groupName).toBe('Sul');
+    expect(out.name).toBe('Sul');
     expect(out.uf).toBe(Uf.RJ);
     expect(out.createdBy).toBe(actor.id);
   });

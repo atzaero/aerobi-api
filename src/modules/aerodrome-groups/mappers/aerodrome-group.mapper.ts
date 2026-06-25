@@ -8,7 +8,7 @@ export class AerodromeGroupMapper {
     const row = new AerodromeGroupResponseDTO();
     row.id = entity.id;
     row.uf = entity.uf;
-    row.groupName = entity.groupName;
+    row.name = entity.name;
     row.ownerId = entity.ownerId;
     row.deletionRequested = entity.deletionRequested;
     row.createdAt = entity.createdAt.toISOString();

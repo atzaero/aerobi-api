@@ -13,7 +13,7 @@ export function buildAerodromeGroupCreateInput(
 ): Prisma.AerodromeGroupCreateInput {
   return {
     uf: dto.uf,
-    groupName: dto.groupName,
+    name: dto.name,
     ownerId: dto.ownerId,
     deletionRequested: dto.deletionRequested,
     createdBy,
@@ -21,7 +21,7 @@ export function buildAerodromeGroupCreateInput(
 }
 
 /**
- * Monta o patch de edição. Alinhado ao web: só `groupName` é editável;
+ * Monta o patch de edição. Alinhado ao web: só `name` é editável;
  * `updatedBy` recebe o ator autenticado.
  */
 export function patchAerodromeGroupToPrisma(
@@ -29,7 +29,7 @@ export function patchAerodromeGroupToPrisma(
   updatedBy: string,
 ): Prisma.AerodromeGroupUpdateInput {
   return {
-    groupName: dto.groupName,
+    name: dto.name,
     updatedBy,
   };
 }

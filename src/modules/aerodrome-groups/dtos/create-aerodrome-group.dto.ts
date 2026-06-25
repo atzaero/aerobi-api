@@ -25,7 +25,7 @@ export class CreateAerodromeGroupDTO {
   @IsString()
   @IsNotEmpty()
   @MaxLength(500)
-  groupName!: string;
+  name!: string;
 
   @ApiPropertyOptional({
     description: 'Identificador do proprietário (legado Firebase owner)',

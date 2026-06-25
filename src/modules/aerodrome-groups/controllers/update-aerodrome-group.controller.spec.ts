@@ -29,7 +29,7 @@ describe('UpdateAerodromeGroupController', () => {
     const params: AerodromeGroupParamDTO = {
       id: '44444444-4444-4444-8444-444444444444',
     };
-    const body: UpdateAerodromeGroupDTO = { groupName: 'X' };
+    const body: UpdateAerodromeGroupDTO = { name: 'X' };
     const row = new AerodromeGroupResponseDTO();
     execute.mockResolvedValue(row);
     await expect(controller.handle(params, body, actor)).resolves.toBe(row);

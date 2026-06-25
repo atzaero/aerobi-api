@@ -33,7 +33,7 @@ describe('UpdateAerodromeGroupService', () => {
   it('404 sem registo', async () => {
     findById.mockResolvedValue(null);
     try {
-      await service.execute(id, { groupName: 'X' }, actor);
+      await service.execute(id, { name: 'X' }, actor);
       throw new Error('expected');
     } catch (e) {
       expect(e).toBeInstanceOf(CustomHttpException);
@@ -44,18 +44,18 @@ describe('UpdateAerodromeGroupService', () => {
     expect(update).not.toHaveBeenCalled();
   });
 
-  it('edita só groupName e grava updatedBy = ator', async () => {
+  it('edita só name e grava updatedBy = ator', async () => {
     findById.mockResolvedValue(buildAerodromeGroupFixture({ id }));
     const updated = buildAerodromeGroupFixture({
       id,
-      groupName: 'Novo nome',
+      name: 'Novo nome',
       updatedBy: actor.id,
     });
     update.mockResolvedValue(updated);
-    await service.execute(id, { groupName: 'Novo nome' }, actor);
+    await service.execute(id, { name: 'Novo nome' }, actor);
     expect(update).toHaveBeenCalledWith(
       id,
-      patchAerodromeGroupToPrisma({ groupName: 'Novo nome' }, actor.id),
+      patchAerodromeGroupToPrisma({ name: 'Novo nome' }, actor.id),
     );
   });
 });

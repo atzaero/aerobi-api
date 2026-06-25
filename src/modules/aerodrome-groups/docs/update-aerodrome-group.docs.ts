@@ -17,7 +17,7 @@ export function UpdateAerodromeGroupDocs() {
     ApiOperation({
       summary: 'Atualiza um(a) AerodromeGroup por id',
       description:
-        'Requer `group:update` (ADMIN). Apenas `groupName` é editável; ' +
+        'Requer `group:update` (ADMIN). Apenas `name` é editável; ' +
         '`updatedBy` recebe o usuário autenticado.',
     }),
     ApiParam({ name: 'id', format: 'uuid', description: 'Identificador' }),

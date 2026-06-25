@@ -44,7 +44,7 @@ export class ListAerodromeGroupsService {
       where.uf = query.uf;
     }
     if (query.name !== undefined) {
-      where.groupName = { contains: query.name, mode: 'insensitive' };
+      where.name = { contains: query.name, mode: 'insensitive' };
     }
     /** O grupo do coordinator **é** o registro: força o id ao próprio grupo. */
     if (scope.kind === 'group') {

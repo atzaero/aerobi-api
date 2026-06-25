@@ -27,7 +27,7 @@ describe('CreateAerodromeGroupController', () => {
   it('delega passando o ator autenticado', async () => {
     const dto: CreateAerodromeGroupDTO = {
       uf: Uf.SP,
-      groupName: 'G',
+      name: 'G',
     };
     const row = new AerodromeGroupResponseDTO();
     execute.mockResolvedValue(row);

@@ -47,7 +47,7 @@ describe('ListAerodromeGroupsService', () => {
     await service.execute({ uf: Uf.SP, name: 'int' }, admin);
     const w = {
       uf: Uf.SP,
-      groupName: { contains: 'int', mode: 'insensitive' },
+      name: { contains: 'int', mode: 'insensitive' },
     };
     expect(findMany).toHaveBeenCalledWith(w, 0, 10);
     expect(count).toHaveBeenCalledWith(w);
@@ -59,7 +59,7 @@ describe('ListAerodromeGroupsService', () => {
     count.mockResolvedValue(0);
     await service.execute({ name: 'x' }, coordinator);
     const w = {
-      groupName: { contains: 'x', mode: 'insensitive' },
+      name: { contains: 'x', mode: 'insensitive' },
       id: 'group-9',
     };
     expect(findMany).toHaveBeenCalledWith(w, 0, 10);

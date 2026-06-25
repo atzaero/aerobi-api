@@ -9,7 +9,7 @@ export function buildAerodromeGroupFixture(
   return {
     id: '11111111-1111-4111-8111-111111111111',
     uf: Uf.SP,
-    groupName: 'Interior',
+    name: 'Interior',
     ownerId: null,
     deletionRequested: false,
     createdAt: t,
