@@ -1,3 +1,10 @@
+# [2.6.0-beta.34](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.33...v2.6.0-beta.34) (2026-06-25)
+
+
+### Bug Fixes
+
+* **common:** neutraliza formula/CSV injection no escapeCell ([271744e](https://github.com/atzaero/aerobi-api/commit/271744e28482a0d4d8e7a7b8fc83ca106012a153)), closes [#390](https://github.com/atzaero/aerobi-api/issues/390)
+
 # [2.6.0-beta.33](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.32...v2.6.0-beta.33) (2026-06-25)
 
 
