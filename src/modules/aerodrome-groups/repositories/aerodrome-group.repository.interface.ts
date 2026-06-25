@@ -18,6 +18,13 @@ export interface IAerodromeGroupRepository {
 
   count(where: Prisma.AerodromeGroupWhereInput): Promise<number>;
 
-  /** Soft delete usando campos de auditoria deletedAt/deletedBy. */
-  softDelete(id: string, deletedBy: string): Promise<AerodromeGroup>;
+  /**
+   * Soft delete (deletedAt/deletedBy) do grupo + cascata transacional: fecha os
+   * aeródromos operacionais ativos do grupo. Devolve o grupo e a contagem de
+   * aeródromos afetados.
+   */
+  softDeleteWithCascade(
+    id: string,
+    deletedBy: string,
+  ): Promise<{ group: AerodromeGroup; affectedAerodromes: number }>;
 }

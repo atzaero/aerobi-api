@@ -3,22 +3,31 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Uf } from '@/generated/prisma/client';
 
 export class AerodromeGroupResponseDTO {
-  @ApiProperty({ format: 'uuid' })
+  @ApiProperty({
+    format: 'uuid',
+    example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+  })
   id!: string;
 
-  @ApiProperty({ enum: Uf })
+  @ApiProperty({ enum: Uf, example: Uf.SP })
   uf!: Uf;
 
-  @ApiProperty()
-  groupName!: string;
+  @ApiProperty({ example: 'Interior SP' })
+  name!: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    description: 'Identificador do proprietário (legado Firebase owner).',
+    example: null,
+  })
   ownerId!: string | null;
 
   @ApiPropertyOptional({
-    nullable: true,
-    description: 'Pedido de eliminação registado para o grupo',
     type: Boolean,
+    nullable: true,
+    description: 'Pedido de eliminação registado para o grupo.',
+    example: false,
   })
   deletionRequested!: boolean | null;
 
@@ -34,11 +43,7 @@ export class AerodromeGroupResponseDTO {
   @ApiPropertyOptional({ type: String, nullable: true })
   updatedBy!: string | null;
 
-  @ApiPropertyOptional({
-    nullable: true,
-    type: String,
-    format: 'date-time',
-  })
+  @ApiPropertyOptional({ type: String, nullable: true, format: 'date-time' })
   deletedAt!: string | null;
 
   @ApiPropertyOptional({ type: String, nullable: true })

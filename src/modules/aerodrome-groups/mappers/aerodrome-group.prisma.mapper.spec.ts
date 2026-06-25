@@ -10,27 +10,27 @@ import {
 describe('aerodrome-group prisma mapper', () => {
   const createDto = (): CreateAerodromeGroupDTO => ({
     uf: Uf.SP,
-    groupName: 'Grupo Norte',
+    name: 'Grupo Norte',
     ownerId: 'owner',
     deletionRequested: false,
   });
 
-  it('build copia todos os campos do create dto', () => {
-    expect(buildAerodromeGroupCreateInput(createDto())).toMatchObject({
+  it('build copia os campos do create dto + createdBy do ator', () => {
+    expect(
+      buildAerodromeGroupCreateInput(createDto(), 'actor-1'),
+    ).toMatchObject({
       uf: Uf.SP,
-      groupName: 'Grupo Norte',
+      name: 'Grupo Norte',
       ownerId: 'owner',
       deletionRequested: false,
+      createdBy: 'actor-1',
     });
   });
 
-  it('patch inclui apenas campos com !== undefined', () => {
-    expect(patchAerodromeGroupToPrisma({ uf: Uf.RJ })).toEqual({
-      uf: Uf.RJ,
+  it('patch edita só name e grava updatedBy', () => {
+    expect(patchAerodromeGroupToPrisma({ name: 'X' }, 'actor-1')).toEqual({
+      name: 'X',
+      updatedBy: 'actor-1',
     });
-  });
-
-  it('patch vazio', () => {
-    expect(patchAerodromeGroupToPrisma({})).toEqual({});
   });
 });

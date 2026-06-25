@@ -1,5 +1,6 @@
 import type { AerodromeGroup } from '@/generated/prisma/client';
 
+import { AerodromeGroupDeletionResponseDTO } from '../dtos/aerodrome-group-deletion-response.dto';
 import { AerodromeGroupResponseDTO } from '../dtos/aerodrome-group-response.dto';
 
 export class AerodromeGroupMapper {
@@ -7,7 +8,7 @@ export class AerodromeGroupMapper {
     const row = new AerodromeGroupResponseDTO();
     row.id = entity.id;
     row.uf = entity.uf;
-    row.groupName = entity.groupName;
+    row.name = entity.name;
     row.ownerId = entity.ownerId;
     row.deletionRequested = entity.deletionRequested;
     row.createdAt = entity.createdAt.toISOString();
@@ -21,5 +22,20 @@ export class AerodromeGroupMapper {
 
   static toApiRows(entities: AerodromeGroup[]): AerodromeGroupResponseDTO[] {
     return entities.map((e) => AerodromeGroupMapper.toApiRow(e));
+  }
+
+  /**
+   * Projeção do soft-delete: o grupo removido + a contagem de aeródromos
+   * fechados na cascata.
+   */
+  static toDeletionResult(
+    entity: AerodromeGroup,
+    affectedAerodromes: number,
+  ): AerodromeGroupDeletionResponseDTO {
+    return Object.assign(
+      new AerodromeGroupDeletionResponseDTO(),
+      AerodromeGroupMapper.toApiRow(entity),
+      { affectedAerodromes },
+    );
   }
 }

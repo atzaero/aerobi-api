@@ -1,7 +1,14 @@
 import { Body, Controller, Param, Patch, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
-import { AerobiApiKeyGuard } from '@/common/guards/aerobi-api-key.guard';
+import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator';
+import { RequirePermission } from '@/modules/auth/decorators/require-permission.decorator';
+import { RequiresGroupScope } from '@/modules/auth/decorators/requires-group-scope.decorator';
+import { GroupScopeGuard } from '@/modules/auth/guards/group-scope.guard';
+import { GroupScopeSubject } from '@/modules/auth/guards/group-scope.subject';
+import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
+import { PermissionsGuard } from '@/modules/auth/guards/permissions.guard';
+import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
 import { UpdateAerodromeGroupDocs } from '../docs/update-aerodrome-group.docs';
 import { AerodromeGroupParamDTO } from '../dtos/aerodrome-group-param.dto';
@@ -11,16 +18,19 @@ import { UpdateAerodromeGroupService } from '../services/update-aerodrome-group.
 
 @ApiTags('Aerodrome Groups')
 @Controller('aerodrome-groups')
-@UseGuards(AerobiApiKeyGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard, GroupScopeGuard)
 export class UpdateAerodromeGroupController {
   constructor(private readonly service: UpdateAerodromeGroupService) {}
 
-  @Patch(':aerodromeGroupId')
+  @Patch(':id')
+  @RequirePermission('group', 'update')
+  @RequiresGroupScope(GroupScopeSubject.AERODROME_GROUP)
   @UpdateAerodromeGroupDocs()
   handle(
-    @Param() params: AerodromeGroupParamDTO,
+    @Param() { id }: AerodromeGroupParamDTO,
     @Body() dto: UpdateAerodromeGroupDTO,
+    @CurrentUser() actor: AuthenticatedUser,
   ): Promise<AerodromeGroupResponseDTO> {
-    return this.service.execute({ id: params.aerodromeGroupId, ...dto });
+    return this.service.execute(id, dto, actor);
   }
 }

@@ -17,11 +17,11 @@ describe('FindAerodromeGroupByIdController', () => {
 
   it('id a partir do param', async () => {
     const params: AerodromeGroupParamDTO = {
-      aerodromeGroupId: '44444444-4444-4444-8444-444444444444',
+      id: '44444444-4444-4444-8444-444444444444',
     };
     const row = new AerodromeGroupResponseDTO();
     execute.mockResolvedValue(row);
     await expect(controller.handle(params)).resolves.toBe(row);
-    expect(execute).toHaveBeenCalledWith({ id: params.aerodromeGroupId });
+    expect(execute).toHaveBeenCalledWith(params.id);
   });
 });

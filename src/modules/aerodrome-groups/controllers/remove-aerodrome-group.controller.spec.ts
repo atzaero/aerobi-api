@@ -1,8 +1,17 @@
+import { UserRole } from '@/generated/prisma/client';
+import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
+
+import { AerodromeGroupDeletionResponseDTO } from '../dtos/aerodrome-group-deletion-response.dto';
 import { AerodromeGroupParamDTO } from '../dtos/aerodrome-group-param.dto';
-import { AerodromeGroupResponseDTO } from '../dtos/aerodrome-group-response.dto';
 import type { RemoveAerodromeGroupService } from '../services/remove-aerodrome-group.service';
 
 import { RemoveAerodromeGroupController } from './remove-aerodrome-group.controller';
+
+const actor: AuthenticatedUser = {
+  id: 'actor-1',
+  email: 'admin@e',
+  role: UserRole.ADMIN,
+};
 
 describe('RemoveAerodromeGroupController', () => {
   let controller: RemoveAerodromeGroupController;
@@ -15,16 +24,13 @@ describe('RemoveAerodromeGroupController', () => {
     } as unknown as RemoveAerodromeGroupService);
   });
 
-  it('deletedBy system', async () => {
+  it('delega id e ator (deletedBy real, sem "system")', async () => {
     const params: AerodromeGroupParamDTO = {
-      aerodromeGroupId: '44444444-4444-4444-8444-444444444444',
+      id: '44444444-4444-4444-8444-444444444444',
     };
-    const row = new AerodromeGroupResponseDTO();
+    const row = new AerodromeGroupDeletionResponseDTO();
     execute.mockResolvedValue(row);
-    await expect(controller.handle(params)).resolves.toBe(row);
-    expect(execute).toHaveBeenCalledWith({
-      id: params.aerodromeGroupId,
-      deletedBy: 'system',
-    });
+    await expect(controller.handle(params, actor)).resolves.toBe(row);
+    expect(execute).toHaveBeenCalledWith(params.id, actor);
   });
 });

@@ -44,7 +44,7 @@ export class AerodromeGroupRepository implements IAerodromeGroupRepository {
       },
       skip,
       take,
-      orderBy: { updatedAt: 'desc' },
+      orderBy: { createdAt: 'desc' },
     });
   }
 
@@ -56,14 +56,36 @@ export class AerodromeGroupRepository implements IAerodromeGroupRepository {
     });
   }
 
-  softDelete(id: string, deletedBy: string): Promise<AerodromeGroup> {
-    return this.prisma.aerodromeGroup.update({
-      where: { id, ...activeWhere },
-      data: {
-        deletedAt: new Date(),
-        deletedBy,
-        updatedBy: deletedBy,
-      },
+  /**
+   * Soft-delete do grupo + cascata (espelha o `aerobi-web`): na mesma transação,
+   * fecha os aeródromos operacionais ativos do grupo (`isOpen=false`,
+   * `isView=false`). Devolve o grupo removido e quantos aeródromos foram
+   * afetados.
+   */
+  async softDeleteWithCascade(
+    id: string,
+    deletedBy: string,
+  ): Promise<{ group: AerodromeGroup; affectedAerodromes: number }> {
+    return this.prisma.$transaction(async (tx) => {
+      const group = await tx.aerodromeGroup.update({
+        where: { id, ...activeWhere },
+        data: {
+          deletedAt: new Date(),
+          deletedBy,
+          updatedBy: deletedBy,
+        },
+      });
+
+      const { count } = await tx.operationalAerodrome.updateMany({
+        where: { groupId: id, deletedAt: null },
+        data: {
+          isOpen: false,
+          isView: false,
+          updatedBy: deletedBy,
+        },
+      });
+
+      return { group, affectedAerodromes: count };
     });
   }
 }

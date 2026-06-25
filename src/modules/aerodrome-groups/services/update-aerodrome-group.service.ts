@@ -3,16 +3,13 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { ErrorCode } from '@/common/enums/error-code.enum';
+import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
 import { AerodromeGroupResponseDTO } from '../dtos/aerodrome-group-response.dto';
 import { UpdateAerodromeGroupDTO } from '../dtos/update-aerodrome-group.dto';
 import { AerodromeGroupMapper } from '../mappers/aerodrome-group.mapper';
 import { patchAerodromeGroupToPrisma } from '../mappers/aerodrome-group.prisma.mapper';
 import { AerodromeGroupRepository } from '../repositories/aerodrome-group.repository';
-
-export type UpdateAerodromeGroupServiceInput = UpdateAerodromeGroupDTO & {
-  id: string;
-};
 
 @Injectable()
 export class UpdateAerodromeGroupService {
@@ -22,9 +19,14 @@ export class UpdateAerodromeGroupService {
   ) {}
 
   async execute(
-    input: UpdateAerodromeGroupServiceInput,
+    id: string,
+    dto: UpdateAerodromeGroupDTO,
+    actor: AuthenticatedUser,
   ): Promise<AerodromeGroupResponseDTO> {
-    const { id, ...dto } = input;
+    /**
+     * O `GroupScopeGuard` valida escopo/existência para COORDINATOR, mas faz
+     * bypass para ADMIN — por isso a checagem de existência (404) permanece aqui.
+     */
     const existing = await this.repo.findById(id);
     if (!existing) {
       throw new CustomHttpException(
@@ -38,7 +40,7 @@ export class UpdateAerodromeGroupService {
     }
     const updated = await this.repo.update(
       id,
-      patchAerodromeGroupToPrisma(dto),
+      patchAerodromeGroupToPrisma(dto, actor.id),
     );
     return AerodromeGroupMapper.toApiRow(updated);
   }

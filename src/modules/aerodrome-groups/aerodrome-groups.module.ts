@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
-import { AerobiApiKeyGuard } from '@/common/guards/aerobi-api-key.guard';
+import { AuthModule } from '@/modules/auth/auth.module';
+import { UsersModule } from '@/modules/users/users.module';
 import { PrismaModule } from '@/prisma/prisma.module';
 
 import { CreateAerodromeGroupController } from './controllers/create-aerodrome-group.controller';
@@ -17,8 +18,13 @@ import { ListAerodromeGroupsService } from './services/list-aerodrome-groups.ser
 import { RemoveAerodromeGroupService } from './services/remove-aerodrome-group.service';
 import { UpdateAerodromeGroupService } from './services/update-aerodrome-group.service';
 
+/**
+ * Importa `AuthModule` (guards JWT/permissões/escopo via `@UseGuards`) e
+ * `UsersModule` (`UserRepository`, para o lookup do escopo do coordinator na
+ * listagem).
+ */
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, AuthModule, UsersModule],
   controllers: [
     CreateAerodromeGroupController,
     UpdateAerodromeGroupController,
@@ -27,7 +33,6 @@ import { UpdateAerodromeGroupService } from './services/update-aerodrome-group.s
     RemoveAerodromeGroupController,
   ],
   providers: [
-    AerobiApiKeyGuard,
     AerodromeGroupRepository,
     CreateAerodromeGroupService,
     UpdateAerodromeGroupService,

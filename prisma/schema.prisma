@@ -243,7 +243,7 @@ enum FeedbackRating {
 model AerodromeGroup {
   id                String   @id @default(uuid()) @db.Uuid
   uf                Uf
-  groupName         String   @map("group_name")
+  name              String   @map("group_name")
   ownerId           String?  @map("owner_id")
   deletionRequested Boolean? @map("deletion_requested")
 

@@ -5,6 +5,7 @@ import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { maskEmail } from '@/common/utils/mask-email.util';
+import { resolveActorGroupScope } from '@/common/utils/group-scope.util';
 import { UserRole } from '@/generated/prisma/client';
 import { InviteTokenService } from '@/modules/tokens/services/invite-token.service';
 
@@ -15,10 +16,7 @@ import {
 } from '../events/user-invited.event';
 import { toUserResponse } from '../mappers/user.mapper';
 import { UserRepository } from '../repositories/user.repository';
-import {
-  isTargetManageableInGroup,
-  resolveActorGroupScope,
-} from '../utils/group-scope.util';
+import { isTargetManageableInGroup } from '../utils/group-scope.util';
 
 export interface ResendInviteInput {
   /** Id do user pendente que receberá o novo convite. */

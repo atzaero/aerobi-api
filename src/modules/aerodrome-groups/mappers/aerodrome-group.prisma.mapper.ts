@@ -3,27 +3,33 @@ import type { Prisma } from '@/generated/prisma/client';
 import { CreateAerodromeGroupDTO } from '../dtos/create-aerodrome-group.dto';
 import { UpdateAerodromeGroupDTO } from '../dtos/update-aerodrome-group.dto';
 
+/**
+ * Monta o input de criação. `createdBy` é o ator autenticado (auditoria com ator
+ * real), nunca um valor vindo do corpo da requisição.
+ */
 export function buildAerodromeGroupCreateInput(
   dto: CreateAerodromeGroupDTO,
+  createdBy: string,
 ): Prisma.AerodromeGroupCreateInput {
   return {
     uf: dto.uf,
-    groupName: dto.groupName,
+    name: dto.name,
     ownerId: dto.ownerId,
     deletionRequested: dto.deletionRequested,
-    createdBy: dto.createdBy,
+    createdBy,
   };
 }
 
+/**
+ * Monta o patch de edição. Alinhado ao web: só `name` é editável;
+ * `updatedBy` recebe o ator autenticado.
+ */
 export function patchAerodromeGroupToPrisma(
   dto: UpdateAerodromeGroupDTO,
+  updatedBy: string,
 ): Prisma.AerodromeGroupUpdateInput {
-  const data: Prisma.AerodromeGroupUpdateInput = {};
-  if (dto.uf !== undefined) data.uf = dto.uf;
-  if (dto.groupName !== undefined) data.groupName = dto.groupName;
-  if (dto.ownerId !== undefined) data.ownerId = dto.ownerId;
-  if (dto.deletionRequested !== undefined) {
-    data.deletionRequested = dto.deletionRequested;
-  }
-  return data;
+  return {
+    name: dto.name,
+    updatedBy,
+  };
 }
