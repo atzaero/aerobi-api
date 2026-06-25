@@ -3,6 +3,7 @@ import { ErrorMessageService } from '@/common/error-messages/error-message.servi
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { UserRole } from '@/generated/prisma/client';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
+import type { StorageService } from '@/modules/storage/services/storage.service';
 
 import type { AerodromeGroupRepository } from '../repositories/aerodrome-group.repository';
 import { buildAerodromeGroupFixture } from '../testing/aerodrome-group.entity.fixture';
@@ -14,6 +15,10 @@ const actor: AuthenticatedUser = {
   email: 'admin@e',
   role: UserRole.ADMIN,
 };
+
+const storage = {
+  getPresignedUrl: jest.fn(),
+} as unknown as StorageService;
 
 describe('RemoveAerodromeGroupService', () => {
   let service: RemoveAerodromeGroupService;
@@ -27,7 +32,11 @@ describe('RemoveAerodromeGroupService', () => {
       findById,
       softDeleteWithCascade,
     } as unknown as AerodromeGroupRepository;
-    service = new RemoveAerodromeGroupService(repo, new ErrorMessageService());
+    service = new RemoveAerodromeGroupService(
+      repo,
+      storage,
+      new ErrorMessageService(),
+    );
   });
 
   const id = '11111111-1111-4111-8111-111111111111';

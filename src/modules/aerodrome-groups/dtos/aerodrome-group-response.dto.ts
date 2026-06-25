@@ -18,6 +18,16 @@ export class AerodromeGroupResponseDTO {
   @ApiPropertyOptional({
     type: String,
     nullable: true,
+    description:
+      'URL presigned (temporária) da imagem ativa do grupo, resolvida ' +
+      'best-effort a partir da key. `null` se não há imagem ou a assinatura falhou.',
+    example: null,
+  })
+  imageUrl!: string | null;
+
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
     description: 'Identificador do proprietário (legado Firebase owner).',
     example: null,
   })

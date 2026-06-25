@@ -1,5 +1,6 @@
 import { Uf, UserRole } from '@/generated/prisma/client';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
+import type { StorageService } from '@/modules/storage/services/storage.service';
 
 import type { CreateAerodromeGroupDTO } from '../dtos/create-aerodrome-group.dto';
 import { buildAerodromeGroupCreateInput } from '../mappers/aerodrome-group.prisma.mapper';
@@ -7,6 +8,10 @@ import type { AerodromeGroupRepository } from '../repositories/aerodrome-group.r
 import { buildAerodromeGroupFixture } from '../testing/aerodrome-group.entity.fixture';
 
 import { CreateAerodromeGroupService } from './create-aerodrome-group.service';
+
+const storage = {
+  getPresignedUrl: jest.fn(),
+} as unknown as StorageService;
 
 const actor: AuthenticatedUser = {
   id: 'actor-1',
@@ -21,7 +26,7 @@ describe('CreateAerodromeGroupService', () => {
   beforeEach(() => {
     create = jest.fn();
     const repo = { create } as unknown as AerodromeGroupRepository;
-    service = new CreateAerodromeGroupService(repo);
+    service = new CreateAerodromeGroupService(repo, storage);
   });
 
   it('persiste com createdBy = ator autenticado', async () => {

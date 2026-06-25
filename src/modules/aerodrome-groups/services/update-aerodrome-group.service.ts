@@ -4,17 +4,20 @@ import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
+import { StorageService } from '@/modules/storage/services/storage.service';
 
 import { AerodromeGroupResponseDTO } from '../dtos/aerodrome-group-response.dto';
 import { UpdateAerodromeGroupDTO } from '../dtos/update-aerodrome-group.dto';
 import { AerodromeGroupMapper } from '../mappers/aerodrome-group.mapper';
 import { patchAerodromeGroupToPrisma } from '../mappers/aerodrome-group.prisma.mapper';
 import { AerodromeGroupRepository } from '../repositories/aerodrome-group.repository';
+import { resolveAerodromeGroupImageUrl } from '../utils/resolve-aerodrome-group-image-url';
 
 @Injectable()
 export class UpdateAerodromeGroupService {
   constructor(
     private readonly repo: AerodromeGroupRepository,
+    private readonly storage: StorageService,
     private readonly errorMessageService: ErrorMessageService,
   ) {}
 
@@ -42,6 +45,10 @@ export class UpdateAerodromeGroupService {
       id,
       patchAerodromeGroupToPrisma(dto, actor.id),
     );
-    return AerodromeGroupMapper.toApiRow(updated);
+    const imageUrl = await resolveAerodromeGroupImageUrl(
+      this.storage,
+      updated.imageKey,
+    );
+    return AerodromeGroupMapper.toApiRow(updated, imageUrl);
   }
 }

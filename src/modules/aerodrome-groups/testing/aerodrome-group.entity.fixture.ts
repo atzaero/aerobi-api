@@ -12,6 +12,7 @@ export function buildAerodromeGroupFixture(
     name: 'Interior',
     ownerId: null,
     deletionRequested: false,
+    imageKey: null,
     createdAt: t,
     createdBy: null,
     updatedAt: t,

@@ -59,8 +59,9 @@ export class AerodromeGroupRepository implements IAerodromeGroupRepository {
   /**
    * Soft-delete do grupo + cascata (espelha o `aerobi-web`): na mesma transação,
    * fecha os aeródromos operacionais ativos do grupo (`isOpen=false`,
-   * `isView=false`). Devolve o grupo removido e quantos aeródromos foram
-   * afetados.
+   * `isView=false`), soft-deleta as imagens ativas e zera o `imageKey` (sem
+   * imagem ativa para grupo inativo). Devolve o grupo removido e quantos
+   * aeródromos foram afetados.
    */
   async softDeleteWithCascade(
     id: string,
@@ -73,6 +74,7 @@ export class AerodromeGroupRepository implements IAerodromeGroupRepository {
           deletedAt: new Date(),
           deletedBy,
           updatedBy: deletedBy,
+          imageKey: null,
         },
       });
 
@@ -83,6 +85,11 @@ export class AerodromeGroupRepository implements IAerodromeGroupRepository {
           isView: false,
           updatedBy: deletedBy,
         },
+      });
+
+      await tx.aerodromeGroupImage.updateMany({
+        where: { groupId: id, deletedAt: null },
+        data: { deletedAt: new Date(), deletedBy, updatedBy: deletedBy },
       });
 
       return { group, affectedAerodromes: count };
