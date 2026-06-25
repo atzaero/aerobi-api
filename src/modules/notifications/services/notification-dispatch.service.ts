@@ -1,5 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 
+import { getErrorMessage } from '@/common/utils/error.util';
+
 import {
   NOTIFICATION_MESSAGE_BUILDERS,
   NotificationMessageBuilder,
@@ -84,7 +86,7 @@ export class NotificationDispatchService {
       const sent = await this.whatsapp.sendText({ to, text });
       return { to: sent.to, status: 'sent', messageId: sent.messageId };
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
+      const message = getErrorMessage(err);
       if (err instanceof WhatsappSendError) {
         this.logger.warn(
           `Falha ao enviar WhatsApp (retryable=${err.retryable}) para "${to}": ${message}`,

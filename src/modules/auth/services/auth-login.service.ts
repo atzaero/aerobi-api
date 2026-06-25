@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
+import { getErrorMessage } from '@/common/utils/error.util';
 import { maskEmail } from '@/common/utils/mask-email.util';
 import type { UserRole } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
@@ -124,9 +125,9 @@ export class AuthLoginService {
       })
       .catch((err: unknown) => {
         this.logger.warn(
-          `Failed to update lastLoginAt userId=${user.id} err=${
-            err instanceof Error ? err.message : String(err)
-          }`,
+          `Failed to update lastLoginAt userId=${user.id} err=${getErrorMessage(
+            err,
+          )}`,
         );
       });
 

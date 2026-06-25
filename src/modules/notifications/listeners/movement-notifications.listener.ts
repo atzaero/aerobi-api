@@ -1,6 +1,8 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 
+import { getErrorMessage } from '@/common/utils/error.util';
+
 import {
   MOVEMENT_CREATED_EVENT,
   type MovementCreatedEvent,
@@ -193,6 +195,6 @@ export class MovementNotificationsListener {
   }
 
   private describe(err: unknown): string {
-    return err instanceof Error ? err.message : String(err);
+    return getErrorMessage(err);
   }
 }

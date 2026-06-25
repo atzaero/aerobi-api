@@ -1,5 +1,6 @@
 import { Logger } from '@nestjs/common';
 
+import { getErrorMessage } from '@/common/utils/error.util';
 import { StorageService } from '@/modules/storage/services/storage.service';
 
 const logger = new Logger('ReadingImageUrl');
@@ -19,7 +20,7 @@ export async function resolveReadingImageUrl(
   try {
     return await storage.getPresignedUrl(imageKey);
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
+    const msg = getErrorMessage(err);
     logger.warn(`Falha ao gerar presigned URL de ${imageKey}: ${msg}`);
     return null;
   }

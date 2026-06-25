@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 
+import { getErrorMessage } from '@/common/utils/error.util';
 import {
   ConformityStatus,
   MovementType,
@@ -119,9 +120,9 @@ export class ConformityListener {
       await this.handleNonConformant(event, aerodrome);
     } catch (err) {
       this.logger.error(
-        `Falha ao verificar conformidade do movimento ${event.movementId}: ${
-          err instanceof Error ? err.message : String(err)
-        }`,
+        `Falha ao verificar conformidade do movimento ${event.movementId}: ${getErrorMessage(
+          err,
+        )}`,
       );
     }
   }

@@ -1,5 +1,6 @@
 import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
+import { getErrorMessage } from '@/common/utils/error.util';
 import { RabSyncStatus } from '@/generated/prisma/client';
 import { createHash } from 'node:crypto';
 import { firstValueFrom } from 'rxjs';
@@ -143,7 +144,7 @@ export class RabSyncService {
 
       return { period, skipped: false, rowCount: rows.length };
     } catch (e) {
-      const message = e instanceof Error ? e.message : String(e);
+      const message = getErrorMessage(e);
       await this.syncStateRepo.updateFailed(period, message);
       throw e;
     }

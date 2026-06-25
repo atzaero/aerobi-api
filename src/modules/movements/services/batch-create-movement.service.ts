@@ -8,6 +8,7 @@ import { MovementSource } from '@/generated/prisma/enums';
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
+import { getErrorMessage } from '@/common/utils/error.util';
 
 import { BatchMovementItemDTO } from '../dtos/batch-movement-item.dto';
 import {
@@ -117,7 +118,7 @@ export class BatchCreateMovementService {
         status: 'failed',
         id: null,
         image_path: null,
-        error: err instanceof Error ? err.message : String(err),
+        error: getErrorMessage(err),
       };
     }
   }

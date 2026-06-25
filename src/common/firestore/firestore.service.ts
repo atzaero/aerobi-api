@@ -9,6 +9,8 @@ import {
 } from 'firebase-admin/app';
 import { type Firestore, getFirestore } from 'firebase-admin/firestore';
 
+import { getErrorMessage } from '@/common/utils/error.util';
+
 /**
  * Encapsula a inicialização do Firebase Admin SDK e expõe a instância de
  * {@link Firestore}.
@@ -55,9 +57,7 @@ export class FirestoreService {
       });
     } catch (error) {
       this.logger.error(
-        `Falha ao inicializar o Firebase Admin: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
+        `Falha ao inicializar o Firebase Admin: ${getErrorMessage(error)}`,
       );
       return null;
     }

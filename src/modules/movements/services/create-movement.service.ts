@@ -4,6 +4,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
+import { getErrorMessage } from '@/common/utils/error.util';
 import { RabRowRepository } from '@/modules/rab/repositories/rab-row.repository';
 import { normalizeMarcas } from '@/modules/rab/utils/normalize-marcas';
 import { StorageService } from '@/modules/storage/services/storage.service';
@@ -167,7 +168,7 @@ export class CreateMovementService {
     } catch (err) {
       if (imageKey) {
         await this.storage.delete(imageKey).catch((delErr: unknown) => {
-          const msg = delErr instanceof Error ? delErr.message : String(delErr);
+          const msg = getErrorMessage(delErr);
           this.logger.warn(
             `Falha ao limpar imagem órfã ${imageKey} após erro no create: ${msg}`,
           );
