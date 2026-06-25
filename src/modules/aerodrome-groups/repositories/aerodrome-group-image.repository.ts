@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
+import { isSerializationConflict } from '@/common/utils/prisma-error.util';
 import { Prisma } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 
@@ -18,11 +19,49 @@ const SERIALIZABLE = {
   isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
 } as const;
 
+/** Tentativas totais ao colidir serialização (P2034) sob uploads concorrentes. */
+const SERIALIZATION_MAX_ATTEMPTS = 3;
+/** Backoff base entre tentativas (ms); cresce por tentativa, com jitter. */
+const SERIALIZATION_BACKOFF_MS = 25;
+
 @Injectable()
 export class AerodromeGroupImageRepository implements IAerodromeGroupImageRepository {
+  private readonly logger = new Logger(AerodromeGroupImageRepository.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * Cria a imagem ativa do grupo retentando a transação `Serializable` em caso
+   * de conflito de serialização (P2034) — esperado sob uploads concorrentes ao
+   * mesmo grupo. Como não há inconsistência de dados, o retry com backoff
+   * resolve a colisão de forma transparente; só após esgotar as tentativas o
+   * P2034 é propagado (o service o mapeia para 409).
+   */
   async createActiveImage(
+    input: CreateAerodromeGroupImageInput,
+  ): Promise<void> {
+    for (let attempt = 1; attempt <= SERIALIZATION_MAX_ATTEMPTS; attempt++) {
+      try {
+        await this.runCreateActiveImageTx(input);
+        return;
+      } catch (err) {
+        if (
+          isSerializationConflict(err) &&
+          attempt < SERIALIZATION_MAX_ATTEMPTS
+        ) {
+          this.logger.warn(
+            `Conflito de serialização no upload do grupo ${input.groupId} ` +
+              `(tentativa ${attempt}/${SERIALIZATION_MAX_ATTEMPTS}); retentando.`,
+          );
+          await this.backoff(attempt);
+          continue;
+        }
+        throw err;
+      }
+    }
+  }
+
+  private async runCreateActiveImageTx(
     input: CreateAerodromeGroupImageInput,
   ): Promise<void> {
     const {
@@ -57,6 +96,13 @@ export class AerodromeGroupImageRepository implements IAerodromeGroupImageReposi
         data: { imageKey, updatedBy: actorId },
       });
     }, SERIALIZABLE);
+  }
+
+  /** Espera `attempt * base + jitter` ms entre retentativas de serialização. */
+  private async backoff(attempt: number): Promise<void> {
+    const jitter = Math.floor(Math.random() * SERIALIZATION_BACKOFF_MS);
+    const delay = attempt * SERIALIZATION_BACKOFF_MS + jitter;
+    await new Promise((resolve) => setTimeout(resolve, delay));
   }
 
   async removeActiveImage(groupId: string, actorId: string): Promise<boolean> {

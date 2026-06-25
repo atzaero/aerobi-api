@@ -4,6 +4,7 @@ import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { getErrorMessage } from '@/common/utils/error.util';
+import { isSerializationConflict } from '@/common/utils/prisma-error.util';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 import { StorageService } from '@/modules/storage/services/storage.service';
 
@@ -95,6 +96,21 @@ export class UploadAerodromeGroupImageService {
         const msg = getErrorMessage(delErr);
         this.logger.warn(`Falha ao limpar imagem órfã ${key}: ${msg}`);
       });
+      /**
+       * Conflito de serialização que sobreviveu aos retries do repositório
+       * (uploads concorrentes ao mesmo grupo): não há inconsistência de dados,
+       * então responde 409 com ErrorCode estável em vez do P2034 cru → 500.
+       */
+      if (isSerializationConflict(err)) {
+        throw new CustomHttpException(
+          this.errorMessageService.getMessage(ErrorCode.CONFLICT, {
+            DETAILS:
+              'upload concorrente de imagem para o mesmo grupo; tente novamente',
+          }),
+          HttpStatus.CONFLICT,
+          ErrorCode.CONFLICT,
+        );
+      }
       throw err;
     }
 
