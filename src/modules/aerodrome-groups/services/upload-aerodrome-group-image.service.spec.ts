@@ -1,7 +1,7 @@
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
-import { UserRole } from '@/generated/prisma/client';
+import { Prisma, UserRole } from '@/generated/prisma/client';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 import type { StorageService } from '@/modules/storage/services/storage.service';
 
@@ -218,6 +218,24 @@ describe('UploadAerodromeGroupImageService', () => {
     await expect(service.execute(id, file(), actor)).rejects.toThrow(
       'db error',
     );
+    expect(del).toHaveBeenCalledTimes(1);
+  });
+
+  it('CONFLICT (409) quando o conflito de serialização sobrevive aos retries', async () => {
+    findById.mockResolvedValue(buildAerodromeGroupFixture({ id }));
+    upload.mockResolvedValue(undefined);
+    createActiveImage.mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError('write conflict', {
+        code: 'P2034',
+        clientVersion: 'test',
+      }),
+    );
+
+    await expectErrorCode(
+      service.execute(id, file(), actor),
+      ErrorCode.CONFLICT,
+    );
+    /** Compensa o objeto órfão mesmo no caminho de conflito. */
     expect(del).toHaveBeenCalledTimes(1);
   });
 });
