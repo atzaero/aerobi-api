@@ -1,3 +1,10 @@
+# [2.6.0-beta.32](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.31...v2.6.0-beta.32) (2026-06-25)
+
+
+### Features
+
+* **aerodrome-groups:** PR2/3 — export CSV ([#350](https://github.com/atzaero/aerobi-api/issues/350)) ([15a2282](https://github.com/atzaero/aerobi-api/commit/15a2282be629a39b5406b3f87a49337f70d6e565))
+
 # [2.6.0-beta.31](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.30...v2.6.0-beta.31) (2026-06-25)
 
 
