@@ -246,9 +246,13 @@ model AerodromeGroup {
   name              String   @map("group_name")
   ownerId           String?  @map("owner_id")
   deletionRequested Boolean? @map("deletion_requested")
+  /// Key (MinIO) da imagem ativa do grupo — desnormalizada para evitar N+1 na
+  /// listagem. Guarda a key, nunca a URL (presigned é resolvida on-read).
+  imageKey          String?  @map("image_key") @db.Text
 
   operationalAerodromes OperationalAerodrome[]
   users                 User[]
+  images                AerodromeGroupImage[]
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   createdBy String?   @map("created_by")
@@ -802,4 +806,28 @@ model RefreshToken {
   @@index([jti])
   @@index([deletedAt])
   @@map("refresh_tokens")
+}
+
+/// Imagem (logo/capa) de um grupo de aeródromo, armazenada no MinIO sob o
+/// prefixo `groups/{groupId}/images/`. No máximo uma ativa por grupo (garantido
+/// na transação de upload, que soft-deleta as anteriores). Persiste a key do
+/// objeto; a URL presigned é resolvida on-read.
+model AerodromeGroupImage {
+  id               String         @id @default(uuid()) @db.Uuid
+  groupId          String         @map("group_id") @db.Uuid
+  group            AerodromeGroup @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  imageKey         String         @map("image_key") @db.Text
+  originalFilename String         @map("original_filename")
+  mimeType         String         @map("mime_type")
+  sizeBytes        Int            @map("size_bytes")
+  uploadedBy       String?        @map("uploaded_by")
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedBy String?   @map("updated_by")
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+  deletedBy String?   @map("deleted_by")
+
+  @@index([groupId])
+  @@map("aerodrome_group_images")
 }

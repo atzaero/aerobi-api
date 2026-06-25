@@ -1,5 +1,6 @@
 import { Uf, UserRole } from '@/generated/prisma/client';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
+import type { StorageService } from '@/modules/storage/services/storage.service';
 import type { UserRepository } from '@/modules/users/repositories/user.repository';
 
 import type { AerodromeGroupRepository } from '../repositories/aerodrome-group.repository';
@@ -30,7 +31,10 @@ describe('ListAerodromeGroupsService', () => {
     findActiveById = jest.fn();
     const repo = { findMany, count } as unknown as AerodromeGroupRepository;
     const userRepo = { findActiveById } as unknown as UserRepository;
-    service = new ListAerodromeGroupsService(repo, userRepo);
+    const storage = {
+      getPresignedUrl: jest.fn(),
+    } as unknown as StorageService;
+    service = new ListAerodromeGroupsService(repo, userRepo, storage);
   });
 
   it('ADMIN: where vazio quando sem filtros, sem consultar escopo', async () => {

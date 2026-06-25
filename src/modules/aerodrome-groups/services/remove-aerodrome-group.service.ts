@@ -4,15 +4,18 @@ import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
+import { StorageService } from '@/modules/storage/services/storage.service';
 
 import { AerodromeGroupDeletionResponseDTO } from '../dtos/aerodrome-group-deletion-response.dto';
 import { AerodromeGroupMapper } from '../mappers/aerodrome-group.mapper';
 import { AerodromeGroupRepository } from '../repositories/aerodrome-group.repository';
+import { resolveAerodromeGroupImageUrl } from '../utils/resolve-aerodrome-group-image-url';
 
 @Injectable()
 export class RemoveAerodromeGroupService {
   constructor(
     private readonly repo: AerodromeGroupRepository,
+    private readonly storage: StorageService,
     private readonly errorMessageService: ErrorMessageService,
   ) {}
 
@@ -40,6 +43,16 @@ export class RemoveAerodromeGroupService {
       id,
       actor.id,
     );
-    return AerodromeGroupMapper.toDeletionResult(group, affectedAerodromes);
+
+    const imageUrl = await resolveAerodromeGroupImageUrl(
+      this.storage,
+      group.imageKey,
+    );
+
+    return AerodromeGroupMapper.toDeletionResult(
+      group,
+      affectedAerodromes,
+      imageUrl,
+    );
   }
 }

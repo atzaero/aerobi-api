@@ -1,11 +1,16 @@
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
+import type { StorageService } from '@/modules/storage/services/storage.service';
 
 import type { AerodromeGroupRepository } from '../repositories/aerodrome-group.repository';
 import { buildAerodromeGroupFixture } from '../testing/aerodrome-group.entity.fixture';
 
 import { FindAerodromeGroupByIdService } from './find-aerodrome-group-by-id.service';
+
+const storage = {
+  getPresignedUrl: jest.fn(),
+} as unknown as StorageService;
 
 describe('FindAerodromeGroupByIdService', () => {
   let service: FindAerodromeGroupByIdService;
@@ -16,6 +21,7 @@ describe('FindAerodromeGroupByIdService', () => {
     const repo = { findById } as unknown as AerodromeGroupRepository;
     service = new FindAerodromeGroupByIdService(
       repo,
+      storage,
       new ErrorMessageService(),
     );
   });

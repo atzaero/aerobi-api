@@ -4,12 +4,14 @@ import { resolveActorGroupScope } from '@/common/utils/group-scope.util';
 import { resolvePaginationParams } from '@/common/utils/pagination-params.util';
 import type { Prisma } from '@/generated/prisma/client';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
+import { StorageService } from '@/modules/storage/services/storage.service';
 import { UserRepository } from '@/modules/users/repositories/user.repository';
 
 import { ListAerodromeGroupsQueryDTO } from '../dtos/list-aerodrome-groups-query.dto';
 import { AerodromeGroupsPaginatedResponseDTO } from '../dtos/aerodrome-groups-paginated-response.dto';
 import { AerodromeGroupMapper } from '../mappers/aerodrome-group.mapper';
 import { AerodromeGroupRepository } from '../repositories/aerodrome-group.repository';
+import { resolveAerodromeGroupImageUrl } from '../utils/resolve-aerodrome-group-image-url';
 
 const MAX_LIMIT = 200;
 
@@ -18,6 +20,7 @@ export class ListAerodromeGroupsService {
   constructor(
     private readonly repo: AerodromeGroupRepository,
     private readonly userRepository: UserRepository,
+    private readonly storage: StorageService,
   ) {}
 
   async execute(
@@ -56,11 +59,16 @@ export class ListAerodromeGroupsService {
       this.repo.count(where),
     ]);
 
-    return new AerodromeGroupsPaginatedResponseDTO(
-      AerodromeGroupMapper.toApiRows(items),
-      page,
-      limit,
-      total,
+    /** Presigned URL por item, em paralelo e best-effort (falha ⇒ `null`). */
+    const rows = await Promise.all(
+      items.map(async (item) =>
+        AerodromeGroupMapper.toApiRow(
+          item,
+          await resolveAerodromeGroupImageUrl(this.storage, item.imageKey),
+        ),
+      ),
     );
+
+    return new AerodromeGroupsPaginatedResponseDTO(rows, page, limit, total);
   }
 }
