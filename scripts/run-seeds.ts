@@ -12,6 +12,7 @@
  */
 import { PrismaPg } from '@prisma/adapter-pg';
 
+import { getErrorMessage } from '@/common/utils/error.util';
 import { PrismaClient } from '@/generated/prisma/client';
 
 import { seeds } from './seeds';
@@ -61,7 +62,7 @@ async function main(): Promise<void> {
 }
 
 main().catch((err: unknown) => {
-  logger.error(`[seeds] falhou: ${err instanceof Error ? err.message : err}`);
+  logger.error(`[seeds] falhou: ${getErrorMessage(err)}`);
   if (err instanceof Error && err.stack) {
     logger.error(err.stack);
   }

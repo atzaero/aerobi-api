@@ -13,6 +13,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
+import { getErrorMessage } from '@/common/utils/error.util';
 
 import { StorageProvider } from '../interfaces';
 
@@ -138,7 +139,7 @@ export class MinioStorageProvider implements StorageProvider {
       | ErrorCode.STORAGE_DOWNLOAD_FAILED,
     context: string,
   ): never {
-    const message = err instanceof Error ? err.message : String(err);
+    const message = getErrorMessage(err);
     this.logger.error(`${context}: ${message}`);
     throw new CustomHttpException(
       this.errorMessageService.getMessage(code, { ERROR_MESSAGE: message }),
@@ -257,7 +258,7 @@ export class MinioStorageProvider implements StorageProvider {
         `CORS configurado no bucket ${this.config.bucket} para: ${origins.join(', ')}`,
       );
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
+      const message = getErrorMessage(err);
       this.logger.warn(
         `Falha ao configurar CORS no bucket ${this.config.bucket}: ${message}. ` +
           'Configure manualmente via console do MinIO se necessário.',

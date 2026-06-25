@@ -3,6 +3,7 @@ import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
+import { getErrorMessage } from '@/common/utils/error.util';
 
 import { CameraResponseDTO } from '../dtos/camera-response.dto';
 import { CameraMapper } from '../mappers/camera.mapper';
@@ -30,9 +31,9 @@ export class ListAerodromeCamerasService {
     } catch (error) {
       /** Falha de conectividade/credenciais do Firestore é serviço externo → 502. */
       this.logger.warn(
-        `Falha ao listar câmeras de ${icao} no Firestore: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
+        `Falha ao listar câmeras de ${icao} no Firestore: ${getErrorMessage(
+          error,
+        )}`,
       );
       throw new CustomHttpException(
         this.errorMessage.getMessage(ErrorCode.EXTERNAL_SERVICE_FAILED, {

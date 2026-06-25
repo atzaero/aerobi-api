@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 
+import { getErrorMessage } from '@/common/utils/error.util';
+
 import {
   MOVEMENT_CONFORMITY_RESOLVED_EVENT,
   type MovementConformityResolvedEvent,
@@ -31,9 +33,9 @@ export class MovementConformityListener {
       await this.repo.updateConformityStatus(event.movementId, event.status);
     } catch (err) {
       this.logger.error(
-        `Falha ao persistir conformidade do movimento ${event.movementId}: ${
-          err instanceof Error ? err.message : String(err)
-        }`,
+        `Falha ao persistir conformidade do movimento ${event.movementId}: ${getErrorMessage(
+          err,
+        )}`,
       );
     }
   }

@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { OnEvent } from '@nestjs/event-emitter';
 
 import { EmailService } from '@/common/email/email.service';
+import { getErrorMessage } from '@/common/utils/error.util';
 
 import {
   PASSWORD_RESET_TOKEN_SENT_EVENT,
@@ -48,9 +49,9 @@ export class PasswordResetEmailListener {
       );
     } catch (err) {
       this.logger.error(
-        `Falha ao enviar password reset email userId=${event.userId} email=${event.email}: ${
-          err instanceof Error ? err.message : String(err)
-        }`,
+        `Falha ao enviar password reset email userId=${event.userId} email=${event.email}: ${getErrorMessage(
+          err,
+        )}`,
       );
     }
   }

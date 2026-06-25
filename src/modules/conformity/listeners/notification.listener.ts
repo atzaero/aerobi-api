@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { OnEvent } from '@nestjs/event-emitter';
 
 import { EmailService } from '@/common/email/email.service';
+import { getErrorMessage } from '@/common/utils/error.util';
 
 import {
   MOVEMENT_NON_CONFORMITY_EVENT,
@@ -112,9 +113,9 @@ export class NotificationListener {
       );
     } catch (err) {
       this.logger.error(
-        `Falha ao notificar não-conformidade operationalEventId=${event.operationalEventId}: ${
-          err instanceof Error ? err.message : String(err)
-        }`,
+        `Falha ao notificar não-conformidade operationalEventId=${event.operationalEventId}: ${getErrorMessage(
+          err,
+        )}`,
       );
     }
   }

@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { getErrorMessage } from '@/common/utils/error.util';
 import { PrivateAerodromesSyncStatus } from '@/generated/prisma/client';
 import { createHash } from 'node:crypto';
 
@@ -118,7 +119,7 @@ export class PrivateAerodromesSyncService {
       this.logger.log(`Private aerodromes: ${rows.length} linhas upsert.`);
       return { datasetKey: DATASET_KEY, skipped: false, rowCount: rows.length };
     } catch (e) {
-      const message = e instanceof Error ? e.message : String(e);
+      const message = getErrorMessage(e);
       await this.syncStateRepo.updateFailed(DATASET_KEY, message);
       throw e;
     }

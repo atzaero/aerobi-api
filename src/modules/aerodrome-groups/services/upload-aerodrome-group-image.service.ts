@@ -3,6 +3,7 @@ import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
+import { getErrorMessage } from '@/common/utils/error.util';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 import { StorageService } from '@/modules/storage/services/storage.service';
 
@@ -54,7 +55,7 @@ export class UploadAerodromeGroupImageService {
     try {
       await this.storage.upload(image, key);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = getErrorMessage(err);
       this.logger.error(
         `Falha no upload da imagem do grupo ${groupId}: ${msg}`,
       );
@@ -77,7 +78,7 @@ export class UploadAerodromeGroupImageService {
     } catch (err) {
       /** Compensação: o registro falhou após o upload — remove o objeto órfão. */
       await this.storage.delete(key).catch((delErr: unknown) => {
-        const msg = delErr instanceof Error ? delErr.message : String(delErr);
+        const msg = getErrorMessage(delErr);
         this.logger.warn(`Falha ao limpar imagem órfã ${key}: ${msg}`);
       });
       throw err;
