@@ -19,6 +19,20 @@ const actor: AuthenticatedUser = {
 
 const id = '11111111-1111-4111-8111-111111111111';
 
+/**
+ * Magic bytes válidos de cada imagem aceita (PNG, JPEG, WebP), usados nos
+ * testes para cruzar o conteúdo real com o mimetype declarado.
+ */
+const PNG_BYTES = Buffer.from([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00,
+]);
+const JPEG_BYTES = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]);
+const WEBP_BYTES = Buffer.concat([
+  Buffer.from('RIFF', 'ascii'),
+  Buffer.from([0x00, 0x00, 0x00, 0x00]),
+  Buffer.from('WEBP', 'ascii'),
+]);
+
 function file(
   overrides: Partial<Express.Multer.File> = {},
 ): Express.Multer.File {
@@ -26,7 +40,7 @@ function file(
     mimetype: 'image/png',
     size: 1024,
     originalname: 'logo.png',
-    buffer: Buffer.from('x'),
+    buffer: PNG_BYTES,
     ...overrides,
   } as Express.Multer.File;
 }
@@ -102,6 +116,64 @@ describe('UploadAerodromeGroupImageService', () => {
       service.execute(id, file({ size: 6 * 1024 * 1024 }), actor),
       ErrorCode.VALIDATION_FAILED,
     );
+  });
+
+  it('400 quando o arquivo está vazio (0 bytes)', async () => {
+    findById.mockResolvedValue(buildAerodromeGroupFixture({ id }));
+    await expectErrorCode(
+      service.execute(id, file({ size: 0 }), actor),
+      ErrorCode.VALIDATION_FAILED,
+    );
+    expect(upload).not.toHaveBeenCalled();
+  });
+
+  it('400 quando o conteúdo não é imagem (polyglot/bytes forjados)', async () => {
+    findById.mockResolvedValue(buildAerodromeGroupFixture({ id }));
+    await expectErrorCode(
+      service.execute(
+        id,
+        file({ buffer: Buffer.from('definitivamente nao e uma imagem') }),
+        actor,
+      ),
+      ErrorCode.VALIDATION_FAILED,
+    );
+    expect(upload).not.toHaveBeenCalled();
+  });
+
+  it('400 quando a extensão/tipo diverge do conteúdo (declara png, bytes jpeg)', async () => {
+    findById.mockResolvedValue(buildAerodromeGroupFixture({ id }));
+    await expectErrorCode(
+      service.execute(
+        id,
+        file({ mimetype: 'image/png', buffer: JPEG_BYTES }),
+        actor,
+      ),
+      ErrorCode.VALIDATION_FAILED,
+    );
+    expect(upload).not.toHaveBeenCalled();
+  });
+
+  it('aceita webp válido (magic bytes RIFF/WEBP)', async () => {
+    findById
+      .mockResolvedValueOnce(buildAerodromeGroupFixture({ id }))
+      .mockResolvedValueOnce(
+        buildAerodromeGroupFixture({ id, imageKey: 'groups/x/images/y.webp' }),
+      );
+    createActiveImage.mockResolvedValue(undefined);
+    upload.mockResolvedValue(undefined);
+
+    const out = await service.execute(
+      id,
+      file({
+        mimetype: 'image/webp',
+        originalname: 'logo.webp',
+        buffer: WEBP_BYTES,
+      }),
+      actor,
+    );
+
+    expect(upload).toHaveBeenCalledTimes(1);
+    expect(out.imageUrl).toBe('https://signed');
   });
 
   it('sucesso: upload, registra a imagem e devolve imageUrl presigned', async () => {
