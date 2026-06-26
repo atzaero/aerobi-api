@@ -7,7 +7,7 @@ echo "Prisma migrate deploy..."
 npx prisma migrate deploy
 
 # Em dev, seed roda por default — o próprio orquestrador é idempotente e
-# faz skip silencioso quando não há `SEED_USER_*` configurado. Setar
+# faz skip silencioso quando não há as envs `SEED_*` configuradas. Setar
 # `RUN_SEEDS_ON_BOOT=false` em `.env` desliga explicitamente.
 if [ "${RUN_SEEDS_ON_BOOT:-true}" = "true" ]; then
   echo "Running seeds (RUN_SEEDS_ON_BOOT=true; default em dev)..."

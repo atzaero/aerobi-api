@@ -8,7 +8,7 @@
  *
  * Os seeds podem ser disparados:
  *  - Sob demanda:        `npm run seed`                  (todos)
- *  - Granular:           `npm run seed:users`            (apenas users)
+ *  - Granular:           `npm run seed:admin` / `seed:states`
  *  - No boot dos starts: `RUN_SEEDS_ON_BOOT=true` em
  *                        `scripts/start-dev.sh` / `scripts/start-prod.sh`.
  */
