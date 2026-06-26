@@ -1,3 +1,10 @@
+# [2.6.0-beta.36](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.35...v2.6.0-beta.36) (2026-06-26)
+
+
+### Features
+
+* **seeds:** bootstrap declarativo de grupos por estado, bandeiras e usuários por função ([1704ec6](https://github.com/atzaero/aerobi-api/commit/1704ec6ffd35d55df7395578d18decd815ecf853)), closes [#413](https://github.com/atzaero/aerobi-api/issues/413) [#227](https://github.com/atzaero/aerobi-api/issues/227)
+
 # [2.6.0-beta.35](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.34...v2.6.0-beta.35) (2026-06-26)
 
 
