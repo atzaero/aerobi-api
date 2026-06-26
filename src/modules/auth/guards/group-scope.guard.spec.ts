@@ -187,7 +187,7 @@ describe('GroupScopeGuard', () => {
     );
   });
 
-  it('lança FORBIDDEN quando o usuário foi soft-deletado (lookup retorna null)', async () => {
+  it('lança ACCOUNT_DELETED (401) quando o usuário foi soft-deletado (lookup retorna null)', async () => {
     mockSubject(GroupScopeSubject.OPERATIONAL_AERODROME);
     deps.operationalAerodrome.findFirst.mockResolvedValue({
       groupId: GROUP_A,
@@ -195,10 +195,14 @@ describe('GroupScopeGuard', () => {
     // JwtStrategy confia no token; o lookup ativo (deletedAt: null) devolve null.
     deps.user.findFirst.mockResolvedValue(null);
 
-    await expectErrorCode(
-      guard.canActivate(buildContext(operator)),
-      ErrorCode.FORBIDDEN,
-    );
+    const promise = guard.canActivate(buildContext(operator));
+    await expect(promise).rejects.toBeInstanceOf(CustomHttpException);
+    await promise.catch((e) => {
+      expect((e as CustomHttpException).getErrorCode()).toBe(
+        ErrorCode.ACCOUNT_DELETED,
+      );
+      expect((e as CustomHttpException).getStatus()).toBe(401);
+    });
   });
 
   it('lança RESOURCE_NOT_FOUND quando o recurso não existe', async () => {

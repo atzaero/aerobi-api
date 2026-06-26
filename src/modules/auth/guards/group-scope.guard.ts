@@ -33,7 +33,8 @@ import { GroupScopeSubject } from './group-scope.subject';
  * - `user.role === ADMIN` → passa (bypass global, sem grupo).
  * - `params.id` ausente/não-UUID → 422 (não consulta o DB com lixo).
  * - Recurso inexistente ou soft-deletado → 404.
- * - `recurso.groupId !== user.aerodromeGroupId` → 403.
+ * - Ator removido (lookup ativo devolve `null`, token ainda válido) → 401.
+ * - Ator sem grupo, ou `recurso.groupId !== user.aerodromeGroupId` → 403.
  *
  * O `aerodromeGroupId` do usuário é lido **do banco** (não do JWT), de modo que
  * uma troca de grupo tenha efeito imediato sem esperar o token expirar.
@@ -115,14 +116,31 @@ export class GroupScopeGuard implements CanActivate {
       );
     }
 
-    // Lê o usuário ativo do banco (a JwtStrategy confia no payload e não
-    // revalida contra o DB; um usuário soft-deletado com access token ainda
-    // válido cai aqui como `null` → grupo `null` → 403).
+    /**
+     * Lê o usuário ativo do banco (a `JwtStrategy` confia no payload e não
+     * revalida contra o DB; o `aerodromeGroupId` vem daqui para refletir troca
+     * de grupo sem esperar o token expirar).
+     */
     const dbUser = await this.prisma.user.findFirst({
       where: { id: user.id, deletedAt: null },
       select: { aerodromeGroupId: true },
     });
-    const userGroupId = dbUser?.aerodromeGroupId ?? null;
+
+    /**
+     * Conta removida (token ainda válido, registro inexistente/soft-deletado):
+     * **401 `ACCOUNT_DELETED`** — força re-login em vez de mascarar como 403.
+     * Espelha o `resolveActorGroupScope` das listagens (#385); o 403 abaixo fica
+     * só para ator existente cujo grupo não cobre o recurso.
+     */
+    if (dbUser === null) {
+      throw new CustomHttpException(
+        this.errorMessageService.getMessage(ErrorCode.ACCOUNT_DELETED),
+        HttpStatus.UNAUTHORIZED,
+        ErrorCode.ACCOUNT_DELETED,
+      );
+    }
+
+    const userGroupId = dbUser.aerodromeGroupId ?? null;
 
     if (userGroupId === null || userGroupId !== resourceGroupId) {
       this.logger.debug(
