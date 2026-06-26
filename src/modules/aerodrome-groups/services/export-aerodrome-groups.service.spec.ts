@@ -1,3 +1,5 @@
+import { ErrorMessageService } from '@/common/error-messages/error-message.service';
+import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { Uf, UserRole } from '@/generated/prisma/client';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 import type { UserRepository } from '@/modules/users/repositories/user.repository';
@@ -32,7 +34,11 @@ describe('ExportAerodromeGroupsService', () => {
     findActiveById = jest.fn();
     const repo = { findMany } as unknown as AerodromeGroupRepository;
     const userRepo = { findActiveById } as unknown as UserRepository;
-    service = new ExportAerodromeGroupsService(repo, userRepo);
+    service = new ExportAerodromeGroupsService(
+      repo,
+      userRepo,
+      new ErrorMessageService(),
+    );
   });
 
   it('ADMIN: where vazio, busca MAX+1 sem paginação, cabeçalho + linha', async () => {
@@ -75,10 +81,21 @@ describe('ExportAerodromeGroupsService', () => {
     );
   });
 
-  it('COORDINATOR sem grupo: CSV só com cabeçalho, sem tocar no repo', async () => {
+  it('COORDINATOR sem grupo: where fail-closed (id in []), CSV só cabeçalho', async () => {
     findActiveById.mockResolvedValue({ aerodromeGroupId: null });
+    findMany.mockResolvedValue([]);
     const csv = await service.execute({}, coordinator);
     expect(csv).toBe(HEADER);
+    /** Mesmo invariante da listagem: `none` cai no `where` que nunca casa, em
+     * vez de short-circuit por serviço (#383). */
+    expect(findMany).toHaveBeenCalledWith({ id: { in: [] } }, 0, 50_001);
+  });
+
+  it('COORDINATOR inativo/soft-deletado (registro null): 401, sem tocar no repo', async () => {
+    findActiveById.mockResolvedValue(null);
+    await expect(service.execute({}, coordinator)).rejects.toBeInstanceOf(
+      CustomHttpException,
+    );
     expect(findMany).not.toHaveBeenCalled();
   });
 

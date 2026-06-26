@@ -1,3 +1,8 @@
+import { HttpStatus } from '@nestjs/common';
+
+import { ErrorCode } from '@/common/enums/error-code.enum';
+import { ErrorMessageService } from '@/common/error-messages/error-message.service';
+import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { UserRole } from '@/generated/prisma/client';
 
 /**
@@ -26,11 +31,23 @@ export type UserGroupScope =
   | { kind: 'none' };
 
 /**
- * Deriva o `UserGroupScope` a partir do papel + grupo do ator. O `actorGroupId`
- * deve vir de **consulta ao DB** (o JWT carrega só `role`; decisão da epic #204),
- * nunca do payload do cliente.
+ * Porta mínima de lookup do ator no DB. O `UserRepository` a satisfaz; manter a
+ * interface aqui evita que `@/common` acople ao módulo `users` e centraliza o
+ * lambda `(id) => userRepository.findActiveById(id)` antes duplicado em cada
+ * consumidor.
  */
-export function resolveUserGroupScope(
+export interface ActorGroupLookup {
+  findActiveById(
+    id: string,
+  ): Promise<{ aerodromeGroupId: string | null } | null>;
+}
+
+/**
+ * Deriva o `UserGroupScope` a partir do papel + grupo do ator. Interno: o ponto
+ * de entrada é o `resolveActorGroupScope` (que encapsula o lookup e o
+ * short-circuit de ADMIN sem consulta).
+ */
+function resolveUserGroupScope(
   actorRole: UserRole,
   actorGroupId: string | null,
 ): UserGroupScope {
@@ -44,13 +61,30 @@ export function resolveUserGroupScope(
  * necessário**: ADMIN (e papéis não-restritos) curto-circuitam para `all` sem
  * consulta; só COORDINATOR dispara o `lookup` do próprio registro. Centraliza o
  * padrão usado por list/remove/resend (users) e pela list/export de grupos.
+ *
+ * O ator **não encontrado / inativo** (registro `null` — token ainda válido mas
+ * usuário soft-deletado, já que a `JwtStrategy` não revalida contra o DB) é
+ * tratado como conta removida (**401 `ACCOUNT_DELETED`**) num único ponto, em
+ * vez de virar `none` e mascarar a desativação com resultado vazio. É distinto
+ * de um registro existente sem `aerodromeGroupId` (= `none`, COORDINATOR sem
+ * grupo provisionado, que legitimamente vê página vazia).
  */
 export async function resolveActorGroupScope(
   actorRole: UserRole,
   actorId: string,
-  lookup: (id: string) => Promise<{ aerodromeGroupId: string | null } | null>,
+  lookup: ActorGroupLookup,
+  errorMessageService: ErrorMessageService,
 ): Promise<UserGroupScope> {
   if (actorRole !== UserRole.COORDINATOR) return { kind: 'all' };
-  const record = await lookup(actorId);
-  return resolveUserGroupScope(actorRole, record?.aerodromeGroupId ?? null);
+
+  const record = await lookup.findActiveById(actorId);
+  if (record === null) {
+    throw new CustomHttpException(
+      errorMessageService.getMessage(ErrorCode.ACCOUNT_DELETED),
+      HttpStatus.UNAUTHORIZED,
+      ErrorCode.ACCOUNT_DELETED,
+    );
+  }
+
+  return resolveUserGroupScope(actorRole, record.aerodromeGroupId);
 }

@@ -1,3 +1,5 @@
+import { ErrorMessageService } from '@/common/error-messages/error-message.service';
+import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { Uf, UserRole } from '@/generated/prisma/client';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 import type { StorageService } from '@/modules/storage/services/storage.service';
@@ -34,7 +36,12 @@ describe('ListAerodromeGroupsService', () => {
     const storage = {
       getPresignedUrl: jest.fn(),
     } as unknown as StorageService;
-    service = new ListAerodromeGroupsService(repo, userRepo, storage);
+    service = new ListAerodromeGroupsService(
+      repo,
+      userRepo,
+      storage,
+      new ErrorMessageService(),
+    );
   });
 
   it('ADMIN: where vazio quando sem filtros, sem consultar escopo', async () => {
@@ -77,13 +84,25 @@ describe('ListAerodromeGroupsService', () => {
     expect(findMany).toHaveBeenCalledWith({ uf: Uf.SP, id: 'group-9' }, 0, 10);
   });
 
-  it('COORDINATOR sem grupo: página vazia sem tocar no repositório', async () => {
+  it('COORDINATOR sem grupo: where fail-closed (id in []), página vazia', async () => {
     findActiveById.mockResolvedValue({ aerodromeGroupId: null });
+    findMany.mockResolvedValue([]);
+    count.mockResolvedValue(0);
     const out = await service.execute({}, coordinator);
     expect(out.data).toEqual([]);
     expect(out.meta.totalItems).toBe(0);
+    /** O invariante de segurança vive no builder: o `none` vira um `where` que
+     * nunca casa registro, em vez de short-circuit por serviço (#383). */
+    expect(findMany).toHaveBeenCalledWith({ id: { in: [] } }, 0, 10);
+    expect(count).toHaveBeenCalledWith({ id: { in: [] } });
+  });
+
+  it('COORDINATOR inativo/soft-deletado (registro null): 401, sem tocar no repo', async () => {
+    findActiveById.mockResolvedValue(null);
+    await expect(service.execute({}, coordinator)).rejects.toBeInstanceOf(
+      CustomHttpException,
+    );
     expect(findMany).not.toHaveBeenCalled();
-    expect(count).not.toHaveBeenCalled();
   });
 
   it('paginação (ADMIN)', async () => {
