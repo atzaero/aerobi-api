@@ -27,7 +27,8 @@
     "prisma:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
     "seed": "node --env-file-if-exists=.env --require tsconfig-paths/register --require ts-node/register scripts/run-seeds.ts",
-    "seed:users": "npm run seed -- users",
+    "seed:admin": "npm run seed -- admin",
+    "seed:states": "npm run seed -- states",
     "postinstall": "prisma generate",
     "release": "npx -p semantic-release -p @semantic-release/changelog -p @semantic-release/git semantic-release",
     "security:check": "npm audit --package-lock-only --audit-level=high --omit=dev"

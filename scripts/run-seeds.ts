@@ -2,10 +2,10 @@
  * Entrypoint dos seeds — instancia o `PrismaClient` (com adapter-pg)
  * e executa cada `SeedRunner` registrado em `scripts/seeds/index.ts`.
  *
- * Filtragem opcional por nome via argv: `npm run seed -- users` roda
- * apenas o seed `users`. Sem argumentos, roda todos em ordem.
+ * Filtragem opcional por nome via argv: `npm run seed -- admin` roda
+ * apenas o seed `admin`. Sem argumentos, roda todos em ordem.
  *
- * Idempotente — todos os runners devem usar `upsert` ou
+ * Idempotente — todos os runners devem ser create-only / `upsert` /
  * `createMany({ skipDuplicates: true })` para que rodar múltiplas vezes
  * (inclusive em todo boot via `RUN_SEEDS_ON_BOOT=true`) não cause efeitos
  * colaterais nem erros.

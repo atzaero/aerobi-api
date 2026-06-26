@@ -27,6 +27,9 @@ COPY prisma ./prisma/
 COPY prisma.config.ts ./
 RUN npm ci --omit=dev && npx prisma generate
 COPY --from=builder /usr/src/app/dist ./dist
+# Assets dos seeds (bandeiras PNG) — o `nest build` não copia não-`.ts`; o seed
+# os resolve por `__dirname` em `dist/scripts/seeds/assets`.
+COPY --from=builder /usr/src/app/scripts/seeds/assets ./dist/scripts/seeds/assets
 COPY scripts/start-prod.sh ./scripts/start-prod.sh
 RUN chown -R nestjs:nodejs /usr/src/app && chmod +x scripts/start-prod.sh
 EXPOSE 3333
