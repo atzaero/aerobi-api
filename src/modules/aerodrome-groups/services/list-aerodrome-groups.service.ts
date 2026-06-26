@@ -5,6 +5,7 @@ import { resolveActorGroupScope } from '@/common/utils/group-scope.util';
 import { resolvePaginationParams } from '@/common/utils/pagination-params.util';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 import { StorageService } from '@/modules/storage/services/storage.service';
+import { resolveBestEffortPresignedUrl } from '@/modules/storage/utils/resolve-presigned-url';
 import { UserRepository } from '@/modules/users/repositories/user.repository';
 
 import { ListAerodromeGroupsQueryDTO } from '../dtos/list-aerodrome-groups-query.dto';
@@ -12,7 +13,6 @@ import { AerodromeGroupsPaginatedResponseDTO } from '../dtos/aerodrome-groups-pa
 import { AerodromeGroupMapper } from '../mappers/aerodrome-group.mapper';
 import { AerodromeGroupRepository } from '../repositories/aerodrome-group.repository';
 import { buildAerodromeGroupScopedWhere } from '../utils/build-aerodrome-group-where';
-import { resolveAerodromeGroupImageUrl } from '../utils/resolve-aerodrome-group-image-url';
 
 const MAX_LIMIT = 200;
 
@@ -56,7 +56,7 @@ export class ListAerodromeGroupsService {
       items.map(async (item) =>
         AerodromeGroupMapper.toApiRow(
           item,
-          await resolveAerodromeGroupImageUrl(this.storage, item.imageKey),
+          await resolveBestEffortPresignedUrl(this.storage, item.imageKey),
         ),
       ),
     );

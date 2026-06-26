@@ -1,25 +1,17 @@
 import { randomUUID } from 'node:crypto';
 
-/** Mapa de mimetypes de imagem aceitos → extensão usada na key. */
-const MIME_TO_EXT: Record<string, string> = {
-  'image/jpeg': 'jpg',
-  'image/png': 'png',
-  'image/webp': 'webp',
-};
+import { MIME_TO_EXT } from '@/modules/storage/utils/image-mimetype';
 
-/** Mimetypes de imagem aceitos no upload da imagem do grupo. */
-export const ALLOWED_IMAGE_MIMETYPES = Object.keys(MIME_TO_EXT);
+export {
+  ALLOWED_IMAGE_MIMETYPES,
+  isAllowedImageMimetype,
+} from '@/modules/storage/utils/image-mimetype';
 
 /**
  * Tamanho máximo da imagem (5 MB), espelhando o limite do `aerobi-web` para a
  * imagem do grupo (`movements` usa 10 MB; aqui é 5 por paridade com o web).
  */
 export const MAX_GROUP_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
-
-/** `true` se o mimetype é uma imagem aceita. */
-export function isAllowedImageMimetype(mimetype: string): boolean {
-  return mimetype in MIME_TO_EXT;
-}
 
 /** Assinatura de magic bytes do JPEG: `FF D8 FF`. */
 function matchesJpeg(buffer: Buffer): boolean {

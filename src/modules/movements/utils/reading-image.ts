@@ -1,25 +1,17 @@
 import { randomUUID } from 'node:crypto';
 
-/** Mapa de mimetypes de imagem aceitos → extensão usada na key. */
-const MIME_TO_EXT: Record<string, string> = {
-  'image/jpeg': 'jpg',
-  'image/png': 'png',
-  'image/webp': 'webp',
-};
+import { MIME_TO_EXT } from '@/modules/storage/utils/image-mimetype';
 
-/** Mimetypes de imagem aceitos no upload de leituras. */
-export const ALLOWED_IMAGE_MIMETYPES = Object.keys(MIME_TO_EXT);
+export {
+  ALLOWED_IMAGE_MIMETYPES,
+  isAllowedImageMimetype,
+} from '@/modules/storage/utils/image-mimetype';
 
 /** Tamanho máximo da imagem (10 MB), espelhando o limite do aviascan-api legado. */
 export const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
 
 /** Máximo de imagens por requisição de lote (`POST /readings/batch`). */
 export const MAX_BATCH_FILES = 50;
-
-/** `true` se o mimetype é uma imagem aceita. */
-export function isAllowedImageMimetype(mimetype: string): boolean {
-  return mimetype in MIME_TO_EXT;
-}
 
 /**
  * Monta a key do objeto no MinIO no layout `readings/YYYY/MM/<uuid>.<ext>`,

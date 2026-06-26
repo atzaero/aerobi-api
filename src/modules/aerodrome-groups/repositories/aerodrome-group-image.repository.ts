@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 import { isSerializationConflict } from '@/common/utils/prisma-error.util';
-import { Prisma } from '@/generated/prisma/client';
+import { AerodromeGroup, Prisma } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 
 import type {
@@ -35,15 +35,15 @@ export class AerodromeGroupImageRepository implements IAerodromeGroupImageReposi
    * de conflito de serialização (P2034) — esperado sob uploads concorrentes ao
    * mesmo grupo. Como não há inconsistência de dados, o retry com backoff
    * resolve a colisão de forma transparente; só após esgotar as tentativas o
-   * P2034 é propagado (o service o mapeia para 409).
+   * P2034 é propagado (o service o mapeia para 409). Retorna o grupo já
+   * atualizado (com `imageKey` sincronizado), evitando um re-fetch pós-tx.
    */
   async createActiveImage(
     input: CreateAerodromeGroupImageInput,
-  ): Promise<void> {
+  ): Promise<AerodromeGroup> {
     for (let attempt = 1; attempt <= SERIALIZATION_MAX_ATTEMPTS; attempt++) {
       try {
-        await this.runCreateActiveImageTx(input);
-        return;
+        return await this.runCreateActiveImageTx(input);
       } catch (err) {
         if (
           isSerializationConflict(err) &&
@@ -59,11 +59,17 @@ export class AerodromeGroupImageRepository implements IAerodromeGroupImageReposi
         throw err;
       }
     }
+    /**
+     * Inalcançável: cada tentativa ou retorna o grupo, ou relança o erro (o
+     * retry exige `attempt < SERIALIZATION_MAX_ATTEMPTS`). O `throw` existe só
+     * para satisfazer o tipo de retorno não-`void`.
+     */
+    throw new Error('createActiveImage: laço de retry encerrou sem resolução');
   }
 
   private async runCreateActiveImageTx(
     input: CreateAerodromeGroupImageInput,
-  ): Promise<void> {
+  ): Promise<AerodromeGroup> {
     const {
       groupId,
       imageKey,
@@ -73,7 +79,7 @@ export class AerodromeGroupImageRepository implements IAerodromeGroupImageReposi
       actorId,
     } = input;
 
-    await this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx) => {
       const created = await tx.aerodromeGroupImage.create({
         data: {
           groupId,
@@ -91,7 +97,7 @@ export class AerodromeGroupImageRepository implements IAerodromeGroupImageReposi
         data: { deletedAt: new Date(), deletedBy: actorId, updatedBy: actorId },
       });
 
-      await tx.aerodromeGroup.update({
+      return tx.aerodromeGroup.update({
         where: { id: groupId, deletedAt: null },
         data: { imageKey, updatedBy: actorId },
       });
@@ -105,7 +111,10 @@ export class AerodromeGroupImageRepository implements IAerodromeGroupImageReposi
     await new Promise((resolve) => setTimeout(resolve, delay));
   }
 
-  async removeActiveImage(groupId: string, actorId: string): Promise<boolean> {
+  async removeActiveImage(
+    groupId: string,
+    actorId: string,
+  ): Promise<AerodromeGroup | null> {
     return this.prisma.$transaction(async (tx) => {
       const active = await tx.aerodromeGroupImage.findFirst({
         where: { groupId, deletedAt: null },
@@ -114,7 +123,7 @@ export class AerodromeGroupImageRepository implements IAerodromeGroupImageReposi
       });
 
       if (!active) {
-        return false;
+        return null;
       }
 
       await tx.aerodromeGroupImage.update({
@@ -128,12 +137,10 @@ export class AerodromeGroupImageRepository implements IAerodromeGroupImageReposi
         select: { imageKey: true },
       });
 
-      await tx.aerodromeGroup.update({
+      return tx.aerodromeGroup.update({
         where: { id: groupId, deletedAt: null },
         data: { imageKey: next?.imageKey ?? null, updatedBy: actorId },
       });
-
-      return true;
     }, SERIALIZABLE);
   }
 }

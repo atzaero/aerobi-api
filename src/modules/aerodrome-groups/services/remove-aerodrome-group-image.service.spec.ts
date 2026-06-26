@@ -63,7 +63,7 @@ describe('RemoveAerodromeGroupImageService', () => {
 
   it('404 quando não há imagem ativa', async () => {
     findById.mockResolvedValue(buildAerodromeGroupFixture({ id }));
-    removeActiveImage.mockResolvedValue(false);
+    removeActiveImage.mockResolvedValue(null);
     await expectErrorCode(
       service.execute(id, actor),
       ErrorCode.RESOURCE_NOT_FOUND,
@@ -71,14 +71,12 @@ describe('RemoveAerodromeGroupImageService', () => {
   });
 
   it('sucesso: remove a ativa e zera imageKey (imageUrl null)', async () => {
-    findById
-      .mockResolvedValueOnce(
-        buildAerodromeGroupFixture({ id, imageKey: 'groups/x/images/y.png' }),
-      )
-      .mockResolvedValueOnce(
-        buildAerodromeGroupFixture({ id, imageKey: null }),
-      );
-    removeActiveImage.mockResolvedValue(true);
+    findById.mockResolvedValue(
+      buildAerodromeGroupFixture({ id, imageKey: 'groups/x/images/y.png' }),
+    );
+    removeActiveImage.mockResolvedValue(
+      buildAerodromeGroupFixture({ id, imageKey: null }),
+    );
 
     const out = await service.execute(id, actor);
 

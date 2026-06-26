@@ -154,12 +154,10 @@ describe('UploadAerodromeGroupImageService', () => {
   });
 
   it('aceita webp válido (magic bytes RIFF/WEBP)', async () => {
-    findById
-      .mockResolvedValueOnce(buildAerodromeGroupFixture({ id }))
-      .mockResolvedValueOnce(
-        buildAerodromeGroupFixture({ id, imageKey: 'groups/x/images/y.webp' }),
-      );
-    createActiveImage.mockResolvedValue(undefined);
+    findById.mockResolvedValue(buildAerodromeGroupFixture({ id }));
+    createActiveImage.mockResolvedValue(
+      buildAerodromeGroupFixture({ id, imageKey: 'groups/x/images/y.webp' }),
+    );
     upload.mockResolvedValue(undefined);
 
     const out = await service.execute(
@@ -177,12 +175,10 @@ describe('UploadAerodromeGroupImageService', () => {
   });
 
   it('sucesso: upload, registra a imagem e devolve imageUrl presigned', async () => {
-    findById
-      .mockResolvedValueOnce(buildAerodromeGroupFixture({ id }))
-      .mockResolvedValueOnce(
-        buildAerodromeGroupFixture({ id, imageKey: 'groups/x/images/y.png' }),
-      );
-    createActiveImage.mockResolvedValue(undefined);
+    findById.mockResolvedValue(buildAerodromeGroupFixture({ id }));
+    createActiveImage.mockResolvedValue(
+      buildAerodromeGroupFixture({ id, imageKey: 'groups/x/images/y.png' }),
+    );
     upload.mockResolvedValue(undefined);
 
     const out = await service.execute(id, file(), actor);
