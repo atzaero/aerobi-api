@@ -1,5 +1,6 @@
-import { Controller, Get, Header, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, Res, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import type { Response } from 'express';
 
 import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator';
 import { RequirePermission } from '@/modules/auth/decorators/require-permission.decorator';
@@ -22,15 +23,27 @@ import { ExportAerodromeGroupsService } from '../services/export-aerodrome-group
 export class ExportAerodromeGroupsController {
   constructor(private readonly service: ExportAerodromeGroupsService) {}
 
+  /**
+   * Os headers de download são setados **dentro do handler**, só depois do
+   * service resolver — nunca via `@Header`, que o Nest aplica antes de executar
+   * o handler. Se o service lançar, os headers não chegam a ser setados e o
+   * `AllExceptionsFilter` responde JSON com `Content-Type: application/json`
+   * (o Express só preenche o Content-Type quando ainda não há um), em vez de
+   * entregar o corpo de erro como `text/csv` attachment.
+   */
   @Get('export')
   @RequirePermission('group', 'export')
   @ExportAerodromeGroupsDocs()
-  @Header('Content-Type', 'text/csv; charset=utf-8')
-  @Header('Content-Disposition', 'attachment; filename="aerodrome-groups.csv"')
-  handle(
+  async handle(
     @Query() query: ExportAerodromeGroupsQueryDTO,
     @CurrentUser() actor: AuthenticatedUser,
+    @Res({ passthrough: true }) res: Response,
   ): Promise<string> {
-    return this.service.execute(query, actor);
+    const csv = await this.service.execute(query, actor);
+    res.set({
+      'Content-Type': 'text/csv; charset=utf-8',
+      'Content-Disposition': 'attachment; filename="aerodrome-groups.csv"',
+    });
+    return csv;
   }
 }

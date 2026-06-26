@@ -194,5 +194,23 @@ describe('RemoveUserService', () => {
       }
       expect(softDelete).not.toHaveBeenCalled();
     });
+
+    it('COORDINATOR inativo/soft-deletado (registro null) → 401 ACCOUNT_DELETED', async () => {
+      routeFindActiveById(
+        null,
+        buildUserFixture({ id: 'target', role: UserRole.OPERATOR }),
+      );
+
+      try {
+        await service.execute('target', COORDINATOR);
+        fail('should have thrown');
+      } catch (e) {
+        expect((e as CustomHttpException).getErrorCode()).toBe(
+          ErrorCode.ACCOUNT_DELETED,
+        );
+        expect((e as CustomHttpException).getStatus()).toBe(401);
+      }
+      expect(softDelete).not.toHaveBeenCalled();
+    });
   });
 });

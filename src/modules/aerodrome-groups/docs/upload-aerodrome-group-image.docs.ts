@@ -39,7 +39,9 @@ export function UploadAerodromeGroupImageDocs() {
     ApiOkResponse({ type: AerodromeGroupResponseDTO }),
     ApiBadRequestResponse({
       description:
-        'Imagem ausente, mimetype não suportado (use jpg/png/webp) ou acima de 5 MB.',
+        'Imagem ausente, vazia (0 bytes), mimetype não suportado (use ' +
+        'jpg/png/webp), acima de 5 MB, ou com conteúdo que não corresponde a ' +
+        'uma imagem jpg/png/webp (validação por magic bytes).',
     }),
     ApiUnauthorizedResponse({ description: 'Token ausente ou inválido.' }),
     ApiForbiddenResponse({

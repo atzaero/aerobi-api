@@ -32,8 +32,10 @@ import { GroupScopeSubject } from './group-scope.subject';
  * - `request.user` ausente → 401 (fallback caso o `JwtAuthGuard` falte).
  * - `user.role === ADMIN` → passa (bypass global, sem grupo).
  * - `params.id` ausente/não-UUID → 422 (não consulta o DB com lixo).
- * - Recurso inexistente ou soft-deletado → 404.
- * - `recurso.groupId !== user.aerodromeGroupId` → 403.
+ * - Ator removido (lookup ativo devolve `null`, token ainda válido) → 401.
+ * - Recurso inexistente, fora do escopo do ator, ou ator sem grupo provisionado
+ *   → 404 (indistinguíveis: o status não vaza a existência de recursos de outro
+ *   grupo — #387). O motivo real fica só no log `debug`.
  *
  * O `aerodromeGroupId` do usuário é lido **do banco** (não do JWT), de modo que
  * uma troca de grupo tenha efeito imediato sem esperar o token expirar.
@@ -102,9 +104,49 @@ export class GroupScopeGuard implements CanActivate {
       );
     }
 
+    /**
+     * Lê o usuário ativo do banco **antes** de tocar no recurso (a `JwtStrategy`
+     * confia no payload e não revalida contra o DB; o `aerodromeGroupId` vem
+     * daqui para refletir troca de grupo sem esperar o token expirar).
+     */
+    const dbUser = await this.prisma.user.findFirst({
+      where: { id: user.id, deletedAt: null },
+      select: { aerodromeGroupId: true },
+    });
+
+    /**
+     * Conta removida (token ainda válido, registro inexistente/soft-deletado):
+     * **401 `ACCOUNT_DELETED`** — força re-login em vez de mascarar como 404.
+     * Espelha o `resolveActorGroupScope` das listagens (#385) e tem precedência
+     * sobre o estado do recurso.
+     */
+    if (dbUser === null) {
+      throw new CustomHttpException(
+        this.errorMessageService.getMessage(ErrorCode.ACCOUNT_DELETED),
+        HttpStatus.UNAUTHORIZED,
+        ErrorCode.ACCOUNT_DELETED,
+      );
+    }
+
+    const userGroupId = dbUser.aerodromeGroupId ?? null;
     const resourceGroupId = await resolver(this.prisma, resourceId);
 
-    if (resourceGroupId === null) {
+    /**
+     * Acesso negado é **404 uniforme** (#387): recurso inexistente, recurso de
+     * outro grupo e ator sem grupo provisionado são indistinguíveis para o
+     * cliente — o status não pode virar oracle de existência de recursos fora do
+     * escopo. O motivo real fica só no log `debug`.
+     */
+    if (
+      resourceGroupId === null ||
+      userGroupId === null ||
+      userGroupId !== resourceGroupId
+    ) {
+      this.logger.debug(
+        `Acesso negado (404) — userId=${user.id} userGroup=${userGroupId} ` +
+          `resource=${subject}:${resourceId} resourceGroup=${resourceGroupId} ` +
+          `exists=${resourceGroupId !== null}`,
+      );
       throw new CustomHttpException(
         this.errorMessageService.getMessage(ErrorCode.RESOURCE_NOT_FOUND, {
           RESOURCE: subject,
@@ -112,29 +154,6 @@ export class GroupScopeGuard implements CanActivate {
         }),
         HttpStatus.NOT_FOUND,
         ErrorCode.RESOURCE_NOT_FOUND,
-      );
-    }
-
-    // Lê o usuário ativo do banco (a JwtStrategy confia no payload e não
-    // revalida contra o DB; um usuário soft-deletado com access token ainda
-    // válido cai aqui como `null` → grupo `null` → 403).
-    const dbUser = await this.prisma.user.findFirst({
-      where: { id: user.id, deletedAt: null },
-      select: { aerodromeGroupId: true },
-    });
-    const userGroupId = dbUser?.aerodromeGroupId ?? null;
-
-    if (userGroupId === null || userGroupId !== resourceGroupId) {
-      this.logger.debug(
-        `Forbidden — userId=${user.id} userGroup=${userGroupId} ` +
-          `resource=${subject}:${resourceId} resourceGroup=${resourceGroupId}`,
-      );
-      throw new CustomHttpException(
-        this.errorMessageService.getMessage(ErrorCode.FORBIDDEN, {
-          RESOURCE: subject,
-        }),
-        HttpStatus.FORBIDDEN,
-        ErrorCode.FORBIDDEN,
       );
     }
 

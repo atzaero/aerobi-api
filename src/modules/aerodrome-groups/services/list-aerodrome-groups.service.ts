@@ -1,17 +1,18 @@
 import { Injectable } from '@nestjs/common';
 
+import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { resolveActorGroupScope } from '@/common/utils/group-scope.util';
 import { resolvePaginationParams } from '@/common/utils/pagination-params.util';
-import type { Prisma } from '@/generated/prisma/client';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 import { StorageService } from '@/modules/storage/services/storage.service';
+import { resolveBestEffortPresignedUrl } from '@/modules/storage/utils/resolve-presigned-url';
 import { UserRepository } from '@/modules/users/repositories/user.repository';
 
 import { ListAerodromeGroupsQueryDTO } from '../dtos/list-aerodrome-groups-query.dto';
 import { AerodromeGroupsPaginatedResponseDTO } from '../dtos/aerodrome-groups-paginated-response.dto';
 import { AerodromeGroupMapper } from '../mappers/aerodrome-group.mapper';
 import { AerodromeGroupRepository } from '../repositories/aerodrome-group.repository';
-import { resolveAerodromeGroupImageUrl } from '../utils/resolve-aerodrome-group-image-url';
+import { buildAerodromeGroupScopedWhere } from '../utils/build-aerodrome-group-where';
 
 const MAX_LIMIT = 200;
 
@@ -21,6 +22,7 @@ export class ListAerodromeGroupsService {
     private readonly repo: AerodromeGroupRepository,
     private readonly userRepository: UserRepository,
     private readonly storage: StorageService,
+    private readonly errorMessageService: ErrorMessageService,
   ) {}
 
   async execute(
@@ -31,28 +33,18 @@ export class ListAerodromeGroupsService {
 
     /**
      * Escopo por grupo (espelha o web): COORDINATOR só enxerga o próprio grupo
-     * (resolvido por consulta — o JWT só tem role); ADMIN vê todos. COORDINATOR
-     * sem grupo (`none`) não enxerga nada — sem "fail open".
+     * (resolvido por consulta — o JWT só tem role); ADMIN vê todos. Ator inativo
+     * → 401; COORDINATOR sem grupo (`none`) cai no `where` fail-closed do
+     * builder e não enxerga nada — sem "fail open".
      */
-    const scope = await resolveActorGroupScope(actor.role, actor.id, (id) =>
-      this.userRepository.findActiveById(id),
+    const scope = await resolveActorGroupScope(
+      actor.role,
+      actor.id,
+      this.userRepository,
+      this.errorMessageService,
     );
 
-    if (scope.kind === 'none') {
-      return new AerodromeGroupsPaginatedResponseDTO([], page, limit, 0);
-    }
-
-    const where: Prisma.AerodromeGroupWhereInput = {};
-    if (query.uf !== undefined) {
-      where.uf = query.uf;
-    }
-    if (query.name !== undefined) {
-      where.name = { contains: query.name, mode: 'insensitive' };
-    }
-    /** O grupo do coordinator **é** o registro: força o id ao próprio grupo. */
-    if (scope.kind === 'group') {
-      where.id = scope.groupId;
-    }
+    const where = buildAerodromeGroupScopedWhere(query, scope);
 
     const [items, total] = await Promise.all([
       this.repo.findMany(where, skip, limit),
@@ -64,7 +56,7 @@ export class ListAerodromeGroupsService {
       items.map(async (item) =>
         AerodromeGroupMapper.toApiRow(
           item,
-          await resolveAerodromeGroupImageUrl(this.storage, item.imageKey),
+          await resolveBestEffortPresignedUrl(this.storage, item.imageKey),
         ),
       ),
     );

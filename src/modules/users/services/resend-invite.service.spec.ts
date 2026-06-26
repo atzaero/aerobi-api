@@ -245,5 +245,27 @@ describe('ResendInviteService', () => {
       }
       expect(createInviteToken).not.toHaveBeenCalled();
     });
+
+    it('COORDINATOR inativo/soft-deletado (registro null) → 401 ACCOUNT_DELETED', async () => {
+      routeFindActiveById(
+        null,
+        buildPendingUserFixture({ role: UserRole.OPERATOR }),
+      );
+
+      try {
+        await service.execute({
+          userId: 'user-1',
+          actorId: 'coord-1',
+          actorRole: UserRole.COORDINATOR,
+        });
+        fail('should have thrown');
+      } catch (e) {
+        expect((e as CustomHttpException).getErrorCode()).toBe(
+          ErrorCode.ACCOUNT_DELETED,
+        );
+        expect((e as CustomHttpException).getStatus()).toBe(401);
+      }
+      expect(createInviteToken).not.toHaveBeenCalled();
+    });
   });
 });
