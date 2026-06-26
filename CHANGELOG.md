@@ -1,3 +1,14 @@
+# [2.6.0-beta.35](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.34...v2.6.0-beta.35) (2026-06-26)
+
+
+### Bug Fixes
+
+* **aerodrome-groups:** retenta P2034 no upload e mapeia conflito para 409 ([81a0a14](https://github.com/atzaero/aerobi-api/commit/81a0a143337361f447ce6f37a3576d7e785a9eaa)), closes [#397](https://github.com/atzaero/aerobi-api/issues/397)
+* **aerodrome-groups:** seta headers do /export dentro do handler (só no sucesso) ([2db31b5](https://github.com/atzaero/aerobi-api/commit/2db31b596d053da495fe7f6d11c1c797ce944ba0)), closes [#391](https://github.com/atzaero/aerobi-api/issues/391)
+* **aerodrome-groups:** valida magic bytes e rejeita imagem de 0 bytes no upload ([b1ae9c4](https://github.com/atzaero/aerobi-api/commit/b1ae9c491ed5390784bb011a8d28d899c11c27e6)), closes [#396](https://github.com/atzaero/aerobi-api/issues/396)
+* **auth:** GroupScopeGuard responde 404 uniforme fora do escopo ([#387](https://github.com/atzaero/aerobi-api/issues/387)) ([a2758a5](https://github.com/atzaero/aerobi-api/commit/a2758a5eca971d4a1e323573c1eb7c0072c055ca))
+* **auth:** GroupScopeGuard retorna 401 ACCOUNT_DELETED para conta removida ([#385](https://github.com/atzaero/aerobi-api/issues/385)) ([3d7ea03](https://github.com/atzaero/aerobi-api/commit/3d7ea0305310b2e5727ebdad9aed11ff8fcc2a31)), closes [#387](https://github.com/atzaero/aerobi-api/issues/387)
+
 # [2.6.0-beta.34](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.33...v2.6.0-beta.34) (2026-06-25)
 
 
