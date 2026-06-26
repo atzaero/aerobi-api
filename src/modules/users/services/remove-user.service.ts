@@ -46,8 +46,11 @@ export class RemoveUserService {
       );
     }
 
-    const scope = await resolveActorGroupScope(actor.role, actor.id, (id) =>
-      this.userRepository.findActiveById(id),
+    const scope = await resolveActorGroupScope(
+      actor.role,
+      actor.id,
+      this.userRepository,
+      this.errorMessageService,
     );
 
     if (scope.kind === 'none') {

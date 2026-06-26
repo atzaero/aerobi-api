@@ -1,3 +1,5 @@
+import { ErrorMessageService } from '@/common/error-messages/error-message.service';
+import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { Uf, UserRole } from '@/generated/prisma/client';
 import { buildAuthenticatedUserFixture } from '@/modules/auth/testing/authenticated-user.fixtures';
 
@@ -37,7 +39,7 @@ describe('ListUsersService', () => {
       findManyPaginated,
     } as unknown as UserRepository;
 
-    service = new ListUsersService(userRepository);
+    service = new ListUsersService(userRepository, new ErrorMessageService());
   });
 
   const baseQuery: ListUsersQueryDto = { page: 1, limit: 10 };
@@ -91,5 +93,14 @@ describe('ListUsersService', () => {
     expect(findManyPaginated).not.toHaveBeenCalled();
     expect(result.meta.totalItems).toBe(0);
     expect(result.data).toEqual([]);
+  });
+
+  it('COORDINATOR inativo/soft-deletado (registro null): 401, sem listar', async () => {
+    findActiveById.mockResolvedValue(null);
+
+    await expect(
+      service.execute(baseQuery, COORDINATOR),
+    ).rejects.toBeInstanceOf(CustomHttpException);
+    expect(findManyPaginated).not.toHaveBeenCalled();
   });
 });

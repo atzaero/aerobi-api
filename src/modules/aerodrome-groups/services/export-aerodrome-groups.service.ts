@@ -1,14 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 import { EXPORT_MAX_ROWS, toCsv } from '@/common/utils/csv.util';
+import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { resolveActorGroupScope } from '@/common/utils/group-scope.util';
-import type { Prisma } from '@/generated/prisma/client';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 import { UserRepository } from '@/modules/users/repositories/user.repository';
 
 import { ExportAerodromeGroupsQueryDTO } from '../dtos/export-aerodrome-groups-query.dto';
 import { aerodromeGroupExportColumns } from '../mappers/aerodrome-group-export.columns';
 import { AerodromeGroupRepository } from '../repositories/aerodrome-group.repository';
+import { buildAerodromeGroupScopedWhere } from '../utils/build-aerodrome-group-where';
 
 @Injectable()
 export class ExportAerodromeGroupsService {
@@ -17,6 +18,7 @@ export class ExportAerodromeGroupsService {
   constructor(
     private readonly repo: AerodromeGroupRepository,
     private readonly userRepository: UserRepository,
+    private readonly errorMessageService: ErrorMessageService,
   ) {}
 
   async execute(
@@ -25,27 +27,18 @@ export class ExportAerodromeGroupsService {
   ): Promise<string> {
     /**
      * Mesmo escopo da listagem: COORDINATOR exporta só o próprio grupo; ADMIN
-     * exporta todos. COORDINATOR sem grupo (`none`) recebe um CSV só com o
-     * cabeçalho — sem "fail open".
+     * exporta todos. Ator inativo → 401; COORDINATOR sem grupo (`none`) cai no
+     * `where` fail-closed do builder e recebe um CSV só com o cabeçalho — sem
+     * "fail open".
      */
-    const scope = await resolveActorGroupScope(actor.role, actor.id, (id) =>
-      this.userRepository.findActiveById(id),
+    const scope = await resolveActorGroupScope(
+      actor.role,
+      actor.id,
+      this.userRepository,
+      this.errorMessageService,
     );
 
-    if (scope.kind === 'none') {
-      return toCsv([], aerodromeGroupExportColumns);
-    }
-
-    const where: Prisma.AerodromeGroupWhereInput = {};
-    if (query.uf !== undefined) {
-      where.uf = query.uf;
-    }
-    if (query.name !== undefined) {
-      where.name = { contains: query.name, mode: 'insensitive' };
-    }
-    if (scope.kind === 'group') {
-      where.id = scope.groupId;
-    }
+    const where = buildAerodromeGroupScopedWhere(query, scope);
 
     /**
      * Busca `EXPORT_MAX_ROWS + 1` (sem paginação: `skip = 0`) para detectar

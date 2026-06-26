@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
+import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { resolvePaginationParams } from '@/common/utils/pagination-params.util';
 import { resolveActorGroupScope } from '@/common/utils/group-scope.util';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
@@ -11,7 +12,10 @@ import { UserRepository } from '../repositories/user.repository';
 
 @Injectable()
 export class ListUsersService {
-  constructor(private readonly userRepository: UserRepository) {}
+  constructor(
+    private readonly userRepository: UserRepository,
+    private readonly errorMessageService: ErrorMessageService,
+  ) {}
 
   async execute(
     query: ListUsersQueryDto,
@@ -22,8 +26,11 @@ export class ListUsersService {
     // Escopo por grupo (espelha `scopedFilters` do aerobi-web): COORDINATOR é
     // restrito ao próprio grupo (resolvido por consulta — o JWT só tem role);
     // ADMIN vê todos (sem consulta) e pode filtrar livremente por `aerodromeGroupId`.
-    const scope = await resolveActorGroupScope(actor.role, actor.id, (id) =>
-      this.userRepository.findActiveById(id),
+    const scope = await resolveActorGroupScope(
+      actor.role,
+      actor.id,
+      this.userRepository,
+      this.errorMessageService,
     );
 
     // COORDINATOR sem grupo (`none`) não enxerga nada — sem "fail open".

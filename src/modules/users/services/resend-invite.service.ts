@@ -62,7 +62,8 @@ export class ResendInviteService {
     const scope = await resolveActorGroupScope(
       input.actorRole,
       input.actorId,
-      (id) => this.userRepository.findActiveById(id),
+      this.userRepository,
+      this.errorMessageService,
     );
 
     if (scope.kind === 'none') {
