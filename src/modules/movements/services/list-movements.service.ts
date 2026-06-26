@@ -4,12 +4,12 @@ import type { Prisma } from '@/generated/prisma/client';
 import { resolvePaginationParams } from '@/common/utils/pagination-params.util';
 import { normalizeMarcas } from '@/modules/rab/utils/normalize-marcas';
 import { StorageService } from '@/modules/storage/services/storage.service';
+import { resolveBestEffortPresignedUrl } from '@/modules/storage/utils/resolve-presigned-url';
 
 import { MovementsPaginatedResponseDTO } from '../dtos/movements-paginated-response.dto';
 import { ListMovementsQueryDTO } from '../dtos/list-movements-query.dto';
 import { MovementListItemMapper } from '../mappers/movement-list-item.mapper';
 import { MovementRepository } from '../repositories/movement.repository';
-import { resolveReadingImageUrl } from '../utils/resolve-reading-image-url';
 
 const MAX_LIMIT = 200;
 
@@ -35,7 +35,7 @@ export class ListMovementsService {
       items.map(async (item) =>
         MovementListItemMapper.toListItem(
           item,
-          await resolveReadingImageUrl(this.storage, item.imageKey),
+          await resolveBestEffortPresignedUrl(this.storage, item.imageKey),
         ),
       ),
     );

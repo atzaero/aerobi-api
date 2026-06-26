@@ -4,11 +4,11 @@ import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { StorageService } from '@/modules/storage/services/storage.service';
+import { resolveBestEffortPresignedUrl } from '@/modules/storage/utils/resolve-presigned-url';
 
 import { MovementResponseDTO } from '../dtos/movement-response.dto';
 import { MovementMapper } from '../mappers/movement.mapper';
 import { MovementRepository } from '../repositories/movement.repository';
-import { resolveReadingImageUrl } from '../utils/resolve-reading-image-url';
 
 export type RemoveMovementInput = { id: string; deletedBy: string };
 
@@ -33,7 +33,7 @@ export class RemoveMovementService {
       );
     }
     const deleted = await this.repo.softDelete(input.id, input.deletedBy);
-    const imageUrl = await resolveReadingImageUrl(
+    const imageUrl = await resolveBestEffortPresignedUrl(
       this.storage,
       deleted.imageKey,
     );

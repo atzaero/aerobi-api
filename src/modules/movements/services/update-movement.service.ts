@@ -9,6 +9,7 @@ import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { RabRowRepository } from '@/modules/rab/repositories/rab-row.repository';
 import { normalizeMarcas } from '@/modules/rab/utils/normalize-marcas';
 import { StorageService } from '@/modules/storage/services/storage.service';
+import { resolveBestEffortPresignedUrl } from '@/modules/storage/utils/resolve-presigned-url';
 
 import { MovementResponseDTO } from '../dtos/movement-response.dto';
 import {
@@ -19,7 +20,6 @@ import { buildAircraftSnapshotCreateInput } from '../mappers/aircraft-snapshot.p
 import { MovementMapper } from '../mappers/movement.mapper';
 import { MovementRepository } from '../repositories/movement.repository';
 import { isConformityApplicable } from '../utils/conformity-status.util';
-import { resolveReadingImageUrl } from '../utils/resolve-reading-image-url';
 
 /**
  * Entrada do {@link UpdateMovementService.execute}: o id do movimento, a
@@ -124,7 +124,7 @@ export class UpdateMovementService {
       this.eventEmitter.emit(MOVEMENT_CONFORMITY_REQUESTED_EVENT, payload);
     }
 
-    const imageUrl = await resolveReadingImageUrl(
+    const imageUrl = await resolveBestEffortPresignedUrl(
       this.storage,
       updated.imageKey,
     );

@@ -8,6 +8,7 @@ import { getErrorMessage } from '@/common/utils/error.util';
 import { RabRowRepository } from '@/modules/rab/repositories/rab-row.repository';
 import { normalizeMarcas } from '@/modules/rab/utils/normalize-marcas';
 import { StorageService } from '@/modules/storage/services/storage.service';
+import { resolveBestEffortPresignedUrl } from '@/modules/storage/utils/resolve-presigned-url';
 
 import { CreateMovementResponseDTO } from '../dtos/create-movement-response.dto';
 import {
@@ -24,7 +25,6 @@ import {
   buildReadingImageKey,
   isAllowedImageMimetype,
 } from '../utils/reading-image';
-import { resolveReadingImageUrl } from '../utils/resolve-reading-image-url';
 import { MovementType } from '@/generated/prisma/enums';
 
 import type { MovementOrigin } from './movement-origin';
@@ -147,7 +147,7 @@ export class CreateMovementService {
     return {
       id: created.id,
       message: LEGACY_SUCCESS_MESSAGE,
-      image_path: await resolveReadingImageUrl(this.storage, imageKey),
+      image_path: await resolveBestEffortPresignedUrl(this.storage, imageKey),
     };
   }
 

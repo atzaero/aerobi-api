@@ -1,6 +1,8 @@
 import { Prisma } from '@/generated/prisma/client';
 import type { PrismaService } from '@/prisma/prisma.service';
 
+import { buildAerodromeGroupFixture } from '../testing/aerodrome-group.entity.fixture';
+
 import type { CreateAerodromeGroupImageInput } from './aerodrome-group-image.repository.interface';
 
 import { AerodromeGroupImageRepository } from './aerodrome-group-image.repository';
@@ -37,15 +39,19 @@ describe('AerodromeGroupImageRepository.createActiveImage (retry P2034)', () => 
     jest.useRealTimers();
   });
 
-  it('retenta e conclui quando o conflito some antes do limite', async () => {
+  it('retenta e conclui devolvendo o grupo quando o conflito some antes do limite', async () => {
+    const group = buildAerodromeGroupFixture({
+      id: input.groupId,
+      imageKey: input.imageKey,
+    });
     transaction
       .mockRejectedValueOnce(p2034())
       .mockRejectedValueOnce(p2034())
-      .mockResolvedValueOnce(undefined);
+      .mockResolvedValueOnce(group);
     /** Anexa o matcher antes de avançar os timers (evita unhandled rejection). */
-    const expectation = expect(
-      repo.createActiveImage(input),
-    ).resolves.toBeUndefined();
+    const expectation = expect(repo.createActiveImage(input)).resolves.toBe(
+      group,
+    );
     await jest.runAllTimersAsync();
     await expectation;
     expect(transaction).toHaveBeenCalledTimes(3);

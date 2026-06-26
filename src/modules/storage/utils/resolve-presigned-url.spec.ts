@@ -1,13 +1,13 @@
 import type { StorageService } from '@/modules/storage/services/storage.service';
 
-import { resolveAerodromeGroupImageUrl } from './resolve-aerodrome-group-image-url';
+import { resolveBestEffortPresignedUrl } from './resolve-presigned-url';
 
-describe('resolveAerodromeGroupImageUrl', () => {
+describe('resolveBestEffortPresignedUrl', () => {
   it('retorna null sem key, sem tocar no storage', async () => {
     const getPresignedUrl = jest.fn();
     const storage = { getPresignedUrl } as unknown as StorageService;
     await expect(
-      resolveAerodromeGroupImageUrl(storage, null),
+      resolveBestEffortPresignedUrl(storage, null),
     ).resolves.toBeNull();
     expect(getPresignedUrl).not.toHaveBeenCalled();
   });
@@ -17,7 +17,7 @@ describe('resolveAerodromeGroupImageUrl', () => {
       getPresignedUrl: jest.fn().mockResolvedValue('https://minio/signed'),
     } as unknown as StorageService;
     await expect(
-      resolveAerodromeGroupImageUrl(storage, 'groups/g/images/x.png'),
+      resolveBestEffortPresignedUrl(storage, 'groups/g/images/x.png'),
     ).resolves.toBe('https://minio/signed');
   });
 
@@ -26,7 +26,7 @@ describe('resolveAerodromeGroupImageUrl', () => {
       getPresignedUrl: jest.fn().mockRejectedValue(new Error('minio down')),
     } as unknown as StorageService;
     await expect(
-      resolveAerodromeGroupImageUrl(storage, 'groups/g/images/x.png'),
+      resolveBestEffortPresignedUrl(storage, 'groups/g/images/x.png'),
     ).resolves.toBeNull();
   });
 });

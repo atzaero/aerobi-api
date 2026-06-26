@@ -5,20 +5,21 @@ import { ErrorMessageService } from '@/common/error-messages/error-message.servi
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { getErrorMessage } from '@/common/utils/error.util';
 import { isSerializationConflict } from '@/common/utils/prisma-error.util';
+import { resourceNotFound } from '@/common/utils/resource-not-found.util';
+import type { AerodromeGroup } from '@/generated/prisma/client';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 import { StorageService } from '@/modules/storage/services/storage.service';
 
 import { AerodromeGroupResponseDTO } from '../dtos/aerodrome-group-response.dto';
-import { AerodromeGroupMapper } from '../mappers/aerodrome-group.mapper';
 import { AerodromeGroupImageRepository } from '../repositories/aerodrome-group-image.repository';
 import { AerodromeGroupRepository } from '../repositories/aerodrome-group.repository';
+import { toAerodromeGroupApiRowWithImage } from '../utils/aerodrome-group-response';
 import {
   buildAerodromeGroupImageKey,
   detectImageMimetype,
   isAllowedImageMimetype,
   MAX_GROUP_IMAGE_SIZE_BYTES,
 } from '../utils/aerodrome-group-image';
-import { resolveAerodromeGroupImageUrl } from '../utils/resolve-aerodrome-group-image-url';
 
 @Injectable()
 export class UploadAerodromeGroupImageService {
@@ -39,7 +40,11 @@ export class UploadAerodromeGroupImageService {
     /** Existência checada aqui — o `GroupScopeGuard` faz bypass para ADMIN. */
     const group = await this.groupRepo.findById(groupId);
     if (!group) {
-      throw this.notFound(groupId, 'Grupo de aeródromos');
+      throw resourceNotFound(
+        this.errorMessageService,
+        'Grupo de aeródromos',
+        groupId,
+      );
     }
 
     if (!image) {
@@ -81,8 +86,9 @@ export class UploadAerodromeGroupImageService {
       );
     }
 
+    let updated: AerodromeGroup;
     try {
-      await this.imageRepo.createActiveImage({
+      updated = await this.imageRepo.createActiveImage({
         groupId,
         imageKey: key,
         originalFilename: image.originalname,
@@ -114,12 +120,7 @@ export class UploadAerodromeGroupImageService {
       throw err;
     }
 
-    const updated = (await this.groupRepo.findById(groupId)) ?? group;
-    const imageUrl = await resolveAerodromeGroupImageUrl(
-      this.storage,
-      updated.imageKey,
-    );
-    return AerodromeGroupMapper.toApiRow(updated, imageUrl);
+    return toAerodromeGroupApiRowWithImage(this.storage, updated);
   }
 
   private validation(details: string): CustomHttpException {
@@ -129,17 +130,6 @@ export class UploadAerodromeGroupImageService {
       }),
       HttpStatus.BAD_REQUEST,
       ErrorCode.VALIDATION_FAILED,
-    );
-  }
-
-  private notFound(id: string, resource: string): CustomHttpException {
-    return new CustomHttpException(
-      this.errorMessageService.getMessage(ErrorCode.RESOURCE_NOT_FOUND, {
-        RESOURCE: resource,
-        ID: id,
-      }),
-      HttpStatus.NOT_FOUND,
-      ErrorCode.RESOURCE_NOT_FOUND,
     );
   }
 }

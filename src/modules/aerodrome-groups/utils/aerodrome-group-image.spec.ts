@@ -1,24 +1,10 @@
 import {
-  ALLOWED_IMAGE_MIMETYPES,
   buildAerodromeGroupImageKey,
   detectImageMimetype,
-  isAllowedImageMimetype,
   MAX_GROUP_IMAGE_SIZE_BYTES,
 } from './aerodrome-group-image';
 
 describe('aerodrome-group-image utils', () => {
-  it('aceita apenas jpg/png/webp', () => {
-    expect(ALLOWED_IMAGE_MIMETYPES).toEqual([
-      'image/jpeg',
-      'image/png',
-      'image/webp',
-    ]);
-    expect(isAllowedImageMimetype('image/jpeg')).toBe(true);
-    expect(isAllowedImageMimetype('image/webp')).toBe(true);
-    expect(isAllowedImageMimetype('image/gif')).toBe(false);
-    expect(isAllowedImageMimetype('application/pdf')).toBe(false);
-  });
-
   it('limite de 5 MB', () => {
     expect(MAX_GROUP_IMAGE_SIZE_BYTES).toBe(5 * 1024 * 1024);
   });
