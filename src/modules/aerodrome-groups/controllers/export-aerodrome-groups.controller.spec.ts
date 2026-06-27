@@ -32,7 +32,11 @@ describe('ExportAerodromeGroupsController', () => {
 
   it('delega query e ator ao service e devolve o CSV', async () => {
     const query: ExportAerodromeGroupsQueryDTO = { name: 'x' };
-    execute.mockResolvedValue('\uFEFFID,Nome');
+    execute.mockResolvedValue({
+      csv: '\uFEFFID,Nome',
+      truncated: false,
+      total: 1,
+    });
     const { res } = mockResponse();
     await expect(controller.handle(query, actor, res)).resolves.toBe(
       '\uFEFFID,Nome',
@@ -40,14 +44,35 @@ describe('ExportAerodromeGroupsController', () => {
     expect(execute).toHaveBeenCalledWith(query, actor);
   });
 
-  it('seta os headers de download s\u00F3 no caminho de sucesso', async () => {
+  it('seta os headers de download e n\u00E3o marca truncamento no caso normal', async () => {
     const query: ExportAerodromeGroupsQueryDTO = {};
-    execute.mockResolvedValue('\uFEFFID,Nome');
+    execute.mockResolvedValue({
+      csv: '\uFEFFID,Nome',
+      truncated: false,
+      total: 1,
+    });
     const { res, set } = mockResponse();
     await controller.handle(query, actor, res);
     expect(set).toHaveBeenCalledWith({
       'Content-Type': 'text/csv; charset=utf-8',
       'Content-Disposition': 'attachment; filename="aerodrome-groups.csv"',
+    });
+    /** Sem truncamento, n\u00E3o h\u00E1 header `X-Export-*` (\u00FAnica chamada a `set`). */
+    expect(set).toHaveBeenCalledTimes(1);
+  });
+
+  it('seta X-Export-Truncated e X-Export-Total quando truncado (#392)', async () => {
+    const query: ExportAerodromeGroupsQueryDTO = {};
+    execute.mockResolvedValue({
+      csv: '\uFEFFID,Nome',
+      truncated: true,
+      total: 73_000,
+    });
+    const { res, set } = mockResponse();
+    await controller.handle(query, actor, res);
+    expect(set).toHaveBeenCalledWith({
+      'X-Export-Truncated': 'true',
+      'X-Export-Total': '73000',
     });
   });
 

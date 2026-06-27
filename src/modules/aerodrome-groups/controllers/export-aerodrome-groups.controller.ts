@@ -39,11 +39,23 @@ export class ExportAerodromeGroupsController {
     @CurrentUser() actor: AuthenticatedUser,
     @Res({ passthrough: true }) res: Response,
   ): Promise<string> {
-    const csv = await this.service.execute(query, actor);
+    const { csv, truncated, total } = await this.service.execute(query, actor);
     res.set({
       'Content-Type': 'text/csv; charset=utf-8',
       'Content-Disposition': 'attachment; filename="aerodrome-groups.csv"',
     });
+    /**
+     * Sinaliza o corte no teto (#392): o CSV tem só `EXPORT_MAX_ROWS` linhas das
+     * `total` que casam o filtro. A UI usa isto para avisar e orientar a refinar
+     * o filtro, em vez de tratar o arquivo como o dataset completo. Os headers
+     * são expostos via CORS em `apply-cors.ts`.
+     */
+    if (truncated) {
+      res.set({
+        'X-Export-Truncated': 'true',
+        'X-Export-Total': String(total),
+      });
+    }
     return csv;
   }
 }
