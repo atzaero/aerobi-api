@@ -31,6 +31,18 @@ export function applyCors(
       'Authorization',
       'X-API-Key',
     ],
+    /**
+     * Headers de resposta que o JS do browser pode ler (sem isto, custom headers
+     * ficam invisíveis ao cliente). As rotas de export são `JwtAuthGuard`, então
+     * o cliente baixa via `fetch`+Blob e precisa do `Content-Disposition` para o
+     * nome do arquivo; `X-Export-Truncated`/`X-Export-Total` sinalizam o corte no
+     * teto (#392).
+     */
+    exposedHeaders: [
+      'Content-Disposition',
+      'X-Export-Truncated',
+      'X-Export-Total',
+    ],
     credentials: true,
   };
 

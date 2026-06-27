@@ -129,7 +129,7 @@ describe('GroupScopeGuard', () => {
   it('resolve o próprio grupo quando o recurso É o grupo (AerodromeGroup)', async () => {
     mockSubject(GroupScopeSubject.AERODROME_GROUP);
     deps.aerodromeGroup.findFirst.mockResolvedValue({ id: RESOURCE_ID });
-    // O grupo do recurso é o próprio id; o coordinator deve pertencer a ele.
+    /** O grupo do recurso é o próprio id; o coordinator deve pertencer a ele. */
     deps.user.findFirst.mockResolvedValue({ aerodromeGroupId: RESOURCE_ID });
 
     await expect(guard.canActivate(buildContext(operator))).resolves.toBe(true);
@@ -192,7 +192,7 @@ describe('GroupScopeGuard', () => {
     deps.operationalAerodrome.findFirst.mockResolvedValue({
       groupId: GROUP_A,
     });
-    // JwtStrategy confia no token; o lookup ativo (deletedAt: null) devolve null.
+    /** JwtStrategy confia no token; o lookup ativo (deletedAt: null) devolve null. */
     deps.user.findFirst.mockResolvedValue(null);
 
     const promise = guard.canActivate(buildContext(operator));

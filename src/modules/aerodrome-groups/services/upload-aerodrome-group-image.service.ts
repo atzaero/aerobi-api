@@ -37,7 +37,7 @@ export class UploadAerodromeGroupImageService {
     image: Express.Multer.File | undefined,
     actor: AuthenticatedUser,
   ): Promise<AerodromeGroupResponseDTO> {
-    /** Existência checada aqui — o `GroupScopeGuard` faz bypass para ADMIN. */
+    /** `group:update` é ADMIN-only (`PermissionsGuard`): a existência (404) é checada aqui. */
     const group = await this.groupRepo.findById(groupId);
     if (!group) {
       throw resourceNotFound(

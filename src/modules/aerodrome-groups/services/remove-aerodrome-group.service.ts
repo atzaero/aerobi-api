@@ -22,9 +22,8 @@ export class RemoveAerodromeGroupService {
     actor: AuthenticatedUser,
   ): Promise<AerodromeGroupDeletionResponseDTO> {
     /**
-     * Existência checada aqui porque o `GroupScopeGuard` faz bypass para ADMIN
-     * (COORDINATOR nem chega: o `PermissionsGuard` barra — `group:delete` é só
-     * ADMIN).
+     * `group:delete` é ADMIN-only (`PermissionsGuard`), sem escopo por grupo — a
+     * checagem de existência (404) é responsabilidade exclusiva deste service.
      */
     const existing = await this.repo.findById(id);
     if (!existing) {

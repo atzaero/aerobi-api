@@ -25,8 +25,8 @@ export class UpdateAerodromeGroupService {
     actor: AuthenticatedUser,
   ): Promise<AerodromeGroupResponseDTO> {
     /**
-     * O `GroupScopeGuard` valida escopo/existência para COORDINATOR, mas faz
-     * bypass para ADMIN — por isso a checagem de existência (404) permanece aqui.
+     * `group:update` é ADMIN-only (`PermissionsGuard`), sem escopo por grupo —
+     * a checagem de existência (404) é responsabilidade exclusiva deste service.
      */
     const existing = await this.repo.findById(id);
     if (!existing) {
