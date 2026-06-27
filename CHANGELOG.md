@@ -1,3 +1,11 @@
+# [2.6.0-beta.37](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.36...v2.6.0-beta.37) (2026-06-27)
+
+
+### Bug Fixes
+
+* **aerodrome-groups:** aplica findings do code-review do Bloco 3 ([#386](https://github.com/atzaero/aerobi-api/issues/386), [#392](https://github.com/atzaero/aerobi-api/issues/392)) ([c6f7715](https://github.com/atzaero/aerobi-api/commit/c6f771531c679e38c262e0bebe0a18feaf9ad3f7))
+* **deps:** override linkify-it para 5.0.1 (corrige ReDoS high transitivo) ([95775ca](https://github.com/atzaero/aerobi-api/commit/95775ca67ba0123a7bb79fdb2e0260a11c22f5c9)), closes [#401](https://github.com/atzaero/aerobi-api/issues/401)
+
 # [2.6.0-beta.36](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.35...v2.6.0-beta.36) (2026-06-26)
 
 
