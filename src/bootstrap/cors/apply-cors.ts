@@ -33,10 +33,16 @@ export function applyCors(
     ],
     /**
      * Headers de resposta que o JS do browser pode ler (sem isto, custom headers
-     * ficam invisíveis ao cliente). `X-Export-Truncated`/`X-Export-Total`
-     * sinalizam o corte no teto dos exports CSV (#392).
+     * ficam invisíveis ao cliente). As rotas de export são `JwtAuthGuard`, então
+     * o cliente baixa via `fetch`+Blob e precisa do `Content-Disposition` para o
+     * nome do arquivo; `X-Export-Truncated`/`X-Export-Total` sinalizam o corte no
+     * teto (#392).
      */
-    exposedHeaders: ['X-Export-Truncated', 'X-Export-Total'],
+    exposedHeaders: [
+      'Content-Disposition',
+      'X-Export-Truncated',
+      'X-Export-Total',
+    ],
     credentials: true,
   };
 

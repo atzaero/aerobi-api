@@ -114,7 +114,7 @@ describe('ExportAerodromeGroupsService', () => {
     ]);
     const { csv } = await service.execute({}, admin);
     const dataRow = csv.split('\r\n')[1];
-    // ...,Proprietário(vazio),... e ...,Criado por(vazio),...
+    /** ...,Proprietário(vazio),... e ...,Criado por(vazio),... */
     expect(dataRow).toContain(',,');
   });
 
@@ -131,5 +131,26 @@ describe('ExportAerodromeGroupsService', () => {
     expect(total).toBe(73_000);
     expect(count).toHaveBeenCalledTimes(1);
     expect(warn).toHaveBeenCalledTimes(1);
+  });
+
+  it('count do total falha → ainda entrega o CSV truncado com total = EXPORT_MAX_ROWS (best-effort, sem 500)', async () => {
+    jest.spyOn(service['logger'], 'warn').mockImplementation();
+    const one = buildAerodromeGroupFixture();
+    findMany.mockResolvedValue(Array.from({ length: 50_001 }, () => one));
+    count.mockRejectedValue(new Error('statement timeout'));
+    const { csv, truncated, total } = await service.execute({}, admin);
+    expect(truncated).toBe(true);
+    expect(total).toBe(50_000);
+    expect(csv.split('\r\n')).toHaveLength(1 + 50_000);
+  });
+
+  it('total nunca menor que o entregue: count abaixo do teto (soft-delete concorrente) é clampado', async () => {
+    jest.spyOn(service['logger'], 'warn').mockImplementation();
+    const one = buildAerodromeGroupFixture();
+    findMany.mockResolvedValue(Array.from({ length: 50_001 }, () => one));
+    count.mockResolvedValue(40_000);
+    const { truncated, total } = await service.execute({}, admin);
+    expect(truncated).toBe(true);
+    expect(total).toBe(50_000);
   });
 });
