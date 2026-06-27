@@ -37,7 +37,11 @@ import { UploadAerodromeGroupImageService } from './services/upload-aerodrome-gr
     CreateAerodromeGroupController,
     UpdateAerodromeGroupController,
     ListAerodromeGroupsController,
-    /** `/export` deve preceder `/:id`, senão a rota cai no handler de busca por id. */
+    /**
+     * `/export` deve preceder `/:id` (Express 5 não tem regex no param de rota):
+     * senão `GET /aerodrome-groups/export` cai no handler de busca por id. A
+     * invariante é travada por `aerodrome-groups.module.spec.ts`.
+     */
     ExportAerodromeGroupsController,
     UploadAerodromeGroupImageController,
     RemoveAerodromeGroupImageController,
