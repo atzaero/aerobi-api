@@ -11,6 +11,17 @@ import { aerodromeGroupExportColumns } from '../mappers/aerodrome-group-export.c
 import { AerodromeGroupRepository } from '../repositories/aerodrome-group.repository';
 import { buildAerodromeGroupScopedWhere } from '../utils/build-aerodrome-group-where';
 
+/**
+ * Resultado do export: o CSV mais os sinais de truncamento que o controller
+ * expõe ao cliente (`X-Export-Truncated`/`X-Export-Total`), para a UI não tratar
+ * um arquivo cortado no teto como o dataset completo (#392).
+ */
+export interface ExportAerodromeGroupsResult {
+  csv: string;
+  truncated: boolean;
+  total: number;
+}
+
 @Injectable()
 export class ExportAerodromeGroupsService {
   private readonly logger = new Logger(ExportAerodromeGroupsService.name);
@@ -24,7 +35,7 @@ export class ExportAerodromeGroupsService {
   async execute(
     query: ExportAerodromeGroupsQueryDTO,
     actor: AuthenticatedUser,
-  ): Promise<string> {
+  ): Promise<ExportAerodromeGroupsResult> {
     /**
      * Mesmo escopo da listagem: COORDINATOR exporta só o próprio grupo; ADMIN
      * exporta todos. Ator inativo → 401; COORDINATOR sem grupo (`none`) cai no
@@ -42,17 +53,28 @@ export class ExportAerodromeGroupsService {
 
     /**
      * Busca `EXPORT_MAX_ROWS + 1` (sem paginação: `skip = 0`) para detectar
-     * truncamento — se vier além do teto, corta no teto e loga (o arquivo não
-     * sinaliza que foi truncado). Ordenação `createdAt DESC` vem do repo.
+     * truncamento. Ao exceder o teto, corta no teto e sinaliza ao cliente via
+     * `truncated`/`total` (o controller traduz em headers) — o `total` real só é
+     * consultado neste ramo, evitando um `count` no caminho comum. Ordenação
+     * `createdAt DESC` vem do repo.
      */
     const rows = await this.repo.findMany(where, 0, EXPORT_MAX_ROWS + 1);
     if (rows.length > EXPORT_MAX_ROWS) {
+      const total = await this.repo.count(where);
       this.logger.warn(
-        `Export de grupos truncado em ${EXPORT_MAX_ROWS} linhas (resultado excedeu o teto).`,
+        `Export de grupos truncado em ${EXPORT_MAX_ROWS} de ${total} linhas.`,
       );
-      return toCsv(rows.slice(0, EXPORT_MAX_ROWS), aerodromeGroupExportColumns);
+      return {
+        csv: toCsv(rows.slice(0, EXPORT_MAX_ROWS), aerodromeGroupExportColumns),
+        truncated: true,
+        total,
+      };
     }
 
-    return toCsv(rows, aerodromeGroupExportColumns);
+    return {
+      csv: toCsv(rows, aerodromeGroupExportColumns),
+      truncated: false,
+      total: rows.length,
+    };
   }
 }

@@ -27,12 +27,14 @@ const coordinator: AuthenticatedUser = {
 describe('ExportAerodromeGroupsService', () => {
   let service: ExportAerodromeGroupsService;
   let findMany: jest.Mock;
+  let count: jest.Mock;
   let findActiveById: jest.Mock;
 
   beforeEach(() => {
     findMany = jest.fn();
+    count = jest.fn();
     findActiveById = jest.fn();
-    const repo = { findMany } as unknown as AerodromeGroupRepository;
+    const repo = { findMany, count } as unknown as AerodromeGroupRepository;
     const userRepo = { findActiveById } as unknown as UserRepository;
     service = new ExportAerodromeGroupsService(
       repo,
@@ -45,11 +47,13 @@ describe('ExportAerodromeGroupsService', () => {
     findMany.mockResolvedValue([
       buildAerodromeGroupFixture({ name: 'Interior', uf: Uf.SP }),
     ]);
-    const csv = await service.execute({}, admin);
+    const { csv, truncated } = await service.execute({}, admin);
     expect(findMany).toHaveBeenCalledWith({}, 0, 50_001);
     expect(csv.startsWith(HEADER)).toBe(true);
     expect(csv).toContain('\r\n');
     expect(csv).toContain('Interior');
+    expect(truncated).toBe(false);
+    expect(count).not.toHaveBeenCalled();
     expect(findActiveById).not.toHaveBeenCalled();
   });
 
@@ -84,7 +88,7 @@ describe('ExportAerodromeGroupsService', () => {
   it('COORDINATOR sem grupo: where fail-closed (id in []), CSV só cabeçalho', async () => {
     findActiveById.mockResolvedValue({ aerodromeGroupId: null });
     findMany.mockResolvedValue([]);
-    const csv = await service.execute({}, coordinator);
+    const { csv } = await service.execute({}, coordinator);
     expect(csv).toBe(HEADER);
     /** Mesmo invariante da listagem: `none` cai no `where` que nunca casa, em
      * vez de short-circuit por serviço (#383). */
@@ -108,19 +112,24 @@ describe('ExportAerodromeGroupsService', () => {
         updatedBy: null,
       }),
     ]);
-    const csv = await service.execute({}, admin);
+    const { csv } = await service.execute({}, admin);
     const dataRow = csv.split('\r\n')[1];
     // ...,Proprietário(vazio),... e ...,Criado por(vazio),...
     expect(dataRow).toContain(',,');
   });
 
-  it('trunca em EXPORT_MAX_ROWS quando o resultado excede (e loga)', async () => {
+  it('trunca em EXPORT_MAX_ROWS e sinaliza truncated + total real (#392)', async () => {
     const warn = jest.spyOn(service['logger'], 'warn').mockImplementation();
     const one = buildAerodromeGroupFixture();
     findMany.mockResolvedValue(Array.from({ length: 50_001 }, () => one));
-    const csv = await service.execute({}, admin);
-    // cabeçalho + 50.000 linhas de dados (a 50.001ª é descartada).
+    count.mockResolvedValue(73_000);
+    const { csv, truncated, total } = await service.execute({}, admin);
+    /** Cabeçalho + 50.000 linhas de dados (a 50.001ª é descartada). */
     expect(csv.split('\r\n')).toHaveLength(1 + 50_000);
+    expect(truncated).toBe(true);
+    /** O `total` real vem de um `count(where)`, não do array materializado. */
+    expect(total).toBe(73_000);
+    expect(count).toHaveBeenCalledTimes(1);
     expect(warn).toHaveBeenCalledTimes(1);
   });
 });

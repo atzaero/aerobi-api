@@ -31,6 +31,12 @@ export function applyCors(
       'Authorization',
       'X-API-Key',
     ],
+    /**
+     * Headers de resposta que o JS do browser pode ler (sem isto, custom headers
+     * ficam invisíveis ao cliente). `X-Export-Truncated`/`X-Export-Total`
+     * sinalizam o corte no teto dos exports CSV (#392).
+     */
+    exposedHeaders: ['X-Export-Truncated', 'X-Export-Total'],
     credentials: true,
   };
 
