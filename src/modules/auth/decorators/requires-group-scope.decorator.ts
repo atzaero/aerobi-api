@@ -5,7 +5,7 @@ import { GroupScopeSubject } from '../guards/group-scope.subject';
 
 /**
  * Exige que o recurso identificado por `request.params.id` pertença ao mesmo
- * grupo (`aerodromeGroupId`) do usuário autenticado. Avaliado pelo
+ * grupo (`groupId`) do usuário autenticado. Avaliado pelo
  * `GroupScopeGuard`, que deve rodar **após** o `JwtAuthGuard` (popula
  * `request.user`) e o `RolesGuard`.
  *

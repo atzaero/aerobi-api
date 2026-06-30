@@ -50,10 +50,10 @@ export class CreateUserRequestDto {
   @ApiPropertyOptional({ format: 'uuid' })
   @IsOptional()
   @IsUUID()
-  aerodromeGroupId?: string;
+  groupId?: string;
 
   /**
-   * UF do grupo. Mesmas regras de `aerodromeGroupId` — exigido do ADMIN para
+   * UF do grupo. Mesmas regras de `groupId` — exigido do ADMIN para
    * roles com grupo; ignorado para COORDINATOR (herda) e ADMIN alvo (sem UF).
    */
   @ApiPropertyOptional({ enum: Uf })

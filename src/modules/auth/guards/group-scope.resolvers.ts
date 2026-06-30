@@ -22,12 +22,12 @@ export type GroupResolver = (
  * `groupId`) e não conhece HTTP — fica trivial de testar isoladamente.
  */
 export const groupScopeResolvers: Record<GroupScopeSubject, GroupResolver> = {
-  [GroupScopeSubject.AERODROME_GROUP]: async (prisma, id) => {
+  [GroupScopeSubject.GROUP]: async (prisma, id) => {
     /**
      * O recurso é o próprio grupo: o "groupId" do escopo é o seu próprio id.
      * Retorna null se inexistente ou soft-deletado (→ 404 pelo guard).
      */
-    const group = await prisma.aerodromeGroup.findFirst({
+    const group = await prisma.group.findFirst({
       where: { id, deletedAt: null },
       select: { id: true },
     });

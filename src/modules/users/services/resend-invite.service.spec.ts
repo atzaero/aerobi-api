@@ -18,7 +18,7 @@ import { ResendInviteService } from './resend-invite.service';
 const COORD_RECORD = buildUserFixture({
   id: 'coord-1',
   role: UserRole.COORDINATOR,
-  aerodromeGroupId: 'group-a',
+  groupId: 'group-a',
   state: Uf.SP,
 });
 
@@ -147,7 +147,7 @@ describe('ResendInviteService', () => {
           COORD_RECORD,
           buildPendingUserFixture({
             role: targetRole,
-            aerodromeGroupId: 'group-a',
+            groupId: 'group-a',
           }),
         );
         createInviteToken.mockResolvedValue({
@@ -176,7 +176,7 @@ describe('ResendInviteService', () => {
           COORD_RECORD,
           buildPendingUserFixture({
             role: targetRole,
-            aerodromeGroupId: 'group-a',
+            groupId: 'group-a',
           }),
         );
 
@@ -202,7 +202,7 @@ describe('ResendInviteService', () => {
         COORD_RECORD,
         buildPendingUserFixture({
           role: UserRole.OPERATOR,
-          aerodromeGroupId: 'group-b',
+          groupId: 'group-b',
         }),
       );
 
@@ -225,7 +225,7 @@ describe('ResendInviteService', () => {
         buildUserFixture({
           id: 'coord-1',
           role: UserRole.COORDINATOR,
-          aerodromeGroupId: null,
+          groupId: null,
           state: null,
         }),
         buildPendingUserFixture({ role: UserRole.OPERATOR }),

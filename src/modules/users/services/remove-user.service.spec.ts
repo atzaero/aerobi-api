@@ -23,7 +23,7 @@ const COORDINATOR = buildAuthenticatedUserFixture({
 const COORD_RECORD = buildUserFixture({
   id: 'coord-1',
   role: UserRole.COORDINATOR,
-  aerodromeGroupId: 'group-a',
+  groupId: 'group-a',
   state: Uf.SP,
 });
 
@@ -115,7 +115,7 @@ describe('RemoveUserService', () => {
           buildUserFixture({
             id: 'target',
             role: targetRole,
-            aerodromeGroupId: 'group-a',
+            groupId: 'group-a',
           }),
         );
         revokeAllForUser.mockResolvedValue(0);
@@ -135,7 +135,7 @@ describe('RemoveUserService', () => {
           buildUserFixture({
             id: 'target',
             role: targetRole,
-            aerodromeGroupId: 'group-a',
+            groupId: 'group-a',
           }),
         );
 
@@ -158,7 +158,7 @@ describe('RemoveUserService', () => {
         buildUserFixture({
           id: 'target',
           role: UserRole.OPERATOR,
-          aerodromeGroupId: 'group-b',
+          groupId: 'group-b',
         }),
       );
 
@@ -178,7 +178,7 @@ describe('RemoveUserService', () => {
         buildUserFixture({
           id: 'coord-1',
           role: UserRole.COORDINATOR,
-          aerodromeGroupId: null,
+          groupId: null,
           state: null,
         }),
         buildUserFixture({ id: 'target', role: UserRole.OPERATOR }),

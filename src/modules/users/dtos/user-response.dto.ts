@@ -19,7 +19,7 @@ export class UserResponseDto {
   role!: UserRole;
 
   @ApiPropertyOptional({ format: 'uuid', nullable: true })
-  aerodromeGroupId!: string | null;
+  groupId!: string | null;
 
   @ApiPropertyOptional({ enum: Uf, nullable: true })
   state!: Uf | null;

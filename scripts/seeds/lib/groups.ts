@@ -1,5 +1,5 @@
 /**
- * Idempotência de grupos de estado. Como `AerodromeGroup.uf` não é único (o
+ * Idempotência de grupos de estado. Como `Group.uf` não é único (o
  * produto admite múltiplos grupos por UF), a chave de idempotência do seed é o
  * par determinístico `(uf, name)` entre os ativos — sempre o mais antigo, para
  * ser estável caso um humano crie outro grupo homônimo.
@@ -19,7 +19,7 @@ export async function ensureStateGroup(
   uf: Uf,
   name: string,
 ): Promise<EnsuredGroup> {
-  const existing = await prisma.aerodromeGroup.findFirst({
+  const existing = await prisma.group.findFirst({
     where: { uf, name, deletedAt: null },
     orderBy: { createdAt: 'asc' },
     select: { id: true },
@@ -29,7 +29,7 @@ export async function ensureStateGroup(
     return { id: existing.id, created: false };
   }
 
-  const created = await prisma.aerodromeGroup.create({
+  const created = await prisma.group.create({
     data: { uf, name, createdBy: 'seed' },
     select: { id: true },
   });

@@ -56,7 +56,7 @@ export class CreateUserService {
       this.errorMessageService,
     );
 
-    const { aerodromeGroupId, state } = await this.resolveGroupAndState(input);
+    const { groupId, state } = await this.resolveGroupAndState(input);
 
     if (await this.userRepository.existsByEmail(input.email)) {
       throw new CustomHttpException(
@@ -74,7 +74,7 @@ export class CreateUserService {
       email: input.email,
       name: input.name,
       role: input.role,
-      aerodromeGroupId,
+      groupId,
       state,
       ...(input.phone !== undefined && { phone: input.phone }),
       invitedById: input.actorId,
@@ -119,16 +119,16 @@ export class CreateUserService {
    */
   private async resolveGroupAndState(
     input: CreateUserInput,
-  ): Promise<{ aerodromeGroupId: string | null; state: Uf | null }> {
+  ): Promise<{ groupId: string | null; state: Uf | null }> {
     if (input.role === UserRole.ADMIN) {
-      return { aerodromeGroupId: null, state: null };
+      return { groupId: null, state: null };
     }
 
     if (input.actorRole === UserRole.COORDINATOR) {
       const actorRecord = await this.userRepository.findActiveById(
         input.actorId,
       );
-      if (!actorRecord?.aerodromeGroupId || !actorRecord.state) {
+      if (!actorRecord?.groupId || !actorRecord.state) {
         throw new CustomHttpException(
           this.errorMessageService.getMessage(ErrorCode.FORBIDDEN, {
             RESOURCE: 'user',
@@ -138,21 +138,20 @@ export class CreateUserService {
         );
       }
       return {
-        aerodromeGroupId: actorRecord.aerodromeGroupId,
+        groupId: actorRecord.groupId,
         state: actorRecord.state,
       };
     }
 
-    if (!input.aerodromeGroupId || !input.state) {
+    if (!input.groupId || !input.state) {
       throw new CustomHttpException(
         this.errorMessageService.getMessage(ErrorCode.VALIDATION_FAILED, {
-          DETAILS:
-            'aerodromeGroupId e state são obrigatórios para a role informada',
+          DETAILS: 'groupId e state são obrigatórios para a role informada',
         }),
         HttpStatus.BAD_REQUEST,
         ErrorCode.VALIDATION_FAILED,
       );
     }
-    return { aerodromeGroupId: input.aerodromeGroupId, state: input.state };
+    return { groupId: input.groupId, state: input.state };
   }
 }

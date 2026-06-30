@@ -14,7 +14,7 @@ import { UserRole } from '@/generated/prisma/client';
  * (`app/actions/_shared/group-scope.ts`):
  *  - `all`   — sem restrição de grupo (ADMIN).
  *  - `group` — restrito ao `groupId` do ator (COORDINATOR com grupo).
- *  - `none`  — COORDINATOR sem `aerodromeGroupId` (provisionamento incompleto):
+ *  - `none`  — COORDINATOR sem `groupId` (provisionamento incompleto):
  *              não enxerga/gere nada (nunca "fail open").
  *
  * Restringe **só** COORDINATOR; ADMIN (e qualquer papel fora do conjunto) → `all`.
@@ -23,7 +23,7 @@ import { UserRole } from '@/generated/prisma/client';
  * (`resolveOperationalScope`), que não se aplica aqui.
  *
  * Vive em `src/common/` por ser transversal: consumido por `users` e
- * `aerodrome-groups` (e próximos módulos da migração Firebase→API).
+ * `groups` (e próximos módulos da migração Firebase→API).
  */
 export type UserGroupScope =
   | { kind: 'all' }
@@ -37,9 +37,7 @@ export type UserGroupScope =
  * consumidor.
  */
 export interface ActorGroupLookup {
-  findActiveById(
-    id: string,
-  ): Promise<{ aerodromeGroupId: string | null } | null>;
+  findActiveById(id: string): Promise<{ groupId: string | null } | null>;
 }
 
 /**
@@ -66,7 +64,7 @@ function resolveUserGroupScope(
  * usuário soft-deletado, já que a `JwtStrategy` não revalida contra o DB) é
  * tratado como conta removida (**401 `ACCOUNT_DELETED`**) num único ponto, em
  * vez de virar `none` e mascarar a desativação com resultado vazio. É distinto
- * de um registro existente sem `aerodromeGroupId` (= `none`, COORDINATOR sem
+ * de um registro existente sem `groupId` (= `none`, COORDINATOR sem
  * grupo provisionado, que legitimamente vê página vazia).
  */
 export async function resolveActorGroupScope(
@@ -86,5 +84,5 @@ export async function resolveActorGroupScope(
     );
   }
 
-  return resolveUserGroupScope(actorRole, record.aerodromeGroupId);
+  return resolveUserGroupScope(actorRole, record.groupId);
 }

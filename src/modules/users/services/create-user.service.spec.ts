@@ -79,12 +79,12 @@ describe('CreateUserService', () => {
     });
 
     // ValidationPipe normaliza email via `@NormalizeEmail()` antes do service.
-    // ADMIN criando role com grupo precisa informar aerodromeGroupId + state.
+    // ADMIN criando role com grupo precisa informar groupId + state.
     const result = await service.execute({
       email: 'piloto@aerobi.local',
       name: 'Piloto',
       role: UserRole.OPERATOR,
-      aerodromeGroupId: 'group-a',
+      groupId: 'group-a',
       state: Uf.SP,
       actorId: 'admin-1',
       actorRole: UserRole.ADMIN,
@@ -115,7 +115,7 @@ describe('CreateUserService', () => {
         email: 'jaexiste@aerobi.local',
         name: 'X',
         role: UserRole.OPERATOR,
-        aerodromeGroupId: 'group-a',
+        groupId: 'group-a',
         state: Uf.SP,
         actorId: 'admin-1',
         actorRole: UserRole.ADMIN,
@@ -137,7 +137,7 @@ describe('CreateUserService', () => {
           buildUserFixture({
             id: 'coord-1',
             role: UserRole.COORDINATOR,
-            aerodromeGroupId: 'group-a',
+            groupId: 'group-a',
             state: Uf.SP,
           }),
         );
@@ -145,7 +145,7 @@ describe('CreateUserService', () => {
         create.mockResolvedValue(
           buildPendingUserFixture({
             role: targetRole,
-            aerodromeGroupId: 'group-a',
+            groupId: 'group-a',
             state: Uf.SP,
           }),
         );
@@ -170,7 +170,7 @@ describe('CreateUserService', () => {
         // Herdou o grupo/UF do coordenador, não do input.
         expect(create).toHaveBeenCalledWith(
           expect.objectContaining({
-            aerodromeGroupId: 'group-a',
+            groupId: 'group-a',
             state: Uf.SP,
           }),
         );
@@ -201,7 +201,7 @@ describe('CreateUserService', () => {
   });
 
   describe('escopo por grupo', () => {
-    it('ADMIN cria role com grupo sem informar aerodromeGroupId/state → VALIDATION_FAILED', async () => {
+    it('ADMIN cria role com grupo sem informar groupId/state → VALIDATION_FAILED', async () => {
       try {
         await service.execute({
           email: 'novo@aerobi.local',
@@ -219,7 +219,7 @@ describe('CreateUserService', () => {
       expect(create).not.toHaveBeenCalled();
     });
 
-    it('ADMIN cria ADMIN → sem grupo/UF (null), não exige aerodromeGroupId', async () => {
+    it('ADMIN cria ADMIN → sem grupo/UF (null), não exige groupId', async () => {
       existsByEmail.mockResolvedValue(false);
       create.mockResolvedValue(
         buildPendingUserFixture({ role: UserRole.ADMIN }),
@@ -238,7 +238,7 @@ describe('CreateUserService', () => {
       });
 
       expect(create).toHaveBeenCalledWith(
-        expect.objectContaining({ aerodromeGroupId: null, state: null }),
+        expect.objectContaining({ groupId: null, state: null }),
       );
     });
 
@@ -247,7 +247,7 @@ describe('CreateUserService', () => {
         buildUserFixture({
           id: 'coord-1',
           role: UserRole.COORDINATOR,
-          aerodromeGroupId: null,
+          groupId: null,
           state: null,
         }),
       );

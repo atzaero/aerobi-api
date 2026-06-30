@@ -133,7 +133,7 @@ definitivo.
 
 A matriz é só o gate **`papel × entidade × ação`**. O **escopo por registro**
 (coordinator/operator restritos ao **próprio grupo**) **não vive aqui** — é
-resolvido server-side a partir do `aerodromeGroupId` do token, e é o objeto da
+resolvido server-side a partir do `groupId` do token, e é o objeto da
 **epic #204** (`GroupScopeGuard`), **nunca** a partir do payload do cliente.
 Ver o cabeçalho de `permissions.ts`.
 
@@ -191,7 +191,7 @@ DB** — o JWT continua só com `role` (decisão da epic #204). Helpers em
 `users/utils/group-scope.util.ts` (`resolveUserGroupScope`,
 `isTargetManageableInGroup`), espelhando `resolveGroupScope`/`manageable` do web:
 
-- **`list`** — COORDINATOR é forçado ao próprio `aerodromeGroupId` (ignora o da
+- **`list`** — COORDINATOR é forçado ao próprio `groupId` (ignora o da
   query); sem grupo provisionado ⇒ lista vazia (sem _fail open_). ADMIN vê todos
   e pode filtrar por grupo. _Nota:_ o backend é **mais conservador** que o web —
   no `aerobi-web` o `list/action` só força o filtro quando o COORDINATOR tem
@@ -199,7 +199,7 @@ DB** — o JWT continua só com `role` (decisão da epic #204). Helpers em
   grupo faltar; aqui o `none` retorna vazio (a corrigir no web).
 - **`create`** — COORDINATOR só cria `OPERATOR`/`TECHNICAL` e o novo user
   **herda o grupo/UF do próprio coordenador**. ADMIN: ao criar role com grupo
-  informa `aerodromeGroupId`+`state`; ao criar ADMIN o grupo/UF ficam `null`
+  informa `groupId`+`state`; ao criar ADMIN o grupo/UF ficam `null`
   (admin global — tradução da sentinela `"admin"` do Firestore para `null` no
   Postgres, decisão #210).
 - **`delete`/`resend`** — COORDINATOR só toca `OPERATOR`/`TECHNICAL` do **próprio

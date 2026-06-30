@@ -22,7 +22,7 @@ A **fonte de verdade** do esquema relacional é [`schema.prisma`](../prisma/sche
 
 | Firestore | Modelo Prisma | Tabela SQL |
 |-----------|-----------------|------------|
-| `states/{uf}/groups/{groupId}` | `AerodromeGroup` | `aerodrome_groups` |
+| `states/{uf}/groups/{groupId}` | `Group` | `groups` |
 | `states/.../aerodromes/{id}` | `OperationalAerodrome` | `operational_aerodromes` |
 | `.../awaitemails` + `.../answeredemails` | `LandingRequest` | `landing_requests` |
 | `.../technicalVisit` | `TechnicalVisit` | `technical_visits` |
@@ -34,7 +34,7 @@ Não modelado como tabela operacional: `stateList/list`, `PI`, `admID`, coleçã
 
 ## Decisões de colunas (alvo Postgres)
 
-- **UF** apenas em `AerodromeGroup.uf`. Demais entidades obtêm UF via join (`operational_aerodromes.group_id` → `aerodrome_groups`).
+- **UF** apenas em `Group.uf`. Demais entidades obtêm UF via join (`operational_aerodromes.group_id` → `groups`).
 - **`LandingRequest`:** sem `uf`, `icao`, `answer`; só `status` (`PENDING` / `APPROVED` / `REJECTED`). ICAO via `operational_aerodrome_id`.
 - **`reviewed_by` / `reviewed_at`:** no alvo, **uid** em coluna (`reviewed_by`), não JSON com nome/e-mail/role. O legado pode trazer objeto em `responseby`; na importação extrair o uid (ex. `responseby.uid`). Nome e perfil vêm da futura tabela `users` — mesma linha de `visit_by` em `TechnicalVisit`.
 - **`AerodromeFeedback`:** sem `icao`; rate limit único em `(session_hash, operational_aerodrome_id, feedback_date)`. Ver também `feedback_date` vs `created_at` em [`OPERACIONAL_ANALISE_REDUNDANCIA.md`](./OPERACIONAL_ANALISE_REDUNDANCIA.md).

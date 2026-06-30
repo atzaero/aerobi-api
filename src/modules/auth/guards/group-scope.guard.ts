@@ -24,7 +24,7 @@ import { GroupScopeSubject } from './group-scope.subject';
 
 /**
  * Segunda camada de autorização: **escopo por grupo**. Garante que o recurso
- * alvo (`request.params.id`) pertence ao mesmo `aerodromeGroupId` do usuário.
+ * alvo (`request.params.id`) pertence ao mesmo `groupId` do usuário.
  *
  * Ordem na cadeia: `JwtAuthGuard → RolesGuard → GroupScopeGuard`.
  *
@@ -37,7 +37,7 @@ import { GroupScopeSubject } from './group-scope.subject';
  *   → 404 (indistinguíveis: o status não vaza a existência de recursos de outro
  *   grupo — #387). O motivo real fica só no log `debug`.
  *
- * O `aerodromeGroupId` do usuário é lido **do banco** (não do JWT), de modo que
+ * O `groupId` do usuário é lido **do banco** (não do JWT), de modo que
  * uma troca de grupo tenha efeito imediato sem esperar o token expirar.
  */
 @Injectable()
@@ -106,12 +106,12 @@ export class GroupScopeGuard implements CanActivate {
 
     /**
      * Lê o usuário ativo do banco **antes** de tocar no recurso (a `JwtStrategy`
-     * confia no payload e não revalida contra o DB; o `aerodromeGroupId` vem
+     * confia no payload e não revalida contra o DB; o `groupId` vem
      * daqui para refletir troca de grupo sem esperar o token expirar).
      */
     const dbUser = await this.prisma.user.findFirst({
       where: { id: user.id, deletedAt: null },
-      select: { aerodromeGroupId: true },
+      select: { groupId: true },
     });
 
     /**
@@ -128,7 +128,7 @@ export class GroupScopeGuard implements CanActivate {
       );
     }
 
-    const userGroupId = dbUser.aerodromeGroupId ?? null;
+    const userGroupId = dbUser.groupId ?? null;
     const resourceGroupId = await resolver(this.prisma, resourceId);
 
     /**

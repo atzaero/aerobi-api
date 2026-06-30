@@ -1,6 +1,6 @@
 /**
  * Garante a bandeira de um grupo de estado, de forma idempotente e não
- * destrutiva. A fonte de verdade é a existência de uma `AerodromeGroupImage`
+ * destrutiva. A fonte de verdade é a existência de uma `GroupImage`
  * ativa: se já houver uma, faz skip (não re-sobe — evita acumular objetos órfãos
  * no MinIO a cada boot e respeita uma imagem trocada manualmente). Caso
  * contrário, sobe o PNG e registra a imagem desnormalizando `imageKey` no grupo,
@@ -9,7 +9,7 @@
  */
 import type { PrismaClient } from '@/generated/prisma/client';
 import type { Uf } from '@/generated/prisma/enums';
-import { buildAerodromeGroupImageKey } from '@/modules/aerodrome-groups/utils/aerodrome-group-image';
+import { buildGroupImageKey } from '@/modules/groups/utils/group-image';
 
 import type { SeedLogger } from '../types';
 import { loadFlagFile } from './flags';
@@ -28,7 +28,7 @@ export async function ensureGroupFlag(
   uf: Uf,
   logger: SeedLogger,
 ): Promise<EnsureFlagResult> {
-  const activeImage = await prisma.aerodromeGroupImage.findFirst({
+  const activeImage = await prisma.groupImage.findFirst({
     where: { groupId, deletedAt: null },
     select: { id: true },
   });
@@ -37,13 +37,13 @@ export async function ensureGroupFlag(
   }
 
   const flag = await loadFlagFile(uf);
-  const key = buildAerodromeGroupImageKey(groupId, flag.mimetype);
+  const key = buildGroupImageKey(groupId, flag.mimetype);
 
   await storage.putObject(key, flag.buffer, flag.mimetype);
 
   try {
     await prisma.$transaction(async (tx) => {
-      await tx.aerodromeGroupImage.create({
+      await tx.groupImage.create({
         data: {
           groupId,
           imageKey: key,
@@ -53,7 +53,7 @@ export async function ensureGroupFlag(
           uploadedBy: 'seed',
         },
       });
-      await tx.aerodromeGroup.update({
+      await tx.group.update({
         where: { id: groupId },
         data: { imageKey: key, updatedBy: 'seed' },
       });

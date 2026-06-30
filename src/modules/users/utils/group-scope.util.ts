@@ -12,11 +12,11 @@ import { UserRole } from '@/generated/prisma/client';
  * `@/common/utils/group-scope.util`.
  */
 export function isTargetManageableInGroup(
-  target: { role: UserRole; aerodromeGroupId: string | null },
+  target: { role: UserRole; groupId: string | null },
   groupId: string,
 ): boolean {
   return (
     (target.role === UserRole.OPERATOR || target.role === UserRole.TECHNICAL) &&
-    target.aerodromeGroupId === groupId
+    target.groupId === groupId
   );
 }
