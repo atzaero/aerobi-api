@@ -1,3 +1,10 @@
+# [2.6.0-beta.38](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.37...v2.6.0-beta.38) (2026-06-30)
+
+
+### Features
+
+* **users:** paridade com aerobi-web — E.164, edição admin, senha e export CSV ([fab2dc4](https://github.com/atzaero/aerobi-api/commit/fab2dc4a7b24869177e61a90c7d97227ebcfeb01)), closes [#353](https://github.com/atzaero/aerobi-api/issues/353) [#111](https://github.com/atzaero/aerobi-api/issues/111) [#371](https://github.com/atzaero/aerobi-api/issues/371)
+
 # [2.6.0-beta.37](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.36...v2.6.0-beta.37) (2026-06-27)
 
 
