@@ -24,7 +24,7 @@ export class FindAerodromeByIdService {
     if (!entity) {
       throw new CustomHttpException(
         this.errorMessageService.getMessage(ErrorCode.RESOURCE_NOT_FOUND, {
-          RESOURCE: 'Aeródromo operacional',
+          RESOURCE: 'Aeródromo',
           ID: input.id,
         }),
         HttpStatus.NOT_FOUND,

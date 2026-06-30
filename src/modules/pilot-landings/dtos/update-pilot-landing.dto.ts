@@ -14,7 +14,7 @@ import {
 /** Body para PATCH /pilot-landings/:id — campos opcionais */
 export class UpdatePilotLandingDTO {
   @ApiPropertyOptional({
-    description: 'Se `true`, remove a associação ao aeródromo operacional',
+    description: 'Se `true`, remove a associação ao aeródromo',
   })
   @IsOptional()
   @IsBoolean()

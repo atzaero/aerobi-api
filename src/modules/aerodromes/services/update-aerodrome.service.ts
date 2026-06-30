@@ -27,7 +27,7 @@ export class UpdateAerodromeService {
     if (!existing) {
       throw new CustomHttpException(
         this.errorMessageService.getMessage(ErrorCode.RESOURCE_NOT_FOUND, {
-          RESOURCE: 'Aeródromo operacional',
+          RESOURCE: 'Aeródromo',
           ID: id,
         }),
         HttpStatus.NOT_FOUND,
