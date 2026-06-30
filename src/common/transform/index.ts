@@ -1,5 +1,6 @@
 export {
   NormalizeEmail,
+  NormalizeOptionalPhone,
   OptionalQueryBoolean,
   TrimOptionalString,
   TrimString,
@@ -7,6 +8,7 @@ export {
 
 export {
   normalizeEmailValue,
+  normalizeOptionalPhoneE164Value,
   optionalQueryBooleanValue,
   trimOptionalStringValue,
   trimStringValue,

@@ -5,10 +5,12 @@ import { PrismaService } from '@/prisma/prisma.service';
 
 import type {
   CreateUserData,
+  ExportUsersFilters,
   IUserRepository,
   ListUsersParams,
   ListUsersResult,
   UpdateUserData,
+  UserWithGroupName,
 } from './user.repository.interface';
 
 @Injectable()
@@ -62,6 +64,7 @@ export class UserRepository implements IUserRepository {
     const update: Prisma.UserUpdateInput = {};
 
     if (data.name !== undefined) update.name = data.name;
+    if (data.email !== undefined) update.email = data.email;
     if (data.phone !== undefined) update.phone = data.phone;
     if (data.timezone !== undefined) update.timezone = data.timezone;
     if (data.role !== undefined) update.role = data.role;
@@ -89,25 +92,7 @@ export class UserRepository implements IUserRepository {
   }
 
   async findManyPaginated(params: ListUsersParams): Promise<ListUsersResult> {
-    const where: Prisma.UserWhereInput = { deletedAt: null };
-
-    if (params.role) {
-      where.role = params.role;
-    }
-
-    if (params.groupId) {
-      where.groupId = params.groupId;
-    }
-
-    if (params.search) {
-      const term = params.search.trim();
-      if (term.length > 0) {
-        where.OR = [
-          { email: { contains: term, mode: 'insensitive' } },
-          { name: { contains: term, mode: 'insensitive' } },
-        ];
-      }
-    }
+    const where = this.buildWhere(params);
 
     const [rows, total] = await this.prisma.$transaction([
       this.prisma.user.findMany({
@@ -120,5 +105,50 @@ export class UserRepository implements IUserRepository {
     ]);
 
     return { rows, total };
+  }
+
+  async findManyForExport(
+    filters: ExportUsersFilters,
+    take: number,
+  ): Promise<UserWithGroupName[]> {
+    return this.prisma.user.findMany({
+      where: this.buildWhere(filters),
+      orderBy: { createdAt: 'desc' },
+      take,
+      include: { group: { select: { name: true } } },
+    });
+  }
+
+  async countForExport(filters: ExportUsersFilters): Promise<number> {
+    return this.prisma.user.count({ where: this.buildWhere(filters) });
+  }
+
+  /**
+   * Monta o `where` compartilhado por listagem e export: sempre ativos
+   * (`deletedAt: null`), com `role`/`groupId` por igualdade e `search` em
+   * `email`/`name` (ILIKE — substring case-insensitive).
+   */
+  private buildWhere(filters: ExportUsersFilters): Prisma.UserWhereInput {
+    const where: Prisma.UserWhereInput = { deletedAt: null };
+
+    if (filters.role) {
+      where.role = filters.role;
+    }
+
+    if (filters.groupId) {
+      where.groupId = filters.groupId;
+    }
+
+    if (filters.search) {
+      const term = filters.search.trim();
+      if (term.length > 0) {
+        where.OR = [
+          { email: { contains: term, mode: 'insensitive' } },
+          { name: { contains: term, mode: 'insensitive' } },
+        ];
+      }
+    }
+
+    return where;
   }
 }

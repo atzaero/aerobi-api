@@ -29,6 +29,32 @@ export function normalizeEmailValue(value: unknown): unknown {
 }
 
 /**
+ * Normaliza telefone opcional para E.164 (espelha `normalizeToE164` do
+ * `aerobi-web`): preserva `undefined`/`null` (semântica PATCH); string vazia
+ * (após trim) vira `null`; senão descarta a máscara e prefixa `+` aos dígitos.
+ * Quando a string não tem dígito algum, devolve o valor trimado original para
+ * que `@IsE164Phone` rejeite com a mensagem correta em vez de mascarar o erro.
+ *
+ * A entrada **deve incluir o código do país (DDI)**: a normalização não o
+ * infere — uma máscara BR sem `+55` resultaria num E.164 com DDI incorreto
+ * (ex.: `(11) 99999-9999` → `+11999999999`). O frontend deve enviar com DDI.
+ */
+export function normalizeOptionalPhoneE164Value(value: unknown): unknown {
+  if (value === undefined || value === null) {
+    return value;
+  }
+  if (typeof value !== 'string') {
+    return value;
+  }
+  const trimmed = value.trim();
+  if (trimmed.length === 0) {
+    return null;
+  }
+  const digits = trimmed.replace(/\D/g, '');
+  return digits.length > 0 ? `+${digits}` : trimmed;
+}
+
+/**
  * Booleano vindo de query string ou multipart:
  *  - ausente / vazio / null → `undefined`
  *  - `true` / `'true'`     → `true`

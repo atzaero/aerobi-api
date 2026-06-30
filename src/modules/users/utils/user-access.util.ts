@@ -66,6 +66,29 @@ export function assertCanManageTargetRole(
 }
 
 /**
+ * Recorte por **role atribuível** na edição administrativa: qual role o ator
+ * pode **definir** no alvo. ADMIN atribui qualquer role; COORDINATOR atribui
+ * `OPERATOR`/`TECHNICAL`/`COORDINATOR` mas **nunca promove a ADMIN** (espelha
+ * `getAssignableRolesForEdit` do `aerobi-web`). Violação ⇒ `ROLE_CHANGE_FORBIDDEN`.
+ */
+export function assertCanAssignRole(
+  actorRole: UserRole,
+  targetRole: UserRole,
+  errorMessageService: ErrorMessageService,
+): void {
+  if (actorRole === UserRole.ADMIN) return;
+  if (actorRole === UserRole.COORDINATOR && targetRole !== UserRole.ADMIN) {
+    return;
+  }
+
+  throw new CustomHttpException(
+    errorMessageService.getMessage(ErrorCode.ROLE_CHANGE_FORBIDDEN),
+    HttpStatus.FORBIDDEN,
+    ErrorCode.ROLE_CHANGE_FORBIDDEN,
+  );
+}
+
+/**
  * Garante que `actor` é ADMIN. Usado quando a regra é estritamente
  * "só ADMIN" (não permite owner) — ex: alterar role de outro user.
  */

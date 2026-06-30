@@ -40,6 +40,22 @@ export const templates = {
       email — sua senha atual continua válida.
     </p>
   `,
+  email_changed: `
+    <h1>Seu email de acesso foi alterado</h1>
+    <p>Olá [NAME],</p>
+    <p>
+      O email da sua conta Aerobi foi alterado de <strong>[OLD_EMAIL]</strong>
+      para <strong>[NEW_EMAIL]</strong> por um administrador.
+    </p>
+    <p>
+      Por segurança, todas as sessões ativas foram encerradas — faça login
+      novamente usando o novo email.
+    </p>
+    <p>
+      Se você não reconhece esta alteração, contate o administrador da sua
+      organização imediatamente.
+    </p>
+  `,
   landing_non_conformity: `
     <h1>Pouso sem solicitação de aterragem</h1>
     <p>
