@@ -6,7 +6,7 @@ export class TechnicalVisitMapper {
   static toApiRow(entity: TechnicalVisit): TechnicalVisitResponseDTO {
     const row = new TechnicalVisitResponseDTO();
     row.id = entity.id;
-    row.operationalAerodromeId = entity.operationalAerodromeId;
+    row.aerodromeId = entity.aerodromeId;
     row.modifierUsers = [...entity.modifierUsers];
     row.gatesPadlocksObservation = entity.gatesPadlocksObservation;
     row.hasGatesPadlocks = entity.hasGatesPadlocks;

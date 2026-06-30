@@ -250,9 +250,9 @@ model Group {
   /// listagem. Guarda a key, nunca a URL (presigned é resolvida on-read).
   imageKey          String?  @map("image_key") @db.Text
 
-  operationalAerodromes OperationalAerodrome[]
-  users                 User[]
-  images                GroupImage[]
+  aerodromes Aerodrome[]
+  users      User[]
+  images     GroupImage[]
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   createdBy String?   @map("created_by")
@@ -266,7 +266,7 @@ model Group {
 }
 
 /// Aeródromo gerenciado no produto (distinto de cadastro ANAC público/privado).
-model OperationalAerodrome {
+model Aerodrome {
   id      String @id @default(uuid()) @db.Uuid
   groupId String @map("group_id") @db.Uuid
   group   Group  @relation(fields: [groupId], references: [id], onDelete: Restrict)
@@ -323,14 +323,14 @@ model OperationalAerodrome {
   @@unique([groupId, icao])
   @@index([groupId])
   @@index([icao, isView])
-  @@map("operational_aerodromes")
+  @@map("aerodromes")
 }
 
 /// Solicitação de pouso (unifica awaitemails + answeredemails).
 model LandingRequest {
-  id                     String               @id @default(uuid()) @db.Uuid
-  operationalAerodromeId String               @map("operational_aerodrome_id") @db.Uuid
-  operationalAerodrome   OperationalAerodrome @relation(fields: [operationalAerodromeId], references: [id], onDelete: Restrict)
+  id          String    @id @default(uuid()) @db.Uuid
+  aerodromeId String    @map("aerodrome_id") @db.Uuid
+  aerodrome   Aerodrome @relation(fields: [aerodromeId], references: [id], onDelete: Restrict)
 
   status      LandingRequestStatus @map("status")
   requestDate DateTime             @map("request_date") @db.Timestamptz(3)
@@ -354,8 +354,8 @@ model LandingRequest {
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
   deletedBy String?   @map("deleted_by")
 
-  @@index([operationalAerodromeId, status])
-  @@index([operationalAerodromeId, requestDate])
+  @@index([aerodromeId, status])
+  @@index([aerodromeId, requestDate])
   @@map("landing_requests")
 }
 
@@ -529,11 +529,11 @@ model OperationalEvent {
   @@map("operational_event")
 }
 
-/// Visita técnica em aeródromo (`technicalVisit` no Firestore). ICAO, CIAD, pista, nome e município do aeródromo vêm de `operational_aerodromes` via FK (evita duplicar o cadastro).
+/// Visita técnica em aeródromo (`technicalVisit` no Firestore). ICAO, CIAD, pista, nome e município do aeródromo vêm de `aerodromes` via FK (evita duplicar o cadastro).
 model TechnicalVisit {
-  id                     String               @id @default(uuid()) @db.Uuid
-  operationalAerodromeId String               @map("operational_aerodrome_id") @db.Uuid
-  operationalAerodrome   OperationalAerodrome @relation(fields: [operationalAerodromeId], references: [id], onDelete: Restrict)
+  id          String    @id @default(uuid()) @db.Uuid
+  aerodromeId String    @map("aerodrome_id") @db.Uuid
+  aerodrome   Aerodrome @relation(fields: [aerodromeId], references: [id], onDelete: Restrict)
 
   /// Uids Auth (preferencial) ou e-mail na importação legada — quem editou a visita, em ordem. Firestore ainda usa objetos `{ name, email, date }?` até cutover.
   modifierUsers String[] @default([]) @map("modifier_users")
@@ -574,7 +574,7 @@ model TechnicalVisit {
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
   deletedBy String?   @map("deleted_by")
 
-  @@index([operationalAerodromeId, visitAt])
+  @@index([aerodromeId, visitAt])
   @@map("technical_visits")
 }
 
@@ -583,10 +583,10 @@ model AerodromeGeojson {
   id String @id @default(uuid()) @db.Uuid
 
   /// Um registro por aeródromo operacional.
-  operationalAerodromeId String               @unique @map("operational_aerodrome_id") @db.Uuid
-  operationalAerodrome   OperationalAerodrome @relation(fields: [operationalAerodromeId], references: [id], onDelete: Restrict)
+  aerodromeId String    @unique @map("aerodrome_id") @db.Uuid
+  aerodrome   Aerodrome @relation(fields: [aerodromeId], references: [id], onDelete: Restrict)
 
-  /// Mantido para compatibilidade conceitual (ex.: `aerodrome_map`); o vínculo é único via `operational_aerodrome_id`.
+  /// Mantido para compatibilidade conceitual (ex.: `aerodrome_map`); o vínculo é único via `aerodrome_id`.
   kind   AerodromeGeojsonKind
   status AerodromeGeojsonStatus
 
@@ -621,9 +621,9 @@ model AerodromeGeojson {
 
 /// Avaliação pública (subcoleção `feedbacks` no Firestore).
 model AerodromeFeedback {
-  id                     String               @id @default(uuid()) @db.Uuid
-  operationalAerodromeId String               @map("operational_aerodrome_id") @db.Uuid
-  operationalAerodrome   OperationalAerodrome @relation(fields: [operationalAerodromeId], references: [id], onDelete: Restrict)
+  id          String    @id @default(uuid()) @db.Uuid
+  aerodromeId String    @map("aerodrome_id") @db.Uuid
+  aerodrome   Aerodrome @relation(fields: [aerodromeId], references: [id], onDelete: Restrict)
 
   rating       FeedbackRating @map("rating")
   comment      String?        @map("comment") @db.Text
@@ -638,8 +638,8 @@ model AerodromeFeedback {
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
   deletedBy String?   @map("deleted_by")
 
-  @@unique([sessionHash, operationalAerodromeId, feedbackDate])
-  @@index([operationalAerodromeId, feedbackDate])
+  @@unique([sessionHash, aerodromeId, feedbackDate])
+  @@index([aerodromeId, feedbackDate])
   @@map("aerodrome_feedbacks")
 }
 
@@ -690,9 +690,9 @@ model Token {
 
 /// Registro de pouso do piloto (coleção raiz `landings` no Firestore).
 model PilotLanding {
-  id                     String                @id @default(uuid()) @db.Uuid
-  operationalAerodromeId String?               @map("operational_aerodrome_id") @db.Uuid
-  operationalAerodrome   OperationalAerodrome? @relation(fields: [operationalAerodromeId], references: [id], onDelete: SetNull)
+  id          String     @id @default(uuid()) @db.Uuid
+  aerodromeId String?    @map("aerodrome_id") @db.Uuid
+  aerodrome   Aerodrome? @relation(fields: [aerodromeId], references: [id], onDelete: SetNull)
 
   registration String   @map("registration")
   localName    String   @map("local_name")
@@ -709,7 +709,7 @@ model PilotLanding {
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
   deletedBy String?   @map("deleted_by")
 
-  @@index([operationalAerodromeId])
+  @@index([aerodromeId])
   @@index([registration])
   @@map("pilot_landings")
 }

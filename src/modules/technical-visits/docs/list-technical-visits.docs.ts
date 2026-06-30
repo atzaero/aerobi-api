@@ -24,7 +24,7 @@ export function ListTechnicalVisitsDocs() {
     ApiQuery({ name: 'page', required: false, example: 1 }),
     ApiQuery({ name: 'limit', required: false, example: 10 }),
     ApiQuery({
-      name: 'operationalAerodromeId',
+      name: 'aerodromeId',
       required: false,
       format: 'uuid',
     }),

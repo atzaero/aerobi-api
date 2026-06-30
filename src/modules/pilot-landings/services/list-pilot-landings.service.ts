@@ -20,8 +20,8 @@ export class ListPilotLandingsService {
     const { page, limit, skip } = resolvePaginationParams(query, MAX_LIMIT);
 
     const where: Prisma.PilotLandingWhereInput = {};
-    if (query.operationalAerodromeId !== undefined) {
-      where.operationalAerodromeId = query.operationalAerodromeId;
+    if (query.aerodromeId !== undefined) {
+      where.aerodromeId = query.aerodromeId;
     }
     if (query.registration !== undefined && query.registration.length > 0) {
       where.registration = {

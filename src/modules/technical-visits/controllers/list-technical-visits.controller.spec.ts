@@ -16,7 +16,7 @@ describe('ListTechnicalVisitsController', () => {
 
   it('delega', async () => {
     const q = {
-      operationalAerodromeId: '22222222-2222-4222-8222-222222222222',
+      aerodromeId: '22222222-2222-4222-8222-222222222222',
     };
     const p = new TechnicalVisitsPaginatedResponseDTO([], 1, 10, 0);
     execute.mockResolvedValue(p);

@@ -7,7 +7,7 @@ export class AerodromeFeedbackResponseDTO {
   id!: string;
 
   @ApiProperty({ format: 'uuid' })
-  operationalAerodromeId!: string;
+  aerodromeId!: string;
 
   @ApiProperty({ enum: FeedbackRating })
   rating!: FeedbackRating;

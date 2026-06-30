@@ -24,7 +24,7 @@ export class UpdateAerodromeGeojsonService {
   async execute(
     input: UpdateAerodromeGeojsonServiceInput,
   ): Promise<AerodromeGeojsonResponseDTO> {
-    const { id, operationalAerodromeId, ...dto } = input;
+    const { id, aerodromeId, ...dto } = input;
     const existing = await this.repo.findById(id);
     if (!existing) {
       throw new CustomHttpException(
@@ -38,9 +38,9 @@ export class UpdateAerodromeGeojsonService {
     }
 
     const patch = patchAerodromeGeojsonToPrisma(dto);
-    if (operationalAerodromeId !== undefined) {
-      patch.operationalAerodrome = {
-        connect: { id: operationalAerodromeId },
+    if (aerodromeId !== undefined) {
+      patch.aerodrome = {
+        connect: { id: aerodromeId },
       };
     }
 

@@ -13,7 +13,7 @@ import { AiswebModule } from '@/modules/aisweb/aisweb.module';
 import { AnacModule } from '@/modules/anac/anac.module';
 import { HealthModule } from '@/modules/health/health.module';
 import { LandingRequestsModule } from '@/modules/landing-requests/landing-requests.module';
-import { OperationalAerodromesModule } from '@/modules/operational-aerodromes/operational-aerodromes.module';
+import { AerodromesModule } from '@/modules/aerodromes/aerodromes.module';
 import { PilotLandingsModule } from '@/modules/pilot-landings/pilot-landings.module';
 import { PlugfieldModule } from '@/modules/plugfield/plugfield.module';
 import { PrivateAerodromesModule } from '@/modules/private-aerodromes/private-aerodromes.module';
@@ -45,7 +45,7 @@ import { PrismaModule } from '@/prisma/prisma.module';
     PublicAerodromesModule,
     SchedulerModule,
     GroupsModule,
-    OperationalAerodromesModule,
+    AerodromesModule,
     LandingRequestsModule,
     TechnicalVisitsModule,
     AerodromeGeojsonsModule,

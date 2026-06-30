@@ -29,11 +29,11 @@ describe('ListAerodromeFeedbacksService', () => {
     findMany.mockResolvedValue([]);
     count.mockResolvedValue(0);
     await service.execute({
-      operationalAerodromeId: aid,
+      aerodromeId: aid,
       rating: FeedbackRating.POSITIVE,
     });
     const w = {
-      operationalAerodromeId: aid,
+      aerodromeId: aid,
       rating: FeedbackRating.POSITIVE,
     };
     expect(findMany).toHaveBeenCalledWith(w, 0, 10);

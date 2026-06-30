@@ -24,7 +24,7 @@ export class UpdateTechnicalVisitService {
   async execute(
     input: UpdateTechnicalVisitServiceInput,
   ): Promise<TechnicalVisitResponseDTO> {
-    const { id, operationalAerodromeId, ...dto } = input;
+    const { id, aerodromeId, ...dto } = input;
 
     const existing = await this.repo.findById(id);
     if (!existing) {
@@ -39,9 +39,9 @@ export class UpdateTechnicalVisitService {
     }
 
     const patch = patchTechnicalVisitToPrisma(dto);
-    if (operationalAerodromeId !== undefined) {
-      patch.operationalAerodrome = {
-        connect: { id: operationalAerodromeId },
+    if (aerodromeId !== undefined) {
+      patch.aerodrome = {
+        connect: { id: aerodromeId },
       };
     }
 

@@ -18,15 +18,15 @@ export class UpdatePilotLandingDTO {
   })
   @IsOptional()
   @IsBoolean()
-  disconnectOperationalAerodrome?: boolean;
+  disconnectAerodrome?: boolean;
 
   @ApiPropertyOptional({ format: 'uuid' })
   @ValidateIf(
     (_o: UpdatePilotLandingDTO, v) =>
-      typeof v === 'string' && !_o.disconnectOperationalAerodrome,
+      typeof v === 'string' && !_o.disconnectAerodrome,
   )
   @IsUUID('4')
-  operationalAerodromeId?: string;
+  aerodromeId?: string;
 
   @ApiPropertyOptional({ example: 'PT-ABC' })
   @IsOptional()

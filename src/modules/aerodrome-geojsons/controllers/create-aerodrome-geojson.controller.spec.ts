@@ -22,7 +22,7 @@ describe('CreateAerodromeGeojsonController', () => {
 
   it('delega', async () => {
     const dto: CreateAerodromeGeojsonDTO = {
-      operationalAerodromeId: '22222222-2222-4222-8222-222222222222',
+      aerodromeId: '22222222-2222-4222-8222-222222222222',
       kind: AerodromeGeojsonKind.AERODROME_MAP,
       status: AerodromeGeojsonStatus.READY,
     };

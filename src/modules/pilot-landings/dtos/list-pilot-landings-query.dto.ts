@@ -11,7 +11,7 @@ export class ListPilotLandingsQueryDTO extends BasePaginationQueryDTO {
   })
   @IsOptional()
   @IsUUID('4')
-  operationalAerodromeId?: string;
+  aerodromeId?: string;
 
   @ApiPropertyOptional({
     description: 'Filtra por matrícula (substring, case insensitive)',

@@ -63,18 +63,18 @@ describe('UpdateLandingRequestService', () => {
     const existing = buildLandingRequestFixture({ id });
     findById.mockResolvedValue(existing);
     update.mockResolvedValue(
-      buildLandingRequestFixture({ id, operationalAerodromeId: newAid }),
+      buildLandingRequestFixture({ id, aerodromeId: newAid }),
     );
 
     await service.execute({
       id,
-      operationalAerodromeId: newAid,
+      aerodromeId: newAid,
     });
 
     expect(update).toHaveBeenCalledWith(
       id,
       expect.objectContaining({
-        operationalAerodrome: { connect: { id: newAid } },
+        aerodrome: { connect: { id: newAid } },
       }),
     );
   });

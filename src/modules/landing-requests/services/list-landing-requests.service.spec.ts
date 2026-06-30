@@ -25,18 +25,18 @@ describe('ListLandingRequestsService', () => {
     expect(count).toHaveBeenCalledWith({});
   });
 
-  it('filtra operationalAerodromeId e status', async () => {
+  it('filtra aerodromeId e status', async () => {
     const aid = '22222222-2222-4222-8222-222222222222';
     findMany.mockResolvedValue([]);
     count.mockResolvedValue(0);
 
     await service.execute({
-      operationalAerodromeId: aid,
+      aerodromeId: aid,
       status: LandingRequestStatus.APPROVED,
     });
 
     const w = {
-      operationalAerodromeId: aid,
+      aerodromeId: aid,
       status: LandingRequestStatus.APPROVED,
     };
     expect(findMany).toHaveBeenCalledWith(w, 0, 10);

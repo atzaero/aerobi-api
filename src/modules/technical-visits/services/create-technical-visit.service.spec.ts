@@ -17,7 +17,7 @@ describe('CreateTechnicalVisitService', () => {
 
   it('create com modifierUsers e visitAt', async () => {
     const dto: CreateTechnicalVisitDTO = {
-      operationalAerodromeId: '22222222-2222-4222-8222-222222222222',
+      aerodromeId: '22222222-2222-4222-8222-222222222222',
       modifierUsers: ['u1', 'u2'],
       visitAt: new Date('2024-03-01T08:00:00.000Z'),
       extraObservation: 'note',

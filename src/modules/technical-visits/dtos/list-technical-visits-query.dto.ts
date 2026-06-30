@@ -7,5 +7,5 @@ export class ListTechnicalVisitsQueryDTO extends BasePaginationQueryDTO {
   @ApiPropertyOptional({ format: 'uuid' })
   @IsOptional()
   @IsUUID('4')
-  operationalAerodromeId?: string;
+  aerodromeId?: string;
 }

@@ -6,11 +6,11 @@ import { UpdateTechnicalVisitDTO } from '../dtos/update-technical-visit.dto';
 export function buildTechnicalVisitCreateInput(
   dto: CreateTechnicalVisitDTO,
 ): Prisma.TechnicalVisitCreateInput {
-  const { operationalAerodromeId, ...rest } = dto;
+  const { aerodromeId, ...rest } = dto;
   return {
     ...rest,
-    operationalAerodrome: {
-      connect: { id: operationalAerodromeId },
+    aerodrome: {
+      connect: { id: aerodromeId },
     },
   };
 }

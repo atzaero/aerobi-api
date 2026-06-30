@@ -9,13 +9,13 @@ describe('technical-visit prisma mapper', () => {
   const oid = 'a7b8c9d0-e1f2-3456-a789-bcdef0123456';
 
   const minimalCreate = (): CreateTechnicalVisitDTO => ({
-    operationalAerodromeId: oid,
+    aerodromeId: oid,
     visitAt: new Date('2024-06-02T09:00:00.000Z'),
   });
 
-  it('create conecta operationalAerodrome', () => {
+  it('create conecta aerodrome', () => {
     const input = buildTechnicalVisitCreateInput(minimalCreate());
-    expect(input.operationalAerodrome).toEqual({
+    expect(input.aerodrome).toEqual({
       connect: { id: oid },
     });
     expect(input.visitAt).toEqual(minimalCreate().visitAt);

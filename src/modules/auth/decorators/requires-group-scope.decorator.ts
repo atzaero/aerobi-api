@@ -15,7 +15,7 @@ import { GroupScopeSubject } from '../guards/group-scope.subject';
  * @example
  * ```ts
  * @UseGuards(JwtAuthGuard, RolesGuard, GroupScopeGuard)
- * @RequiresGroupScope(GroupScopeSubject.OPERATIONAL_AERODROME)
+ * @RequiresGroupScope(GroupScopeSubject.AERODROME)
  * @Patch(':id')
  * update(@Param('id') id: string) { ... }
  * ```

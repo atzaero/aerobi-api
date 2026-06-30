@@ -19,8 +19,8 @@ export class ListAerodromeFeedbacksService {
   ): Promise<AerodromeFeedbacksPaginatedResponseDTO> {
     const { page, limit, skip } = resolvePaginationParams(query, MAX_LIMIT);
     const where: Prisma.AerodromeFeedbackWhereInput = {};
-    if (query.operationalAerodromeId !== undefined) {
-      where.operationalAerodromeId = query.operationalAerodromeId;
+    if (query.aerodromeId !== undefined) {
+      where.aerodromeId = query.aerodromeId;
     }
     if (query.rating !== undefined) {
       where.rating = query.rating;

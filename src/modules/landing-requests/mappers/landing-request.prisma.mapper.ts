@@ -7,8 +7,8 @@ export function buildLandingRequestCreateInput(
   dto: CreateLandingRequestDTO,
 ): Prisma.LandingRequestCreateInput {
   return {
-    operationalAerodrome: {
-      connect: { id: dto.operationalAerodromeId },
+    aerodrome: {
+      connect: { id: dto.aerodromeId },
     },
     status: dto.status,
     requestDate: dto.requestDate,
@@ -45,9 +45,9 @@ export function patchLandingRequestToPrisma(
   if (dto.reviewedAt !== undefined) data.reviewedAt = dto.reviewedAt;
   if (dto.reviewedBy !== undefined) data.reviewedBy = dto.reviewedBy;
 
-  if (dto.operationalAerodromeId !== undefined) {
-    data.operationalAerodrome = {
-      connect: { id: dto.operationalAerodromeId },
+  if (dto.aerodromeId !== undefined) {
+    data.aerodrome = {
+      connect: { id: dto.aerodromeId },
     };
   }
   return data;

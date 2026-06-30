@@ -29,15 +29,15 @@ describe('ListAerodromeGeojsonsService', () => {
     expect(findMany).toHaveBeenCalledWith({}, 0, 10);
   });
 
-  it('operationalAerodromeId e status', async () => {
+  it('aerodromeId e status', async () => {
     findMany.mockResolvedValue([]);
     count.mockResolvedValue(0);
     await service.execute({
-      operationalAerodromeId: aid,
+      aerodromeId: aid,
       status: AerodromeGeojsonStatus.ERROR,
     });
     const w = {
-      operationalAerodromeId: aid,
+      aerodromeId: aid,
       status: AerodromeGeojsonStatus.ERROR,
     };
     expect(findMany).toHaveBeenCalledWith(w, 0, 10);

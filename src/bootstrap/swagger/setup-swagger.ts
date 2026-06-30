@@ -30,7 +30,7 @@ Aplica em:
 - \`/aisweb/*\`
 - \`/readings\`
 - \`/anac/*\`
-- \`/operational-aerodromes\`, \`/aerodrome-geojsons\`, \`/aerodrome-feedbacks\`
+- \`/aerodromes\`, \`/aerodrome-geojsons\`, \`/aerodrome-feedbacks\`
 - \`/landing-requests\`, \`/technical-visits\`, \`/pilot-landings\`
 - \`/aerodromes/{icao}/cameras\` e \`/streams/*\` (proxy HLS)
 

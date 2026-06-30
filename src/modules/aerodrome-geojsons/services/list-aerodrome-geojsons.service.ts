@@ -19,8 +19,8 @@ export class ListAerodromeGeojsonsService {
   ): Promise<AerodromeGeojsonsPaginatedResponseDTO> {
     const { page, limit, skip } = resolvePaginationParams(query, MAX_LIMIT);
     const where: Prisma.AerodromeGeojsonWhereInput = {};
-    if (query.operationalAerodromeId !== undefined) {
-      where.operationalAerodromeId = query.operationalAerodromeId;
+    if (query.aerodromeId !== undefined) {
+      where.aerodromeId = query.aerodromeId;
     }
     if (query.status !== undefined) {
       where.status = query.status;

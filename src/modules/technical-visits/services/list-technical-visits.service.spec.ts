@@ -23,12 +23,12 @@ describe('ListTechnicalVisitsService', () => {
     expect(count).toHaveBeenCalledWith({});
   });
 
-  it('filtra operationalAerodromeId', async () => {
+  it('filtra aerodromeId', async () => {
     const aid = '22222222-2222-4222-8222-222222222222';
     findMany.mockResolvedValue([]);
     count.mockResolvedValue(0);
-    await service.execute({ operationalAerodromeId: aid });
-    const w = { operationalAerodromeId: aid };
+    await service.execute({ aerodromeId: aid });
+    const w = { aerodromeId: aid };
     expect(findMany).toHaveBeenCalledWith(w, 0, 10);
     expect(count).toHaveBeenCalledWith(w);
   });

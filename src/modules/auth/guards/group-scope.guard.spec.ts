@@ -30,24 +30,24 @@ function buildContext(
 function buildPrisma(): {
   prisma: PrismaService;
   group: { findFirst: jest.Mock };
-  operationalAerodrome: { findFirst: jest.Mock };
+  aerodrome: { findFirst: jest.Mock };
   landingRequest: { findFirst: jest.Mock };
   user: { findFirst: jest.Mock };
 } {
   const group = { findFirst: jest.fn() };
-  const operationalAerodrome = { findFirst: jest.fn() };
+  const aerodrome = { findFirst: jest.fn() };
   const landingRequest = { findFirst: jest.fn() };
   const user = { findFirst: jest.fn() };
 
   return {
     prisma: {
       group,
-      operationalAerodrome,
+      aerodrome,
       landingRequest,
       user,
     } as unknown as PrismaService,
     group,
-    operationalAerodrome,
+    aerodrome,
     landingRequest,
     user,
   };
@@ -97,20 +97,20 @@ describe('GroupScopeGuard', () => {
     mockSubject(undefined);
 
     await expect(guard.canActivate(buildContext(operator))).resolves.toBe(true);
-    expect(deps.operationalAerodrome.findFirst).not.toHaveBeenCalled();
+    expect(deps.aerodrome.findFirst).not.toHaveBeenCalled();
   });
 
   it('passa (bypass) quando o usuário é ADMIN, sem tocar no DB', async () => {
-    mockSubject(GroupScopeSubject.OPERATIONAL_AERODROME);
+    mockSubject(GroupScopeSubject.AERODROME);
 
     await expect(guard.canActivate(buildContext(admin))).resolves.toBe(true);
-    expect(deps.operationalAerodrome.findFirst).not.toHaveBeenCalled();
+    expect(deps.aerodrome.findFirst).not.toHaveBeenCalled();
     expect(deps.user.findFirst).not.toHaveBeenCalled();
   });
 
   it('passa quando o recurso pertence ao mesmo grupo do usuário', async () => {
-    mockSubject(GroupScopeSubject.OPERATIONAL_AERODROME);
-    deps.operationalAerodrome.findFirst.mockResolvedValue({
+    mockSubject(GroupScopeSubject.AERODROME);
+    deps.aerodrome.findFirst.mockResolvedValue({
       groupId: GROUP_A,
     });
     deps.user.findFirst.mockResolvedValue({ groupId: GROUP_A });
@@ -120,7 +120,7 @@ describe('GroupScopeGuard', () => {
       where: { id: operator.id, deletedAt: null },
       select: { groupId: true },
     });
-    expect(deps.operationalAerodrome.findFirst).toHaveBeenCalledWith({
+    expect(deps.aerodrome.findFirst).toHaveBeenCalledWith({
       where: { id: RESOURCE_ID, deletedAt: null },
       select: { groupId: true },
     });
@@ -153,7 +153,7 @@ describe('GroupScopeGuard', () => {
   it('resolve o grupo de um recurso filho via FK (LandingRequest)', async () => {
     mockSubject(GroupScopeSubject.LANDING_REQUEST);
     deps.landingRequest.findFirst.mockResolvedValue({
-      operationalAerodrome: { groupId: GROUP_A },
+      aerodrome: { groupId: GROUP_A },
     });
     deps.user.findFirst.mockResolvedValue({ groupId: GROUP_A });
 
@@ -162,8 +162,8 @@ describe('GroupScopeGuard', () => {
   });
 
   it('lança RESOURCE_NOT_FOUND (404) quando o recurso é de outro grupo (não vaza existência)', async () => {
-    mockSubject(GroupScopeSubject.OPERATIONAL_AERODROME);
-    deps.operationalAerodrome.findFirst.mockResolvedValue({
+    mockSubject(GroupScopeSubject.AERODROME);
+    deps.aerodrome.findFirst.mockResolvedValue({
       groupId: GROUP_A,
     });
     deps.user.findFirst.mockResolvedValue({ groupId: GROUP_B });
@@ -175,8 +175,8 @@ describe('GroupScopeGuard', () => {
   });
 
   it('lança RESOURCE_NOT_FOUND (404) quando o usuário não tem grupo (groupId null)', async () => {
-    mockSubject(GroupScopeSubject.OPERATIONAL_AERODROME);
-    deps.operationalAerodrome.findFirst.mockResolvedValue({
+    mockSubject(GroupScopeSubject.AERODROME);
+    deps.aerodrome.findFirst.mockResolvedValue({
       groupId: GROUP_A,
     });
     deps.user.findFirst.mockResolvedValue({ groupId: null });
@@ -188,8 +188,8 @@ describe('GroupScopeGuard', () => {
   });
 
   it('lança ACCOUNT_DELETED (401) quando o usuário foi soft-deletado (lookup retorna null)', async () => {
-    mockSubject(GroupScopeSubject.OPERATIONAL_AERODROME);
-    deps.operationalAerodrome.findFirst.mockResolvedValue({
+    mockSubject(GroupScopeSubject.AERODROME);
+    deps.aerodrome.findFirst.mockResolvedValue({
       groupId: GROUP_A,
     });
     /** JwtStrategy confia no token; o lookup ativo (deletedAt: null) devolve null. */
@@ -206,9 +206,9 @@ describe('GroupScopeGuard', () => {
   });
 
   it('lança RESOURCE_NOT_FOUND quando o recurso não existe (mesmo 404 do fora-de-escopo)', async () => {
-    mockSubject(GroupScopeSubject.OPERATIONAL_AERODROME);
+    mockSubject(GroupScopeSubject.AERODROME);
     deps.user.findFirst.mockResolvedValue({ groupId: GROUP_A });
-    deps.operationalAerodrome.findFirst.mockResolvedValue(null);
+    deps.aerodrome.findFirst.mockResolvedValue(null);
 
     await expectErrorCode(
       guard.canActivate(buildContext(operator)),
@@ -217,7 +217,7 @@ describe('GroupScopeGuard', () => {
   });
 
   it('lança UNAUTHORIZED quando request.user está ausente', async () => {
-    mockSubject(GroupScopeSubject.OPERATIONAL_AERODROME);
+    mockSubject(GroupScopeSubject.AERODROME);
 
     await expectErrorCode(
       guard.canActivate(buildContext(undefined)),
@@ -226,17 +226,17 @@ describe('GroupScopeGuard', () => {
   });
 
   it('lança VALIDATION_FAILED quando params.id não é UUID', async () => {
-    mockSubject(GroupScopeSubject.OPERATIONAL_AERODROME);
+    mockSubject(GroupScopeSubject.AERODROME);
 
     await expectErrorCode(
       guard.canActivate(buildContext(operator, { id: 'not-a-uuid' })),
       ErrorCode.VALIDATION_FAILED,
     );
-    expect(deps.operationalAerodrome.findFirst).not.toHaveBeenCalled();
+    expect(deps.aerodrome.findFirst).not.toHaveBeenCalled();
   });
 
   it('lança VALIDATION_FAILED quando params.id está ausente', async () => {
-    mockSubject(GroupScopeSubject.OPERATIONAL_AERODROME);
+    mockSubject(GroupScopeSubject.AERODROME);
 
     await expectErrorCode(
       guard.canActivate(buildContext(operator, {})),

@@ -9,7 +9,7 @@
  * - `PERMISSION_KEY`: par `{ subject, action }` exigido pelo
  *   `PermissionsGuard`. Set via `@RequirePermission(subject, action)`.
  * - `GROUP_SCOPE_KEY`: subject do recurso a checar pelo `GroupScopeGuard`.
- *   Set via `@RequiresGroupScope(GroupScopeSubject.OPERATIONAL_AERODROME)`.
+ *   Set via `@RequiresGroupScope(GroupScopeSubject.AERODROME)`.
  */
 export const IS_PUBLIC_KEY = 'auth:isPublic';
 export const ROLES_KEY = 'auth:roles';

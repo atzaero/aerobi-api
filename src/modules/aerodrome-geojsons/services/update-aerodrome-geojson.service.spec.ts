@@ -57,23 +57,23 @@ describe('UpdateAerodromeGeojsonService', () => {
     );
   });
 
-  it('operationalAerodromeId com connect', async () => {
+  it('aerodromeId com connect', async () => {
     findById.mockResolvedValue(buildAerodromeGeojsonFixture({ id }));
     update.mockResolvedValue(
       buildAerodromeGeojsonFixture({
         id,
-        operationalAerodromeId: newAid,
+        aerodromeId: newAid,
       }),
     );
     await service.execute({
       id,
-      operationalAerodromeId: newAid,
+      aerodromeId: newAid,
       featureCount: 3,
     });
     expect(update).toHaveBeenCalledWith(
       id,
       expect.objectContaining({
-        operationalAerodrome: { connect: { id: newAid } },
+        aerodrome: { connect: { id: newAid } },
         featureCount: 3,
       }),
     );

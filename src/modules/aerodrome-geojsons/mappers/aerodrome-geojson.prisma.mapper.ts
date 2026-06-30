@@ -6,14 +6,14 @@ import { UpdateAerodromeGeojsonDTO } from '../dtos/update-aerodrome-geojson.dto'
 export function buildAerodromeGeojsonCreateInput(
   dto: CreateAerodromeGeojsonDTO,
 ): Prisma.AerodromeGeojsonCreateInput {
-  const { operationalAerodromeId, geoJson, ...rest } = dto;
+  const { aerodromeId, geoJson, ...rest } = dto;
   return {
     ...rest,
     ...(geoJson !== undefined
       ? { geoJson: geoJson as Prisma.InputJsonValue }
       : {}),
-    operationalAerodrome: {
-      connect: { id: operationalAerodromeId },
+    aerodrome: {
+      connect: { id: aerodromeId },
     },
   };
 }
