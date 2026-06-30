@@ -2,7 +2,7 @@ import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
-import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
+import { httpError } from '@/common/exceptions/http-error.util';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
 import type { PasswordResetResponseDto } from '../dtos/password-reset-response.dto';
@@ -35,12 +35,11 @@ export class AdminResetPasswordService {
   ): Promise<PasswordResetResponseDto> {
     const user = await this.userRepository.findActiveById(id);
     if (!user) {
-      throw new CustomHttpException(
-        this.errorMessageService.getMessage(ErrorCode.USER_NOT_FOUND, {
-          ID: id,
-        }),
-        HttpStatus.NOT_FOUND,
+      throw httpError(
+        this.errorMessageService,
         ErrorCode.USER_NOT_FOUND,
+        HttpStatus.NOT_FOUND,
+        { ID: id },
       );
     }
 

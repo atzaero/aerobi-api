@@ -2,7 +2,7 @@ import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
-import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
+import { httpError } from '@/common/exceptions/http-error.util';
 import { RefreshTokenRepository } from '@/modules/auth/repositories/refresh-token.repository';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
@@ -36,10 +36,10 @@ export class ChangePasswordService {
 
     /** Token válido mas conta soft-deletada (a JwtStrategy não revalida). */
     if (!user) {
-      throw new CustomHttpException(
-        this.errorMessageService.getMessage(ErrorCode.ACCOUNT_DELETED),
-        HttpStatus.UNAUTHORIZED,
+      throw httpError(
+        this.errorMessageService,
         ErrorCode.ACCOUNT_DELETED,
+        HttpStatus.UNAUTHORIZED,
       );
     }
 
@@ -51,10 +51,10 @@ export class ChangePasswordService {
       user.password !== null &&
       (await comparePassword(dto.currentPassword, user.password));
     if (!matches) {
-      throw new CustomHttpException(
-        this.errorMessageService.getMessage(ErrorCode.INVALID_CREDENTIALS),
-        HttpStatus.UNAUTHORIZED,
+      throw httpError(
+        this.errorMessageService,
         ErrorCode.INVALID_CREDENTIALS,
+        HttpStatus.UNAUTHORIZED,
       );
     }
 

@@ -2,7 +2,7 @@ import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
-import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
+import { httpError } from '@/common/exceptions/http-error.util';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
 import type { UpdateProfileRequestDto } from '../dtos/update-profile-request.dto';
@@ -33,10 +33,10 @@ export class UpdateProfileService {
 
     /** Token ainda válido mas conta soft-deletada (a JwtStrategy não revalida). */
     if (!user) {
-      throw new CustomHttpException(
-        this.errorMessageService.getMessage(ErrorCode.ACCOUNT_DELETED),
-        HttpStatus.UNAUTHORIZED,
+      throw httpError(
+        this.errorMessageService,
         ErrorCode.ACCOUNT_DELETED,
+        HttpStatus.UNAUTHORIZED,
       );
     }
 

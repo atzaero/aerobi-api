@@ -3,7 +3,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
-import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
+import { httpError } from '@/common/exceptions/http-error.util';
 import { resolveActorGroupScope } from '@/common/utils/group-scope.util';
 import type { User } from '@/generated/prisma/client';
 import { RefreshTokenRepository } from '@/modules/auth/repositories/refresh-token.repository';
@@ -76,12 +76,11 @@ export class UpdateUserService {
 
     /** COORDINATOR sem grupo provisionado não gere ninguém — sem "fail open". */
     if (scope.kind === 'none') {
-      throw new CustomHttpException(
-        this.errorMessageService.getMessage(ErrorCode.FORBIDDEN, {
-          RESOURCE: 'user',
-        }),
-        HttpStatus.FORBIDDEN,
+      throw httpError(
+        this.errorMessageService,
         ErrorCode.FORBIDDEN,
+        HttpStatus.FORBIDDEN,
+        { RESOURCE: 'user' },
       );
     }
 
@@ -95,12 +94,11 @@ export class UpdateUserService {
         ? !!target && isTargetEditableInGroup(target, scope.groupId)
         : !!target;
     if (!target || !manageable) {
-      throw new CustomHttpException(
-        this.errorMessageService.getMessage(ErrorCode.USER_NOT_FOUND, {
-          ID: id,
-        }),
-        HttpStatus.NOT_FOUND,
+      throw httpError(
+        this.errorMessageService,
         ErrorCode.USER_NOT_FOUND,
+        HttpStatus.NOT_FOUND,
+        { ID: id },
       );
     }
 
@@ -111,15 +109,11 @@ export class UpdateUserService {
     /** `email` já chega normalizado (trim + lowercase) pelo DTO. */
     const emailChanged = dto.email !== undefined && dto.email !== target.email;
     if (emailChanged && (await this.userRepository.existsByEmail(dto.email!))) {
-      throw new CustomHttpException(
-        this.errorMessageService.getMessage(
-          ErrorCode.EMAIL_ALREADY_REGISTERED,
-          {
-            EMAIL: dto.email!,
-          },
-        ),
-        HttpStatus.CONFLICT,
+      throw httpError(
+        this.errorMessageService,
         ErrorCode.EMAIL_ALREADY_REGISTERED,
+        HttpStatus.CONFLICT,
+        { EMAIL: dto.email! },
       );
     }
 
@@ -135,13 +129,11 @@ export class UpdateUserService {
     } catch (err) {
       /** Corrida com outro cadastro do mesmo email: a constraint @unique vence. */
       if (emailChanged && isUniqueConstraintError(err)) {
-        throw new CustomHttpException(
-          this.errorMessageService.getMessage(
-            ErrorCode.EMAIL_ALREADY_REGISTERED,
-            { EMAIL: dto.email! },
-          ),
-          HttpStatus.CONFLICT,
+        throw httpError(
+          this.errorMessageService,
           ErrorCode.EMAIL_ALREADY_REGISTERED,
+          HttpStatus.CONFLICT,
+          { EMAIL: dto.email! },
         );
       }
       throw err;

@@ -2,7 +2,7 @@ import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
-import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
+import { httpError } from '@/common/exceptions/http-error.util';
 import { resolveActorGroupScope } from '@/common/utils/group-scope.util';
 import { RefreshTokenRepository } from '@/modules/auth/repositories/refresh-token.repository';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
@@ -37,12 +37,11 @@ export class RemoveUserService {
 
   async execute(id: string, actor: AuthenticatedUser): Promise<void> {
     if (id === actor.id) {
-      throw new CustomHttpException(
-        this.errorMessageService.getMessage(ErrorCode.VALIDATION_FAILED, {
-          DETAILS: 'não é permitido remover o próprio usuário',
-        }),
-        HttpStatus.BAD_REQUEST,
+      throw httpError(
+        this.errorMessageService,
         ErrorCode.VALIDATION_FAILED,
+        HttpStatus.BAD_REQUEST,
+        { DETAILS: 'não é permitido remover o próprio usuário' },
       );
     }
 
@@ -54,12 +53,11 @@ export class RemoveUserService {
     );
 
     if (scope.kind === 'none') {
-      throw new CustomHttpException(
-        this.errorMessageService.getMessage(ErrorCode.FORBIDDEN, {
-          RESOURCE: 'user',
-        }),
-        HttpStatus.FORBIDDEN,
+      throw httpError(
+        this.errorMessageService,
         ErrorCode.FORBIDDEN,
+        HttpStatus.FORBIDDEN,
+        { RESOURCE: 'user' },
       );
     }
 
@@ -72,12 +70,11 @@ export class RemoveUserService {
         ? !user || !isTargetManageableInGroup(user, scope.groupId)
         : !user;
     if (notFound) {
-      throw new CustomHttpException(
-        this.errorMessageService.getMessage(ErrorCode.USER_NOT_FOUND, {
-          ID: id,
-        }),
-        HttpStatus.NOT_FOUND,
+      throw httpError(
+        this.errorMessageService,
         ErrorCode.USER_NOT_FOUND,
+        HttpStatus.NOT_FOUND,
+        { ID: id },
       );
     }
 

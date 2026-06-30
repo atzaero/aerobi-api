@@ -2,7 +2,7 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
-import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
+import { httpError } from '@/common/exceptions/http-error.util';
 import { resolveActorGroupScope } from '@/common/utils/group-scope.util';
 import { UserRole } from '@/generated/prisma/client';
 
@@ -60,12 +60,11 @@ export class FindUserByIdService {
       }
     }
 
-    throw new CustomHttpException(
-      this.errorMessageService.getMessage(ErrorCode.USER_NOT_FOUND, {
-        ID: id,
-      }),
-      HttpStatus.NOT_FOUND,
+    throw httpError(
+      this.errorMessageService,
       ErrorCode.USER_NOT_FOUND,
+      HttpStatus.NOT_FOUND,
+      { ID: id },
     );
   }
 }

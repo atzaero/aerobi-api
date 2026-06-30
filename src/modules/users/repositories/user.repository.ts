@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-import type { Prisma, User } from '@/generated/prisma/client';
+import type { User } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 
 import type {
@@ -12,7 +12,17 @@ import type {
   UpdateUserData,
   UserWithGroupName,
 } from './user.repository.interface';
+import {
+  buildUserCreateInput,
+  buildUserSoftDeleteInput,
+  buildUserUpdateInput,
+  buildUserWhere,
+} from './user-prisma.builder';
 
+/**
+ * Acesso a `User` via Prisma. A montagem dos inputs/where vive em
+ * `user-prisma.builder.ts` (funções puras); aqui só persistimos/consultamos.
+ */
 @Injectable()
 export class UserRepository implements IUserRepository {
   private readonly logger = new Logger(UserRepository.name);
@@ -39,44 +49,16 @@ export class UserRepository implements IUserRepository {
   async create(data: CreateUserData): Promise<User> {
     this.logger.debug(`Creating user email=${data.email} role=${data.role}`);
 
-    return this.prisma.user.create({
-      data: {
-        email: data.email,
-        name: data.name,
-        role: data.role,
-        ...(data.phone !== undefined && { phone: data.phone }),
-        ...(data.groupId !== undefined && {
-          groupId: data.groupId,
-        }),
-        ...(data.state !== undefined && { state: data.state }),
-        ...(data.invitedById !== undefined && {
-          invitedById: data.invitedById,
-        }),
-        ...(data.invitedAt !== undefined && { invitedAt: data.invitedAt }),
-        ...(data.createdBy !== undefined && { createdBy: data.createdBy }),
-      },
-    });
+    return this.prisma.user.create({ data: buildUserCreateInput(data) });
   }
 
   async update(id: string, data: UpdateUserData): Promise<User> {
     this.logger.debug(`Updating user id=${id}`);
 
-    const update: Prisma.UserUpdateInput = {};
-
-    if (data.name !== undefined) update.name = data.name;
-    if (data.email !== undefined) update.email = data.email;
-    if (data.phone !== undefined) update.phone = data.phone;
-    if (data.timezone !== undefined) update.timezone = data.timezone;
-    if (data.role !== undefined) update.role = data.role;
-    if (data.password !== undefined) update.password = data.password;
-    if (data.emailVerified !== undefined)
-      update.emailVerified = data.emailVerified;
-    if (data.acceptedInviteAt !== undefined)
-      update.acceptedInviteAt = data.acceptedInviteAt;
-    if (data.lastLoginAt !== undefined) update.lastLoginAt = data.lastLoginAt;
-    if (data.updatedBy !== undefined) update.updatedBy = data.updatedBy;
-
-    return this.prisma.user.update({ where: { id }, data: update });
+    return this.prisma.user.update({
+      where: { id },
+      data: buildUserUpdateInput(data),
+    });
   }
 
   async softDelete(id: string, deletedBy?: string): Promise<User> {
@@ -84,15 +66,12 @@ export class UserRepository implements IUserRepository {
 
     return this.prisma.user.update({
       where: { id },
-      data: {
-        deletedAt: new Date(),
-        ...(deletedBy !== undefined && { deletedBy, updatedBy: deletedBy }),
-      },
+      data: buildUserSoftDeleteInput(new Date(), deletedBy),
     });
   }
 
   async findManyPaginated(params: ListUsersParams): Promise<ListUsersResult> {
-    const where = this.buildWhere(params);
+    const where = buildUserWhere(params);
 
     const [rows, total] = await this.prisma.$transaction([
       this.prisma.user.findMany({
@@ -112,7 +91,7 @@ export class UserRepository implements IUserRepository {
     take: number,
   ): Promise<UserWithGroupName[]> {
     return this.prisma.user.findMany({
-      where: this.buildWhere(filters),
+      where: buildUserWhere(filters),
       orderBy: { createdAt: 'desc' },
       take,
       include: { group: { select: { name: true } } },
@@ -120,35 +99,6 @@ export class UserRepository implements IUserRepository {
   }
 
   async countForExport(filters: ExportUsersFilters): Promise<number> {
-    return this.prisma.user.count({ where: this.buildWhere(filters) });
-  }
-
-  /**
-   * Monta o `where` compartilhado por listagem e export: sempre ativos
-   * (`deletedAt: null`), com `role`/`groupId` por igualdade e `search` em
-   * `email`/`name` (ILIKE — substring case-insensitive).
-   */
-  private buildWhere(filters: ExportUsersFilters): Prisma.UserWhereInput {
-    const where: Prisma.UserWhereInput = { deletedAt: null };
-
-    if (filters.role) {
-      where.role = filters.role;
-    }
-
-    if (filters.groupId) {
-      where.groupId = filters.groupId;
-    }
-
-    if (filters.search) {
-      const term = filters.search.trim();
-      if (term.length > 0) {
-        where.OR = [
-          { email: { contains: term, mode: 'insensitive' } },
-          { name: { contains: term, mode: 'insensitive' } },
-        ];
-      }
-    }
-
-    return where;
+    return this.prisma.user.count({ where: buildUserWhere(filters) });
   }
 }

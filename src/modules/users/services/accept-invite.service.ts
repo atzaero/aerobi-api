@@ -3,6 +3,7 @@ import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
+import { httpError } from '@/common/exceptions/http-error.util';
 import { maskEmail } from '@/common/utils/mask-email.util';
 import { TokenType } from '@/generated/prisma/enums';
 import { IssueTokenPairService } from '@/modules/auth/services/issue-token-pair.service';
@@ -44,18 +45,18 @@ export class AcceptInviteService {
     const user = await this.userRepository.findByEmail(input.email);
 
     if (!user || user.deletedAt) {
-      throw new CustomHttpException(
-        this.errorMessageService.getMessage(ErrorCode.INVITE_TOKEN_INVALID),
-        HttpStatus.BAD_REQUEST,
+      throw httpError(
+        this.errorMessageService,
         ErrorCode.INVITE_TOKEN_INVALID,
+        HttpStatus.BAD_REQUEST,
       );
     }
 
     if (user.acceptedInviteAt) {
-      throw new CustomHttpException(
-        this.errorMessageService.getMessage(ErrorCode.INVITE_ALREADY_ACCEPTED),
-        HttpStatus.BAD_REQUEST,
+      throw httpError(
+        this.errorMessageService,
         ErrorCode.INVITE_ALREADY_ACCEPTED,
+        HttpStatus.BAD_REQUEST,
       );
     }
 
@@ -72,20 +73,20 @@ export class AcceptInviteService {
       if (err instanceof CustomHttpException) {
         const original = err.getErrorCode();
         if (original === ErrorCode.TOKEN_EXPIRED) {
-          throw new CustomHttpException(
-            this.errorMessageService.getMessage(ErrorCode.INVITE_TOKEN_EXPIRED),
-            HttpStatus.BAD_REQUEST,
+          throw httpError(
+            this.errorMessageService,
             ErrorCode.INVITE_TOKEN_EXPIRED,
+            HttpStatus.BAD_REQUEST,
           );
         }
         if (
           original === ErrorCode.INVALID_TOKEN ||
           original === ErrorCode.TOKEN_ALREADY_USED
         ) {
-          throw new CustomHttpException(
-            this.errorMessageService.getMessage(ErrorCode.INVITE_TOKEN_INVALID),
-            HttpStatus.BAD_REQUEST,
+          throw httpError(
+            this.errorMessageService,
             ErrorCode.INVITE_TOKEN_INVALID,
+            HttpStatus.BAD_REQUEST,
           );
         }
       }

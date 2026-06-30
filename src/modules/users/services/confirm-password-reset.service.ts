@@ -4,6 +4,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
+import { httpError } from '@/common/exceptions/http-error.util';
 import { TokenType } from '@/generated/prisma/enums';
 import { RefreshTokenRepository } from '@/modules/auth/repositories/refresh-token.repository';
 import { TokenValidationService } from '@/modules/tokens/services/token-validation.service';
@@ -82,12 +83,10 @@ export class ConfirmPasswordResetService {
   }
 
   private invalid(): CustomHttpException {
-    return new CustomHttpException(
-      this.errorMessageService.getMessage(
-        ErrorCode.PASSWORD_RESET_TOKEN_INVALID,
-      ),
-      HttpStatus.BAD_REQUEST,
+    return httpError(
+      this.errorMessageService,
       ErrorCode.PASSWORD_RESET_TOKEN_INVALID,
+      HttpStatus.BAD_REQUEST,
     );
   }
 }

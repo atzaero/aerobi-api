@@ -2,7 +2,7 @@ import { HttpStatus } from '@nestjs/common';
 
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
-import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
+import { httpError } from '@/common/exceptions/http-error.util';
 import { UserRole } from '@/generated/prisma/client';
 
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
@@ -22,10 +22,10 @@ export function assertSelfOrAdmin(
   if (actor.role === UserRole.ADMIN) return;
   if (actor.id === targetUserId) return;
 
-  throw new CustomHttpException(
-    errorMessageService.getMessage(ErrorCode.OWNERSHIP_VIOLATION),
-    HttpStatus.FORBIDDEN,
+  throw httpError(
+    errorMessageService,
     ErrorCode.OWNERSHIP_VIOLATION,
+    HttpStatus.FORBIDDEN,
   );
 }
 
@@ -58,10 +58,13 @@ export function assertCanManageTargetRole(
     return;
   }
 
-  throw new CustomHttpException(
-    errorMessageService.getMessage(ErrorCode.FORBIDDEN, { RESOURCE: 'user' }),
-    HttpStatus.FORBIDDEN,
+  throw httpError(
+    errorMessageService,
     ErrorCode.FORBIDDEN,
+    HttpStatus.FORBIDDEN,
+    {
+      RESOURCE: 'user',
+    },
   );
 }
 
@@ -81,10 +84,10 @@ export function assertCanAssignRole(
     return;
   }
 
-  throw new CustomHttpException(
-    errorMessageService.getMessage(ErrorCode.ROLE_CHANGE_FORBIDDEN),
-    HttpStatus.FORBIDDEN,
+  throw httpError(
+    errorMessageService,
     ErrorCode.ROLE_CHANGE_FORBIDDEN,
+    HttpStatus.FORBIDDEN,
   );
 }
 
@@ -99,9 +102,5 @@ export function assertAdmin(
 ): void {
   if (actor.role === UserRole.ADMIN) return;
 
-  throw new CustomHttpException(
-    errorMessageService.getMessage(errorCode),
-    HttpStatus.FORBIDDEN,
-    errorCode,
-  );
+  throw httpError(errorMessageService, errorCode, HttpStatus.FORBIDDEN);
 }
