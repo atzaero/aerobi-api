@@ -100,7 +100,7 @@ export class AcceptInviteService {
       password: passwordHash,
       emailVerified: true,
       acceptedInviteAt: now,
-      ...(input.name !== undefined && { name: input.name }),
+      name: input.name,
       updatedBy: user.id,
     });
 
@@ -108,10 +108,7 @@ export class AcceptInviteService {
 
     const pair = await this.issueTokenPair.execute(
       { id: updated.id, email: updated.email, role: updated.role },
-      {
-        ...(input.userAgent !== undefined && { userAgent: input.userAgent }),
-        ...(input.ipAddress !== undefined && { ipAddress: input.ipAddress }),
-      },
+      { userAgent: input.userAgent, ipAddress: input.ipAddress },
     );
 
     this.logger.log(

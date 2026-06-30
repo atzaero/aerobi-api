@@ -120,10 +120,10 @@ export class UpdateUserService {
     let updated: User;
     try {
       updated = await this.userRepository.update(id, {
-        ...(dto.name !== undefined && { name: dto.name }),
-        ...(emailChanged && { email: dto.email }),
-        ...(dto.phone !== undefined && { phone: dto.phone }),
-        ...(dto.role !== undefined && { role: dto.role }),
+        name: dto.name,
+        email: emailChanged ? dto.email : undefined,
+        phone: dto.phone,
+        role: dto.role,
         updatedBy: actor.id,
       });
     } catch (err) {

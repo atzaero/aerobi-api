@@ -54,9 +54,9 @@ export class ExportUsersService {
 
     const groupId = scope.kind === 'group' ? scope.groupId : query.groupId;
     const filters: ExportUsersFilters = {
-      ...(query.search !== undefined && { search: query.search }),
-      ...(query.role !== undefined && { role: query.role }),
-      ...(groupId !== undefined && { groupId }),
+      search: query.search,
+      role: query.role,
+      groupId,
     };
 
     /**

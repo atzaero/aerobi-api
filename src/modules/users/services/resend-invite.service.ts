@@ -100,7 +100,7 @@ export class ResendInviteService {
 
     const invite = await this.inviteTokenService.createInviteToken(user.id, {
       role: user.role,
-      ...(input.actorName !== undefined && { invitedByName: input.actorName }),
+      invitedByName: input.actorName,
     });
 
     this.eventEmitter.emit(

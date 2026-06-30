@@ -40,10 +40,11 @@ export class UpdateProfileService {
       );
     }
 
+    /** undefined = campo não enviado; o builder do repositório já o descarta. */
     const updated = await this.userRepository.update(actor.id, {
-      ...(dto.name !== undefined && { name: dto.name }),
-      ...(dto.phone !== undefined && { phone: dto.phone }),
-      ...(dto.timezone !== undefined && { timezone: dto.timezone }),
+      name: dto.name,
+      phone: dto.phone,
+      timezone: dto.timezone,
       updatedBy: actor.id,
     });
 

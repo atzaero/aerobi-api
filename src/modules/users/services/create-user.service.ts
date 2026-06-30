@@ -74,7 +74,7 @@ export class CreateUserService {
       role: input.role,
       groupId,
       state,
-      ...(input.phone !== undefined && { phone: input.phone }),
+      phone: input.phone,
       invitedById: input.actorId,
       invitedAt: now,
       createdBy: input.actorId,
@@ -82,7 +82,7 @@ export class CreateUserService {
 
     const invite = await this.inviteTokenService.createInviteToken(user.id, {
       role: user.role,
-      ...(input.actorName !== undefined && { invitedByName: input.actorName }),
+      invitedByName: input.actorName,
     });
 
     this.eventEmitter.emit(
