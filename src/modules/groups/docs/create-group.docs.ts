@@ -13,7 +13,7 @@ export function CreateGroupDocs() {
   return applyDecorators(
     ApiBearerAuth(),
     ApiOperation({
-      summary: 'Cria um(a) Group',
+      summary: 'Cria um grupo de aeródromos',
       description:
         'Requer permissão `group:create` (ADMIN). `createdBy` é o usuário autenticado.',
     }),

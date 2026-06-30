@@ -16,5 +16,5 @@ Cada controller tem um `*.spec.ts` irmão.
 
 - Magros: recebem a request, delegam ao service em `../services` e retornam.
 - Swagger via decoradores importados de `../docs` (`@CreateGroupDocs()` etc.).
-- Guard padrão: `@UseGuards(AerobiApiKeyGuard)` na classe.
+- Guard padrão: `@UseGuards(JwtAuthGuard, PermissionsGuard)` na classe; `find-group-by-id` adiciona `GroupScopeGuard` (`@RequiresGroupScope(GroupScopeSubject.GROUP)`).
 - Sem lógica de negócio — se você precisa transformar dados, faça no service ou mapper.

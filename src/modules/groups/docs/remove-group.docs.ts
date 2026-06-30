@@ -15,7 +15,7 @@ export function RemoveGroupDocs() {
   return applyDecorators(
     ApiBearerAuth(),
     ApiOperation({
-      summary: 'Remove (soft delete) um(a) Group por id',
+      summary: 'Remove (soft delete) um grupo de aeródromos',
       description:
         'Requer `group:delete` (ADMIN). Cascata: fecha os aeródromos do grupo ' +
         '(`isOpen=false`, `isView=false`) na mesma transação e devolve ' +

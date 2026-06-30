@@ -15,7 +15,7 @@ export function UpdateGroupDocs() {
   return applyDecorators(
     ApiBearerAuth(),
     ApiOperation({
-      summary: 'Atualiza um(a) Group por id',
+      summary: 'Atualiza um grupo de aeródromos',
       description:
         'Requer `group:update` (ADMIN). Apenas `name` é editável; ' +
         '`updatedBy` recebe o usuário autenticado.',

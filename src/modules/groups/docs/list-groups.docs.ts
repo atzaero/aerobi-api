@@ -24,7 +24,7 @@ export function ListGroupsDocs() {
       GroupsPaginatedResponseDTO,
     ),
     ApiOperation({
-      summary: 'Lista paginada de Groups',
+      summary: 'Lista paginada de grupos de aeródromos',
       description:
         'Requer `group:list`. COORDINATOR enxerga apenas o próprio grupo; ' +
         'ADMIN vê todos. Ordenado por `createdAt` desc.',
