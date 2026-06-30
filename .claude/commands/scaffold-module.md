@@ -26,10 +26,10 @@ do projeto `aerobi-api`. Equivalente a `nest g resource`, porém com as camadas 
 
 | Arg | Descrição | Exemplo |
 |---|---|---|
-| `<Model>` | Nome do model Prisma em PascalCase | `AerodromeGroup` |
-| `<pasta-plural>` | Pasta do módulo em kebab-case plural | `aerodrome-groups` |
-| `<entidade-singular>` | Nome singular em kebab-case (usado em arquivos) | `aerodrome-group` |
-| `<"Api Tag">` | Tag do Swagger (Title Case entre aspas) | `"Aerodrome Groups"` |
+| `<Model>` | Nome do model Prisma em PascalCase | `Group` |
+| `<pasta-plural>` | Pasta do módulo em kebab-case plural | `groups` |
+| `<entidade-singular>` | Nome singular em kebab-case (usado em arquivos) | `group` |
+| `<"Api Tag">` | Tag do Swagger (Title Case entre aspas) | `"Groups"` |
 
 ## Estrutura gerada
 
@@ -92,7 +92,7 @@ src/modules/<pasta-plural>/
    Exemplo:
 
    ```bash
-   node scripts/scaffold-module.mjs AerodromeGroup aerodrome-groups aerodrome-group "Aerodrome Groups"
+   node scripts/scaffold-module.mjs Group groups group "Groups"
    ```
 
 3. **Registrar em `src/app.module.ts`** — adicionar o import e a entrada na array `imports` (ordem alfabética).

@@ -8,7 +8,7 @@ Atualizado após remover da `TechnicalVisit` a cópia de dados do aeródromo (IC
 
 | Modelo | Redundâncias removidas / evitadas | Campos ainda “discutíveis” |
 |--------|-----------------------------------|----------------------------|
-| `AerodromeGroup` | — | `owner_id` vs futuro `group_members` |
+| `Group` | — | `owner_id` vs futuro `group_members` |
 | `OperationalAerodrome` | — | Nenhuma crítica; UF só no grupo |
 | `LandingRequest` | `uf`, `icao`, `answer` | — |
 | `TechnicalVisit` | **Removidos:** pista + ICAO/CIAD + `aerodrome_name` + `city` + `visitor_name` | Visitante: `visit_by` (uid) → `users`; cadastro do aeródromo via join |

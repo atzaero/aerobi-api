@@ -7,7 +7,7 @@
  *   node scripts/scaffold-module.mjs <Model> <pasta-plural> <entidade-singular> <"Api Tag">
  *
  * Exemplo:
- *   node scripts/scaffold-module.mjs AerodromeGroup aerodrome-groups aerodrome-group "Aerodrome Groups"
+ *   node scripts/scaffold-module.mjs Group groups group "Groups"
  *
  * Falha se a pasta de destino já existe.
  */
@@ -46,13 +46,13 @@ const toCamel = (kebab) => {
 };
 
 const names = {
-  Model, // AerodromeGroup (model Prisma)
-  singularKebab, // aerodrome-group
-  pluralKebab, // aerodrome-groups
-  pascalSingular: toPascal(singularKebab), // AerodromeGroup
-  pascalPlural: toPascal(pluralKebab), // AerodromeGroups
-  camelSingular: toCamel(singularKebab), // aerodromeGroup
-  apiTag, // "Aerodrome Groups"
+  Model, // Group (model Prisma)
+  singularKebab, // group
+  pluralKebab, // groups
+  pascalSingular: toPascal(singularKebab), // Group
+  pascalPlural: toPascal(pluralKebab), // Groups
+  camelSingular: toCamel(singularKebab), // group
+  apiTag, // "Groups"
 };
 
 // --- helper ---

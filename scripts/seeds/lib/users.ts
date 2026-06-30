@@ -16,7 +16,7 @@ export type SeedUserSpec = {
   name: string;
   role: UserRole;
   password: string;
-  aerodromeGroupId: string | null;
+  groupId: string | null;
   state: Uf | null;
 };
 
@@ -51,7 +51,7 @@ export async function ensureSeedUser(
       password: passwordHash,
       emailVerified: true,
       acceptedInviteAt: new Date(),
-      aerodromeGroupId: spec.aerodromeGroupId,
+      groupId: spec.groupId,
       state: spec.state,
       createdBy: 'seed',
     },

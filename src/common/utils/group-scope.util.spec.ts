@@ -11,7 +11,7 @@ import {
 const errorMessageService = new ErrorMessageService();
 
 function lookupReturning(
-  value: { aerodromeGroupId: string | null } | null,
+  value: { groupId: string | null } | null,
 ): ActorGroupLookup {
   return { findActiveById: jest.fn().mockResolvedValue(value) };
 }
@@ -33,7 +33,7 @@ describe('resolveActorGroupScope', () => {
     const scope = await resolveActorGroupScope(
       UserRole.COORDINATOR,
       'c',
-      lookupReturning({ aerodromeGroupId: 'group-9' }),
+      lookupReturning({ groupId: 'group-9' }),
       errorMessageService,
     );
     expect(scope).toEqual({ kind: 'group', groupId: 'group-9' });
@@ -43,7 +43,7 @@ describe('resolveActorGroupScope', () => {
     const scope = await resolveActorGroupScope(
       UserRole.COORDINATOR,
       'c',
-      lookupReturning({ aerodromeGroupId: null }),
+      lookupReturning({ groupId: null }),
       errorMessageService,
     );
     expect(scope).toEqual({ kind: 'none' });

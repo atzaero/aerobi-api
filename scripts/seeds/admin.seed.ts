@@ -32,7 +32,7 @@ export const adminSeed: SeedRunner = {
       name,
       role: UserRole.ADMIN,
       password,
-      aerodromeGroupId: null,
+      groupId: null,
       state: null,
     });
 

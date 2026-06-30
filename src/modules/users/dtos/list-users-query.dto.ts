@@ -31,5 +31,5 @@ export class ListUsersQueryDto extends BasePaginationQueryDTO {
   @ApiPropertyOptional({ format: 'uuid' })
   @IsOptional()
   @IsUUID()
-  aerodromeGroupId?: string;
+  groupId?: string;
 }

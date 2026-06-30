@@ -45,7 +45,7 @@ Aplica em:
 
 - \`GET /auth/me\` e \`POST /auth/logout\`
 - \`/users\` (CRUD) e \`/users/{id}/invite/resend\`
-- \`/aerodrome-groups\` (CRUD) — admin cria, edita e remove; coordinator lê apenas o próprio grupo
+- \`/groups\` (CRUD) — admin cria, edita e remove; coordinator lê apenas o próprio grupo
 
 ### Rotas públicas
 

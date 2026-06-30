@@ -15,7 +15,7 @@ import { ListUsersService } from '../services/list-users.service';
 /**
  * Listagem de usuários. Gated por `@RequirePermission('user','list')`
  * (ADMIN/COORDINATOR). O **escopo por grupo** é aplicado no service: COORDINATOR
- * só enxerga o **próprio grupo** (`aerodromeGroupId` resolvido por consulta);
+ * só enxerga o **próprio grupo** (`groupId` resolvido por consulta);
  * ADMIN vê todos. Espelha `aerobi-web` `app/actions/users/list`.
  */
 @ApiTags('Users')

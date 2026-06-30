@@ -240,10 +240,10 @@ enum FeedbackRating {
 }
 
 /// Grupo de aeródromos por UF (equivale a `states/{uf}/groups/{id}` no Firestore).
-model AerodromeGroup {
+model Group {
   id                String   @id @default(uuid()) @db.Uuid
   uf                Uf
-  name              String   @map("group_name")
+  name              String
   ownerId           String?  @map("owner_id")
   deletionRequested Boolean? @map("deletion_requested")
   /// Key (MinIO) da imagem ativa do grupo — desnormalizada para evitar N+1 na
@@ -252,7 +252,7 @@ model AerodromeGroup {
 
   operationalAerodromes OperationalAerodrome[]
   users                 User[]
-  images                AerodromeGroupImage[]
+  images                GroupImage[]
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   createdBy String?   @map("created_by")
@@ -262,14 +262,14 @@ model AerodromeGroup {
   deletedBy String?   @map("deleted_by")
 
   @@index([uf])
-  @@map("aerodrome_groups")
+  @@map("groups")
 }
 
 /// Aeródromo gerenciado no produto (distinto de cadastro ANAC público/privado).
 model OperationalAerodrome {
-  id      String         @id @default(uuid()) @db.Uuid
-  groupId String         @map("group_id") @db.Uuid
-  group   AerodromeGroup @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  id      String @id @default(uuid()) @db.Uuid
+  groupId String @map("group_id") @db.Uuid
+  group   Group  @relation(fields: [groupId], references: [id], onDelete: Restrict)
 
   icao        String
   ciad        String?
@@ -745,10 +745,10 @@ model User {
 
   /// Grupo de aeródromos ao qual o usuário pertence (escopo). ADMIN global
   /// fica `null` (bypass por role, não pela sentinela "admin" do Firestore).
-  aerodromeGroupId String?         @map("aerodrome_group_id") @db.Uuid
-  aerodromeGroup   AerodromeGroup? @relation(fields: [aerodromeGroupId], references: [id], onDelete: SetNull)
+  groupId String? @map("group_id") @db.Uuid
+  group   Group?  @relation(fields: [groupId], references: [id], onDelete: SetNull)
   /// UF de atuação do usuário (espelha `state` do Firestore).
-  state            Uf?
+  state   Uf?
 
   /// ADMIN que originou o convite (self-relation).
   invitedById      String?   @map("invited_by_id") @db.Uuid
@@ -769,7 +769,7 @@ model User {
 
   @@index([email])
   @@index([role])
-  @@index([aerodromeGroupId])
+  @@index([groupId])
   @@index([deletedAt])
   @@map("users")
 }
@@ -812,15 +812,15 @@ model RefreshToken {
 /// prefixo `groups/{groupId}/images/`. No máximo uma ativa por grupo (garantido
 /// na transação de upload, que soft-deleta as anteriores). Persiste a key do
 /// objeto; a URL presigned é resolvida on-read.
-model AerodromeGroupImage {
-  id               String         @id @default(uuid()) @db.Uuid
-  groupId          String         @map("group_id") @db.Uuid
-  group            AerodromeGroup @relation(fields: [groupId], references: [id], onDelete: Restrict)
-  imageKey         String         @map("image_key") @db.Text
-  originalFilename String         @map("original_filename")
-  mimeType         String         @map("mime_type")
-  sizeBytes        Int            @map("size_bytes")
-  uploadedBy       String?        @map("uploaded_by")
+model GroupImage {
+  id               String  @id @default(uuid()) @db.Uuid
+  groupId          String  @map("group_id") @db.Uuid
+  group            Group   @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  imageKey         String  @map("image_key") @db.Text
+  originalFilename String  @map("original_filename")
+  mimeType         String  @map("mime_type")
+  sizeBytes        Int     @map("size_bytes")
+  uploadedBy       String? @map("uploaded_by")
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
@@ -829,5 +829,5 @@ model AerodromeGroupImage {
   deletedBy String?   @map("deleted_by")
 
   @@index([groupId])
-  @@map("aerodrome_group_images")
+  @@map("group_images")
 }

@@ -21,7 +21,7 @@ const COORDINATOR = buildAuthenticatedUserFixture({
 const COORD_RECORD = buildUserFixture({
   id: 'coord-1',
   role: UserRole.COORDINATOR,
-  aerodromeGroupId: 'group-a',
+  groupId: 'group-a',
   state: Uf.SP,
 });
 
@@ -49,32 +49,27 @@ describe('ListUsersService', () => {
 
     await service.execute(baseQuery, ADMIN);
 
-    const calls = findManyPaginated.mock.calls as Array<
-      [{ aerodromeGroupId?: string }]
-    >;
-    expect(calls[0][0].aerodromeGroupId).toBeUndefined();
+    const calls = findManyPaginated.mock.calls as Array<[{ groupId?: string }]>;
+    expect(calls[0][0].groupId).toBeUndefined();
   });
 
   it('ADMIN: respeita o filtro de grupo informado na query', async () => {
     findActiveById.mockResolvedValue(null);
 
-    await service.execute({ ...baseQuery, aerodromeGroupId: 'group-x' }, ADMIN);
+    await service.execute({ ...baseQuery, groupId: 'group-x' }, ADMIN);
 
     expect(findManyPaginated).toHaveBeenCalledWith(
-      expect.objectContaining({ aerodromeGroupId: 'group-x' }),
+      expect.objectContaining({ groupId: 'group-x' }),
     );
   });
 
   it('COORDINATOR: força o próprio grupo (ignora o da query)', async () => {
     findActiveById.mockResolvedValue(COORD_RECORD);
 
-    await service.execute(
-      { ...baseQuery, aerodromeGroupId: 'group-x' },
-      COORDINATOR,
-    );
+    await service.execute({ ...baseQuery, groupId: 'group-x' }, COORDINATOR);
 
     expect(findManyPaginated).toHaveBeenCalledWith(
-      expect.objectContaining({ aerodromeGroupId: 'group-a' }),
+      expect.objectContaining({ groupId: 'group-a' }),
     );
   });
 
@@ -83,7 +78,7 @@ describe('ListUsersService', () => {
       buildUserFixture({
         id: 'coord-1',
         role: UserRole.COORDINATOR,
-        aerodromeGroupId: null,
+        groupId: null,
         state: null,
       }),
     );

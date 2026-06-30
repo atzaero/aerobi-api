@@ -25,7 +25,7 @@ export class ListUsersService {
 
     // Escopo por grupo (espelha `scopedFilters` do aerobi-web): COORDINATOR é
     // restrito ao próprio grupo (resolvido por consulta — o JWT só tem role);
-    // ADMIN vê todos (sem consulta) e pode filtrar livremente por `aerodromeGroupId`.
+    // ADMIN vê todos (sem consulta) e pode filtrar livremente por `groupId`.
     const scope = await resolveActorGroupScope(
       actor.role,
       actor.id,
@@ -38,15 +38,14 @@ export class ListUsersService {
       return new UsersPaginatedResponseDto([], page, limit, 0);
     }
 
-    const groupFilter =
-      scope.kind === 'group' ? scope.groupId : query.aerodromeGroupId; // ADMIN: filtro livre (ou undefined)
+    const groupFilter = scope.kind === 'group' ? scope.groupId : query.groupId; // ADMIN: filtro livre (ou undefined)
 
     const { rows, total } = await this.userRepository.findManyPaginated({
       skip,
       take: limit,
       ...(query.search !== undefined && { search: query.search }),
       ...(query.role !== undefined && { role: query.role }),
-      ...(groupFilter !== undefined && { aerodromeGroupId: groupFilter }),
+      ...(groupFilter !== undefined && { groupId: groupFilter }),
     });
 
     return new UsersPaginatedResponseDto(

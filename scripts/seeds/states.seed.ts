@@ -91,7 +91,7 @@ export const statesSeed: SeedRunner = {
             name: buildDisplayName(spec.displayLabel, stateName, index),
             role: spec.role,
             password,
-            aerodromeGroupId: group.id,
+            groupId: group.id,
             state: uf,
           });
           if (result === 'created') {

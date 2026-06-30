@@ -13,7 +13,7 @@ import { Uf } from '@/generated/prisma/enums';
 import {
   detectImageMimetype,
   MAX_GROUP_IMAGE_SIZE_BYTES,
-} from '@/modules/aerodrome-groups/utils/aerodrome-group-image';
+} from '@/modules/groups/utils/group-image';
 
 /** Diretório dos PNGs versionados, relativo a este arquivo. */
 const FLAGS_DIR = path.resolve(__dirname, '..', 'assets', 'flags');

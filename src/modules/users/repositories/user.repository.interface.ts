@@ -11,8 +11,8 @@ export interface CreateUserData {
    * não-nulo para COORDINATOR/OPERATOR/TECHNICAL. O service resolve a origem
    * (grupo do COORDINATOR ator ou informado pelo ADMIN).
    */
-  aerodromeGroupId?: string | null;
-  /** UF do grupo. `null` para ADMIN global; alinhado com `aerodromeGroupId`. */
+  groupId?: string | null;
+  /** UF do grupo. `null` para ADMIN global; alinhado com `groupId`. */
   state?: Uf | null;
   invitedById?: string;
   invitedAt?: Date;
@@ -42,7 +42,7 @@ export interface ListUsersParams {
    * Restringe a um grupo de aeródromos. Forçado pelo service para COORDINATOR
    * (próprio grupo); ADMIN pode informá-lo livremente como filtro.
    */
-  aerodromeGroupId?: string;
+  groupId?: string;
 }
 
 /** Resultado de listagem paginada — rows + total para construir metadata. */
