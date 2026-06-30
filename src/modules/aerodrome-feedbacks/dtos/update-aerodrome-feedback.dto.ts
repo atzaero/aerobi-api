@@ -16,7 +16,7 @@ export class UpdateAerodromeFeedbackDTO {
   @ApiPropertyOptional({ format: 'uuid' })
   @IsOptional()
   @IsUUID('4')
-  operationalAerodromeId?: string;
+  aerodromeId?: string;
 
   @ApiPropertyOptional({ enum: FeedbackRating })
   @IsOptional()

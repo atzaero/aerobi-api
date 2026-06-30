@@ -6,7 +6,7 @@ export class TechnicalVisitResponseDTO {
   id!: string;
 
   @ApiProperty({ format: 'uuid' })
-  operationalAerodromeId!: string;
+  aerodromeId!: string;
 
   @ApiProperty({ type: [String], description: 'Editores/modificadores' })
   modifierUsers!: string[];

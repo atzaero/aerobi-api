@@ -6,7 +6,7 @@ export class LandingRequestMapper {
   static toApiRow(entity: LandingRequest): LandingRequestResponseDTO {
     const row = new LandingRequestResponseDTO();
     row.id = entity.id;
-    row.operationalAerodromeId = entity.operationalAerodromeId;
+    row.aerodromeId = entity.aerodromeId;
     row.status = entity.status;
     row.requestDate = entity.requestDate.toISOString();
     row.email = entity.email;

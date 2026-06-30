@@ -56,24 +56,24 @@ describe('UpdatePilotLandingService', () => {
     expect(out.registration).toBe('PT-ZZZ');
   });
 
-  it('disconnectOperationalAerodrome desassocia o aeródromo no Prisma', async () => {
+  it('disconnectAerodrome desassocia o aeródromo no Prisma', async () => {
     const existing = buildPilotLandingFixture({ id });
     const updated = buildPilotLandingFixture({
       id,
-      operationalAerodromeId: null,
+      aerodromeId: null,
     });
     findById.mockResolvedValue(existing);
     update.mockResolvedValue(updated);
 
     await service.execute({
       id,
-      disconnectOperationalAerodrome: true,
+      disconnectAerodrome: true,
     });
 
     expect(update).toHaveBeenCalledWith(
       id,
       expect.objectContaining({
-        operationalAerodrome: { disconnect: true },
+        aerodrome: { disconnect: true },
       }),
     );
   });

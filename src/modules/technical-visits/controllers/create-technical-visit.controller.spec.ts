@@ -17,7 +17,7 @@ describe('CreateTechnicalVisitController', () => {
 
   it('delega', async () => {
     const dto: CreateTechnicalVisitDTO = {
-      operationalAerodromeId: '22222222-2222-4222-8222-222222222222',
+      aerodromeId: '22222222-2222-4222-8222-222222222222',
       visitAt: new Date(),
     };
     const row = new TechnicalVisitResponseDTO();

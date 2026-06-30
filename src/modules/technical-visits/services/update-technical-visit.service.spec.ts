@@ -49,23 +49,23 @@ describe('UpdateTechnicalVisitService', () => {
     );
   });
 
-  it('operationalAerodromeId gera connect fora do patch', async () => {
+  it('aerodromeId gera connect fora do patch', async () => {
     const newAid = '33333333-3333-4333-8333-333333333333';
     findById.mockResolvedValue(buildTechnicalVisitFixture({ id }));
     update.mockResolvedValue(
-      buildTechnicalVisitFixture({ id, operationalAerodromeId: newAid }),
+      buildTechnicalVisitFixture({ id, aerodromeId: newAid }),
     );
 
     await service.execute({
       id,
-      operationalAerodromeId: newAid,
+      aerodromeId: newAid,
       hasFence: false,
     });
 
     expect(update).toHaveBeenCalledWith(
       id,
       expect.objectContaining({
-        operationalAerodrome: { connect: { id: newAid } },
+        aerodrome: { connect: { id: newAid } },
         hasFence: false,
       }),
     );

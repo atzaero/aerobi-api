@@ -23,7 +23,7 @@ export class CreateAerodromeGeojsonDTO {
     format: 'uuid',
   })
   @IsUUID('4')
-  operationalAerodromeId!: string;
+  aerodromeId!: string;
 
   @ApiProperty({ enum: AerodromeGeojsonKind })
   @IsEnum(AerodromeGeojsonKind)

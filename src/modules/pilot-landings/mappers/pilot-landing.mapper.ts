@@ -6,7 +6,7 @@ export class PilotLandingMapper {
   static toApiRow(entity: PilotLanding): PilotLandingResponseDTO {
     const row = new PilotLandingResponseDTO();
     row.id = entity.id;
-    row.operationalAerodromeId = entity.operationalAerodromeId;
+    row.aerodromeId = entity.aerodromeId;
     row.registration = entity.registration;
     row.localName = entity.localName;
     row.localIcao = entity.localIcao;

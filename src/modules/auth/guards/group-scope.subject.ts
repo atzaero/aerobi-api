@@ -8,8 +8,8 @@
 export const GroupScopeSubject = {
   /** `Group` — o recurso **é** o próprio grupo (`groupId === id`). */
   GROUP: 'group',
-  /** `OperationalAerodrome` — dono direto do `groupId`. */
-  OPERATIONAL_AERODROME: 'operationalAerodrome',
+  /** `Aerodrome` — dono direto do `groupId`. */
+  AERODROME: 'aerodrome',
   /** `LandingRequest` — resolve o `groupId` via FK para o aeródromo. */
   LANDING_REQUEST: 'landingRequest',
 } as const;

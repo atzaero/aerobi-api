@@ -15,7 +15,7 @@ import {
 export class CreateTechnicalVisitDTO {
   @ApiProperty({ format: 'uuid' })
   @IsUUID('4')
-  operationalAerodromeId!: string;
+  aerodromeId!: string;
 
   @ApiPropertyOptional({
     description: 'Uids Auth ou e-mails dos editores (ordem)',

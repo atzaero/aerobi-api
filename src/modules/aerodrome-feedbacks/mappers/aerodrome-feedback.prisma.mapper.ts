@@ -7,8 +7,8 @@ export function buildAerodromeFeedbackCreateInput(
   dto: CreateAerodromeFeedbackDTO,
 ): Prisma.AerodromeFeedbackCreateInput {
   return {
-    operationalAerodrome: {
-      connect: { id: dto.operationalAerodromeId },
+    aerodrome: {
+      connect: { id: dto.aerodromeId },
     },
     rating: dto.rating,
     comment: dto.comment,
@@ -26,9 +26,9 @@ export function patchAerodromeFeedbackToPrisma(
   if (dto.comment !== undefined) data.comment = dto.comment;
   if (dto.sessionHash !== undefined) data.sessionHash = dto.sessionHash;
   if (dto.feedbackDate !== undefined) data.feedbackDate = dto.feedbackDate;
-  if (dto.operationalAerodromeId !== undefined) {
-    data.operationalAerodrome = {
-      connect: { id: dto.operationalAerodromeId },
+  if (dto.aerodromeId !== undefined) {
+    data.aerodrome = {
+      connect: { id: dto.aerodromeId },
     };
   }
   return data;

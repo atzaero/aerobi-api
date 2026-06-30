@@ -14,7 +14,7 @@ describe('aerodrome-geojson prisma mapper', () => {
   const aid = 'e5f6a7b8-c9d0-1234-ef56-789012345678';
 
   const baseCreate = (): CreateAerodromeGeojsonDTO => ({
-    operationalAerodromeId: aid,
+    aerodromeId: aid,
     kind: AerodromeGeojsonKind.AERODROME_MAP,
     status: AerodromeGeojsonStatus.READY,
     geoJsonBytes: 0,
@@ -28,7 +28,7 @@ describe('aerodrome-geojson prisma mapper', () => {
       geoJson: fc,
     });
     expect(input.geoJson).toEqual(fc);
-    expect(input.operationalAerodrome).toEqual({ connect: { id: aid } });
+    expect(input.aerodrome).toEqual({ connect: { id: aid } });
   });
 
   it('patch com geoJson aplica InputJsonValue', () => {

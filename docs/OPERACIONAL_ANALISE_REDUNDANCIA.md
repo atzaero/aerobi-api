@@ -9,33 +9,33 @@ Atualizado após remover da `TechnicalVisit` a cópia de dados do aeródromo (IC
 | Modelo | Redundâncias removidas / evitadas | Campos ainda “discutíveis” |
 |--------|-----------------------------------|----------------------------|
 | `Group` | — | `owner_id` vs futuro `group_members` |
-| `OperationalAerodrome` | — | Nenhuma crítica; UF só no grupo |
+| `Aerodrome` | — | Nenhuma crítica; UF só no grupo |
 | `LandingRequest` | `uf`, `icao`, `answer` | — |
 | `TechnicalVisit` | **Removidos:** pista + ICAO/CIAD + `aerodrome_name` + `city` + `visitor_name` | Visitante: `visit_by` (uid) → `users`; cadastro do aeródromo via join |
-| `PilotLanding` | — | `local_icao` / `local_name` vs `operational_aerodrome_id` opcional |
+| `PilotLanding` | — | `local_icao` / `local_name` vs `aerodrome_id` opcional |
 | `AerodromeFeedback` | `icao` | — |
-| `AerodromeGeojson` | `legacy_*` | Metadados espelham doc Firestore; vínculo é `operational_aerodrome_id` |
+| `AerodromeGeojson` | `legacy_*` | Metadados espelham doc Firestore; vínculo é `aerodrome_id` |
 
 ## `PilotLanding`
 
-- **`operational_aerodrome_id`** é opcional: o legado `landings` não tem FK.
+- **`aerodrome_id`** é opcional: o legado `landings` não tem FK.
 - **`local_icao`** e **`local_name`** são o que o piloto informou; podem coincidir com o aeródromo operacional resolvido na migração, mas **não são redundância pura** — são snapshot do formulário (ex.: erro de digitação, aeródromo ainda não operacional).
 - **Ação futura:** se na API sempre houver FK obrigatória, avaliar se `local_*` ainda agrega valor ou só duplica.
 
 ## `TechnicalVisit` (mudança recente)
 
-- **Antes:** mesmos campos de pista e identificação que `OperationalAerodrome` + nome/cidade.
+- **Antes:** mesmos campos de pista e identificação que `Aerodrome` + nome/cidade.
 - **Agora:** inspeção + `visit_by` + `modifier_users` + FK. Nome do visitante via `users`, não coluna duplicada.
 - **Trade-off:** PDFs/relatórios que precisem do ICAO “como na visita” devem buscar no aeródromo **atual** ou, no futuro, introduzir colunas opcionais de snapshot se o produto exigir.
 
 ## `AerodromeGeojson`
 
-- Campos como `kind`, paths de storage espelham o documento Firestore; a **fonte de verdade estrutural** é `operational_aerodrome_id` (1:1).
+- Campos como `kind`, paths de storage espelham o documento Firestore; a **fonte de verdade estrutural** é `aerodrome_id` (1:1).
 - **`geo_json` opcional** quando `status = ERROR` — alinhado ao legado sem payload inline.
 
 ## `AerodromeFeedback`
 
-- Rate limit: `(session_hash, operational_aerodrome_id, feedback_date)` — sem `icao` duplicado.
+- Rate limit: `(session_hash, aerodrome_id, feedback_date)` — sem `icao` duplicado.
 
 ### `feedback_date` vs `created_at`
 
@@ -55,5 +55,5 @@ Atualizado após remover da `TechnicalVisit` a cópia de dados do aeródromo (IC
 ## Próximas revisões sugeridas
 
 1. Quando existir tabela **`users`**, revisar `created_by` / `reviewed_by` / `owner_id` para FKs reais vs string.
-2. **`PilotLanding`:** decisão explícita sobre obrigatoriedade de `operational_aerodrome_id` e papel de `local_icao`.
+2. **`PilotLanding`:** decisão explícita sobre obrigatoriedade de `aerodrome_id` e papel de `local_icao`.
 3. **Relatórios de visita técnica:** validar com negócio se o cadastro atual do aeródromo no histórico é aceitável.

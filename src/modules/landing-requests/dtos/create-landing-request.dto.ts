@@ -15,7 +15,7 @@ import { LandingRequestStatus } from '@/generated/prisma/client';
 export class CreateLandingRequestDTO {
   @ApiProperty({ format: 'uuid' })
   @IsUUID('4')
-  operationalAerodromeId!: string;
+  aerodromeId!: string;
 
   @ApiProperty({ enum: LandingRequestStatus })
   @IsEnum(LandingRequestStatus)

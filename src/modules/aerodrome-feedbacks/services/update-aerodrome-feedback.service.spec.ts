@@ -44,13 +44,13 @@ describe('UpdateAerodromeFeedbackService', () => {
     update.mockResolvedValue(
       buildAerodromeFeedbackFixture({
         id,
-        operationalAerodromeId: newAid,
+        aerodromeId: newAid,
       }),
     );
-    await service.execute({ id, operationalAerodromeId: newAid });
+    await service.execute({ id, aerodromeId: newAid });
     expect(update).toHaveBeenCalledWith(
       id,
-      patchAerodromeFeedbackToPrisma({ operationalAerodromeId: newAid }),
+      patchAerodromeFeedbackToPrisma({ aerodromeId: newAid }),
     );
   });
 });

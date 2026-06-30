@@ -18,7 +18,7 @@ describe('CreateLandingRequestService', () => {
   });
 
   const buildDto = (): CreateLandingRequestDTO => ({
-    operationalAerodromeId: '22222222-2222-4222-8222-222222222222',
+    aerodromeId: '22222222-2222-4222-8222-222222222222',
     status: LandingRequestStatus.PENDING,
     requestDate: new Date('2024-06-02T15:00:00.000Z'),
     email: 'x@y.com',

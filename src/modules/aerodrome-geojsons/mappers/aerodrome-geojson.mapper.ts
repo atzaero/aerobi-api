@@ -6,7 +6,7 @@ export class AerodromeGeojsonMapper {
   static toApiRow(entity: AerodromeGeojson): AerodromeGeojsonResponseDTO {
     const row = new AerodromeGeojsonResponseDTO();
     row.id = entity.id;
-    row.operationalAerodromeId = entity.operationalAerodromeId;
+    row.aerodromeId = entity.aerodromeId;
     row.kind = entity.kind;
     row.status = entity.status;
     row.geoJson = entity.geoJson;

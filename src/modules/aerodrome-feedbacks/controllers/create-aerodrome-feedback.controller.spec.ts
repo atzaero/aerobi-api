@@ -19,7 +19,7 @@ describe('CreateAerodromeFeedbackController', () => {
 
   it('delega', async () => {
     const dto: CreateAerodromeFeedbackDTO = {
-      operationalAerodromeId: '22222222-2222-4222-8222-222222222222',
+      aerodromeId: '22222222-2222-4222-8222-222222222222',
       rating: FeedbackRating.POSITIVE,
       sessionHash: 'h',
       feedbackDate: new Date('2024-01-01T00:00:00.000Z'),

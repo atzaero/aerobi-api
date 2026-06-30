@@ -16,7 +16,7 @@ describe('CreatePilotLandingService', () => {
   });
 
   const buildDto = (): CreatePilotLandingDTO => ({
-    operationalAerodromeId: '22222222-2222-4222-8222-222222222222',
+    aerodromeId: '22222222-2222-4222-8222-222222222222',
     registration: 'PT-ABC',
     localName: 'Campo',
     localIcao: 'SDXX',
@@ -37,7 +37,7 @@ describe('CreatePilotLandingService', () => {
     expect(out).toMatchObject({
       id: saved.id,
       registration: saved.registration,
-      operationalAerodromeId: saved.operationalAerodromeId,
+      aerodromeId: saved.aerodromeId,
     });
   });
 });

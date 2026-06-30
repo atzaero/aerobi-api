@@ -8,7 +8,7 @@ export function buildTechnicalVisitFixture(
 ): TechnicalVisit {
   return {
     id: '11111111-1111-4111-8111-111111111111',
-    operationalAerodromeId: '22222222-2222-4222-8222-222222222222',
+    aerodromeId: '22222222-2222-4222-8222-222222222222',
     modifierUsers: [],
     gatesPadlocksObservation: null,
     hasGatesPadlocks: null,

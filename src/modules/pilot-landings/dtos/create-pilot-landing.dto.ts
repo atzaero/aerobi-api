@@ -18,7 +18,7 @@ export class CreatePilotLandingDTO {
   })
   @IsOptional()
   @IsUUID('4')
-  operationalAerodromeId?: string;
+  aerodromeId?: string;
 
   @ApiProperty({ description: 'Matrícula da aeronave', example: 'PT-ABC' })
   @IsString()

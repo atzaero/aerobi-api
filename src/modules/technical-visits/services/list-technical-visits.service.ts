@@ -19,8 +19,8 @@ export class ListTechnicalVisitsService {
   ): Promise<TechnicalVisitsPaginatedResponseDTO> {
     const { page, limit, skip } = resolvePaginationParams(query, MAX_LIMIT);
     const where: Prisma.TechnicalVisitWhereInput = {};
-    if (query.operationalAerodromeId !== undefined) {
-      where.operationalAerodromeId = query.operationalAerodromeId;
+    if (query.aerodromeId !== undefined) {
+      where.aerodromeId = query.aerodromeId;
     }
     const [items, total] = await Promise.all([
       this.repo.findMany(where, skip, limit),

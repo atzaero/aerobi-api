@@ -7,7 +7,7 @@ export class LandingRequestResponseDTO {
   id!: string;
 
   @ApiProperty({ format: 'uuid' })
-  operationalAerodromeId!: string;
+  aerodromeId!: string;
 
   @ApiProperty({ enum: LandingRequestStatus })
   status!: LandingRequestStatus;

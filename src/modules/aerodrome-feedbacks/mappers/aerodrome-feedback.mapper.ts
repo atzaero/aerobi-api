@@ -11,7 +11,7 @@ export class AerodromeFeedbackMapper {
   static toApiRow(entity: AerodromeFeedback): AerodromeFeedbackResponseDTO {
     const row = new AerodromeFeedbackResponseDTO();
     row.id = entity.id;
-    row.operationalAerodromeId = entity.operationalAerodromeId;
+    row.aerodromeId = entity.aerodromeId;
     row.rating = entity.rating;
     row.comment = entity.comment;
     row.sessionHash = entity.sessionHash;

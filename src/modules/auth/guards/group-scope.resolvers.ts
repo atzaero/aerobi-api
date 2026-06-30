@@ -8,7 +8,7 @@ import { GroupScopeSubject } from './group-scope.subject';
  * Retorna `null` quando o recurso não existe (ou foi soft-deletado — reads
  * ativos filtram `deletedAt: null`, como em todos os repositórios) — o
  * `GroupScopeGuard` traduz isso em `404`. Recursos filhos resolvem o grupo via
- * FK (ex. `LandingRequest` → `OperationalAerodrome.groupId`).
+ * FK (ex. `LandingRequest` → `Aerodrome.groupId`).
  */
 export type GroupResolver = (
   prisma: PrismaService,
@@ -35,8 +35,8 @@ export const groupScopeResolvers: Record<GroupScopeSubject, GroupResolver> = {
     return group?.id ?? null;
   },
 
-  [GroupScopeSubject.OPERATIONAL_AERODROME]: async (prisma, id) => {
-    const aerodrome = await prisma.operationalAerodrome.findFirst({
+  [GroupScopeSubject.AERODROME]: async (prisma, id) => {
+    const aerodrome = await prisma.aerodrome.findFirst({
       where: { id, deletedAt: null },
       select: { groupId: true },
     });
@@ -47,9 +47,9 @@ export const groupScopeResolvers: Record<GroupScopeSubject, GroupResolver> = {
   [GroupScopeSubject.LANDING_REQUEST]: async (prisma, id) => {
     const landingRequest = await prisma.landingRequest.findFirst({
       where: { id, deletedAt: null },
-      select: { operationalAerodrome: { select: { groupId: true } } },
+      select: { aerodrome: { select: { groupId: true } } },
     });
 
-    return landingRequest?.operationalAerodrome.groupId ?? null;
+    return landingRequest?.aerodrome.groupId ?? null;
   },
 };

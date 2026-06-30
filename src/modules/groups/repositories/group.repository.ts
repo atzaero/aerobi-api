@@ -75,7 +75,7 @@ export class GroupRepository implements IGroupRepository {
         },
       });
 
-      const { count } = await tx.operationalAerodrome.updateMany({
+      const { count } = await tx.aerodrome.updateMany({
         where: { groupId: id, deletedAt: null },
         data: {
           isOpen: false,

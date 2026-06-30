@@ -19,7 +19,7 @@ describe('CreateAerodromeFeedbackService', () => {
 
   it('create input alinhado ao mapper', async () => {
     const dto: CreateAerodromeFeedbackDTO = {
-      operationalAerodromeId: '22222222-2222-4222-8222-222222222222',
+      aerodromeId: '22222222-2222-4222-8222-222222222222',
       rating: FeedbackRating.NEGATIVE,
       sessionHash: 's',
       feedbackDate: new Date('2024-04-01T00:00:00.000Z'),

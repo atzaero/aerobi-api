@@ -12,7 +12,7 @@ export class AerodromeGeojsonResponseDTO {
   id!: string;
 
   @ApiProperty({ format: 'uuid' })
-  operationalAerodromeId!: string;
+  aerodromeId!: string;
 
   @ApiProperty({ enum: AerodromeGeojsonKind })
   kind!: AerodromeGeojsonKind;
