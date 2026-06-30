@@ -27,7 +27,7 @@ export function ListPilotLandingsDocs() {
       name: 'aerodromeId',
       required: false,
       format: 'uuid',
-      description: 'Filtra pelo aeródromo operacional associado',
+      description: 'Filtra pelo aeródromo associado',
     }),
     ApiQuery({
       name: 'registration',
