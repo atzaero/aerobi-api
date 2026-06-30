@@ -22,8 +22,13 @@ services:
     ports:
       - "${PORT:-3333}:3333"
     volumes:
-      - ${VOLUME_APP_SOURCE:-./}:/usr/src/app
-      - ${VOLUME_APP_NODE_MODULES:-aerobi_api_node_modules_dev}:/usr/src/app/node_modules
+      # Bind mount do código-fonte (hot reload via Webpack HMR).
+      - ./:/usr/src/app
+      # Anonymous volumes isolam node_modules/dist do bind mount do host:
+      # preservam o que veio da imagem (npm ci) e o dist do webpack, sem deixar
+      # artefatos root-owned no host nem sobrescrever deps. `down -v` recria limpo.
+      - /usr/src/app/node_modules
+      - /usr/src/app/dist
     env_file:
       - .env
     environment:
@@ -45,10 +50,6 @@ services:
     restart: unless-stopped
     networks:
       - aerobi-local
-
-volumes:
-  aerobi_api_node_modules_dev:
-    driver: local
 
 # Rede compartilhada provida pelo aerobi-local-infra (`make network` / `make up`).
 networks:
