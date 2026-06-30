@@ -20,6 +20,7 @@ const ALL_ACTIONS: AuthzAction[] = [
   'list',
   'read',
   'create',
+  'edit',
   'update',
   'update-observation',
   'delete',
@@ -46,9 +47,12 @@ const EXPECTED: Record<
   },
   user: {
     list: [UserRole.ADMIN, UserRole.COORDINATOR],
+    read: [UserRole.ADMIN, UserRole.COORDINATOR],
     create: [UserRole.ADMIN, UserRole.COORDINATOR],
+    edit: [UserRole.ADMIN, UserRole.COORDINATOR],
     update: [UserRole.ADMIN],
     delete: [UserRole.ADMIN, UserRole.COORDINATOR],
+    export: [UserRole.ADMIN, UserRole.COORDINATOR],
   },
   audit: {
     list: [UserRole.ADMIN, UserRole.COORDINATOR],
@@ -179,6 +183,18 @@ describe('can — por papel (amostras-chave)', () => {
     expect(can(UserRole.COORDINATOR, 'group', 'delete')).toBe(false);
     expect(can(UserRole.COORDINATOR, 'user', 'update')).toBe(false);
     expect(can(UserRole.COORDINATOR, 'aerodrome', 'delete')).toBe(false);
+  });
+
+  it('user: edit/read/export são admin+coordinator; update (reset) é só admin', () => {
+    expect(can(UserRole.COORDINATOR, 'user', 'edit')).toBe(true);
+    expect(can(UserRole.COORDINATOR, 'user', 'read')).toBe(true);
+    expect(can(UserRole.COORDINATOR, 'user', 'export')).toBe(true);
+    // `update` = reset de senha → só ADMIN
+    expect(can(UserRole.COORDINATOR, 'user', 'update')).toBe(false);
+    expect(can(UserRole.ADMIN, 'user', 'update')).toBe(true);
+    // operator/technical não gerem usuários
+    expect(can(UserRole.OPERATOR, 'user', 'edit')).toBe(false);
+    expect(can(UserRole.TECHNICAL, 'user', 'read')).toBe(false);
   });
 
   it('OPERATOR: decide pouso, vê documento, mas não cria aeródromo', () => {

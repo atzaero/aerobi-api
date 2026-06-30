@@ -3,120 +3,227 @@ import { ErrorMessageService } from '@/common/error-messages/error-message.servi
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import type { User } from '@/generated/prisma/client';
 import { UserRole } from '@/generated/prisma/client';
+import type { EventEmitter2 } from '@nestjs/event-emitter';
+
+import type { RefreshTokenRepository } from '@/modules/auth/repositories/refresh-token.repository';
+import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
 import type { UserRepository } from '../repositories/user.repository';
 import { buildUserFixture } from '../testing/user.fixtures';
+import { USER_EMAIL_CHANGED_EVENT } from '../events/user-email-changed.event';
 
 import { UpdateUserService } from './update-user.service';
 
-/** Wrapper local com o email/name esperado por estes specs. */
-function buildUser(overrides: Partial<User> = {}): User {
-  return buildUserFixture({ email: 'u@x', name: 'Old', ...overrides });
-}
+const ADMIN: AuthenticatedUser = {
+  id: 'admin-1',
+  email: 'admin@x',
+  role: UserRole.ADMIN,
+};
+const COORD: AuthenticatedUser = {
+  id: 'coord-1',
+  email: 'coord@x',
+  role: UserRole.COORDINATOR,
+};
 
-describe('UpdateUserService', () => {
+/** Registro do coordenador ator (grupo g1), retornado pelo resolveActorGroupScope. */
+const coordRecord = buildUserFixture({
+  id: 'coord-1',
+  role: UserRole.COORDINATOR,
+  groupId: 'g1',
+});
+
+describe('UpdateUserService (edição administrativa)', () => {
   let service: UpdateUserService;
   let findActiveById: jest.Mock;
+  let existsByEmail: jest.Mock;
   let update: jest.Mock;
+  let revokeAllForUser: jest.Mock;
+  let emit: jest.Mock;
 
   beforeEach(() => {
     findActiveById = jest.fn();
+    existsByEmail = jest.fn().mockResolvedValue(false);
     update = jest.fn();
+    revokeAllForUser = jest.fn().mockResolvedValue(2);
+    emit = jest.fn();
 
     const userRepository = {
-      findByEmail: jest.fn(),
-      findById: jest.fn(),
       findActiveById,
-      existsByEmail: jest.fn(),
-      create: jest.fn(),
+      existsByEmail,
       update,
-      softDelete: jest.fn(),
-      findManyPaginated: jest.fn(),
     } as unknown as UserRepository;
+    const refreshTokenRepository = {
+      revokeAllForUser,
+    } as unknown as RefreshTokenRepository;
+    const eventEmitter = { emit } as unknown as EventEmitter2;
 
-    service = new UpdateUserService(userRepository, new ErrorMessageService());
+    service = new UpdateUserService(
+      userRepository,
+      refreshTokenRepository,
+      eventEmitter,
+      new ErrorMessageService(),
+    );
   });
 
-  it('self pode atualizar nome + telefone (sem mudar role)', async () => {
-    findActiveById.mockResolvedValue(buildUser());
-    update.mockResolvedValue(buildUser({ name: 'Novo' }));
+  /** Resolve o ator (coord) e o alvo conforme o id consultado. */
+  function withRepo(target: User | null, actorRecord: User = coordRecord) {
+    findActiveById.mockImplementation((uid: string) => {
+      if (uid === actorRecord.id) return actorRecord;
+      if (target && uid === target.id) return target;
+      return null;
+    });
+  }
 
-    const result = await service.execute(
-      'user-1',
-      { name: 'Novo' },
-      { id: 'user-1', email: 'u@x', role: UserRole.OPERATOR },
+  async function expectErrorCode(
+    promise: Promise<unknown>,
+    code: ErrorCode,
+  ): Promise<void> {
+    await expect(promise).rejects.toBeInstanceOf(CustomHttpException);
+    await promise.catch((e) =>
+      expect((e as CustomHttpException).getErrorCode()).toBe(code),
     );
+  }
+
+  it('ADMIN edita name de qualquer user (sem revogar sessões)', async () => {
+    const target = buildUserFixture({ id: 'u-1', name: 'Old' });
+    withRepo(target);
+    update.mockResolvedValue(buildUserFixture({ id: 'u-1', name: 'Novo' }));
+
+    const result = await service.execute('u-1', { name: 'Novo' }, ADMIN);
 
     expect(update).toHaveBeenCalledWith(
-      'user-1',
-      expect.objectContaining({ name: 'Novo', updatedBy: 'user-1' }),
+      'u-1',
+      expect.objectContaining({ name: 'Novo', updatedBy: 'admin-1' }),
     );
+    expect(revokeAllForUser).not.toHaveBeenCalled();
+    expect(emit).not.toHaveBeenCalled();
     expect(result.name).toBe('Novo');
   });
 
-  it('não-ADMIN tentando mudar role → ROLE_CHANGE_FORBIDDEN', async () => {
-    findActiveById.mockResolvedValue(buildUser());
+  it('ADMIN troca email → valida unicidade, revoga sessões e emite evento', async () => {
+    const target = buildUserFixture({ id: 'u-1', email: 'old@x' });
+    withRepo(target);
+    update.mockResolvedValue(
+      buildUserFixture({ id: 'u-1', email: 'new@x', name: 'User' }),
+    );
 
-    try {
-      await service.execute(
-        'user-1',
-        { role: UserRole.ADMIN },
-        { id: 'user-1', email: 'u@x', role: UserRole.OPERATOR },
-      );
-      fail('should have thrown');
-    } catch (e) {
-      expect((e as CustomHttpException).getErrorCode()).toBe(
-        ErrorCode.ROLE_CHANGE_FORBIDDEN,
-      );
-    }
+    await service.execute('u-1', { email: 'new@x' }, ADMIN);
+
+    expect(existsByEmail).toHaveBeenCalledWith('new@x');
+    expect(update).toHaveBeenCalledWith(
+      'u-1',
+      expect.objectContaining({ email: 'new@x' }),
+    );
+    expect(revokeAllForUser).toHaveBeenCalledWith('u-1');
+    expect(emit).toHaveBeenCalledWith(
+      USER_EMAIL_CHANGED_EVENT,
+      expect.objectContaining({ oldEmail: 'old@x', newEmail: 'new@x' }),
+    );
   });
 
-  it('ADMIN pode mudar role de qualquer user', async () => {
-    findActiveById.mockResolvedValue(buildUser());
-    update.mockResolvedValue(buildUser({ role: UserRole.COORDINATOR }));
+  it('email já em uso → EMAIL_ALREADY_REGISTERED', async () => {
+    withRepo(buildUserFixture({ id: 'u-1', email: 'old@x' }));
+    existsByEmail.mockResolvedValue(true);
 
-    const result = await service.execute(
-      'user-1',
-      { role: UserRole.COORDINATOR },
-      { id: 'admin-1', email: 'a@x', role: UserRole.ADMIN },
+    await expectErrorCode(
+      service.execute('u-1', { email: 'taken@x' }, ADMIN),
+      ErrorCode.EMAIL_ALREADY_REGISTERED,
     );
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it('corrida de unicidade no update (P2002) → EMAIL_ALREADY_REGISTERED', async () => {
+    withRepo(buildUserFixture({ id: 'u-1', email: 'old@x' }));
+    existsByEmail.mockResolvedValue(false); // passou a checagem prévia
+    update.mockRejectedValue({ code: 'P2002' });
+
+    await expectErrorCode(
+      service.execute('u-1', { email: 'race@x' }, ADMIN),
+      ErrorCode.EMAIL_ALREADY_REGISTERED,
+    );
+  });
+
+  it('COORDINATOR edita operator do próprio grupo', async () => {
+    const target = buildUserFixture({
+      id: 'op-1',
+      role: UserRole.OPERATOR,
+      groupId: 'g1',
+    });
+    withRepo(target);
+    update.mockResolvedValue(buildUserFixture({ id: 'op-1', name: 'Novo' }));
+
+    await service.execute('op-1', { name: 'Novo' }, COORD);
 
     expect(update).toHaveBeenCalledWith(
-      'user-1',
-      expect.objectContaining({ role: UserRole.COORDINATOR }),
+      'op-1',
+      expect.objectContaining({ name: 'Novo', updatedBy: 'coord-1' }),
     );
-    expect(result.role).toBe(UserRole.COORDINATOR);
+  });
+
+  it('COORDINATOR não edita alvo de outro grupo → USER_NOT_FOUND', async () => {
+    withRepo(
+      buildUserFixture({
+        id: 'op-2',
+        role: UserRole.OPERATOR,
+        groupId: 'g2',
+      }),
+    );
+
+    await expectErrorCode(
+      service.execute('op-2', { name: 'X' }, COORD),
+      ErrorCode.USER_NOT_FOUND,
+    );
+  });
+
+  it('COORDINATOR não edita ADMIN → USER_NOT_FOUND', async () => {
+    withRepo(
+      buildUserFixture({ id: 'a-9', role: UserRole.ADMIN, groupId: null }),
+    );
+
+    await expectErrorCode(
+      service.execute('a-9', { name: 'X' }, COORD),
+      ErrorCode.USER_NOT_FOUND,
+    );
+  });
+
+  it('COORDINATOR não promove alvo a ADMIN → ROLE_CHANGE_FORBIDDEN', async () => {
+    withRepo(
+      buildUserFixture({
+        id: 'op-1',
+        role: UserRole.OPERATOR,
+        groupId: 'g1',
+      }),
+    );
+
+    await expectErrorCode(
+      service.execute('op-1', { role: UserRole.ADMIN }, COORD),
+      ErrorCode.ROLE_CHANGE_FORBIDDEN,
+    );
   });
 
   it('user inexistente → USER_NOT_FOUND', async () => {
-    findActiveById.mockResolvedValue(null);
+    withRepo(null);
 
-    try {
-      await service.execute(
-        'user-1',
-        { name: 'X' },
-        { id: 'admin-1', email: 'a@x', role: UserRole.ADMIN },
-      );
-      fail('should have thrown');
-    } catch (e) {
-      expect((e as CustomHttpException).getErrorCode()).toBe(
-        ErrorCode.USER_NOT_FOUND,
-      );
-    }
+    await expectErrorCode(
+      service.execute('ghost', { name: 'X' }, ADMIN),
+      ErrorCode.USER_NOT_FOUND,
+    );
   });
 
-  it('não-ADMIN tentando atualizar outro user → OWNERSHIP_VIOLATION', async () => {
-    try {
-      await service.execute(
-        'user-2',
-        { name: 'X' },
-        { id: 'user-1', email: 'u@x', role: UserRole.OPERATOR },
-      );
-      fail('should have thrown');
-    } catch (e) {
-      expect((e as CustomHttpException).getErrorCode()).toBe(
-        ErrorCode.OWNERSHIP_VIOLATION,
-      );
-    }
+  it('COORDINATOR sem grupo provisionado → FORBIDDEN', async () => {
+    const coordSemGrupo = buildUserFixture({
+      id: 'coord-1',
+      role: UserRole.COORDINATOR,
+      groupId: null,
+    });
+    withRepo(
+      buildUserFixture({ id: 'op-1', role: UserRole.OPERATOR, groupId: 'g1' }),
+      coordSemGrupo,
+    );
+
+    await expectErrorCode(
+      service.execute('op-1', { name: 'X' }, COORD),
+      ErrorCode.FORBIDDEN,
+    );
   });
 });

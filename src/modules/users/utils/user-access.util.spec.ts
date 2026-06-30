@@ -3,7 +3,11 @@ import { ErrorMessageService } from '@/common/error-messages/error-message.servi
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { UserRole } from '@/generated/prisma/client';
 
-import { assertAdmin, assertSelfOrAdmin } from './user-access.util';
+import {
+  assertAdmin,
+  assertCanAssignRole,
+  assertSelfOrAdmin,
+} from './user-access.util';
 
 const errorMessages = new ErrorMessageService();
 
@@ -41,6 +45,57 @@ describe('assertSelfOrAdmin', () => {
         ErrorCode.OWNERSHIP_VIOLATION,
       );
     }
+  });
+});
+
+describe('assertCanAssignRole', () => {
+  it('ADMIN pode atribuir qualquer role', () => {
+    for (const target of [
+      UserRole.ADMIN,
+      UserRole.COORDINATOR,
+      UserRole.OPERATOR,
+      UserRole.TECHNICAL,
+    ]) {
+      expect(() =>
+        assertCanAssignRole(UserRole.ADMIN, target, errorMessages),
+      ).not.toThrow();
+    }
+  });
+
+  it('COORDINATOR pode atribuir operator/technical/coordinator', () => {
+    for (const target of [
+      UserRole.OPERATOR,
+      UserRole.TECHNICAL,
+      UserRole.COORDINATOR,
+    ]) {
+      expect(() =>
+        assertCanAssignRole(UserRole.COORDINATOR, target, errorMessages),
+      ).not.toThrow();
+    }
+  });
+
+  it('COORDINATOR não promove a ADMIN → ROLE_CHANGE_FORBIDDEN', () => {
+    try {
+      assertCanAssignRole(UserRole.COORDINATOR, UserRole.ADMIN, errorMessages);
+      fail('should have thrown');
+    } catch (e) {
+      expect((e as CustomHttpException).getErrorCode()).toBe(
+        ErrorCode.ROLE_CHANGE_FORBIDDEN,
+      );
+    }
+  });
+
+  it('OPERATOR/TECHNICAL não atribuem role nenhuma', () => {
+    expect(() =>
+      assertCanAssignRole(UserRole.OPERATOR, UserRole.OPERATOR, errorMessages),
+    ).toThrow(CustomHttpException);
+    expect(() =>
+      assertCanAssignRole(
+        UserRole.TECHNICAL,
+        UserRole.TECHNICAL,
+        errorMessages,
+      ),
+    ).toThrow(CustomHttpException);
   });
 });
 

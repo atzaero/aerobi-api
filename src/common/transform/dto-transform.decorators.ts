@@ -2,6 +2,7 @@ import { Transform } from 'class-transformer';
 
 import {
   normalizeEmailValue,
+  normalizeOptionalPhoneE164Value,
   optionalQueryBooleanValue,
   trimOptionalStringValue,
   trimStringValue,
@@ -27,6 +28,17 @@ export function TrimOptionalString(): PropertyDecorator {
 /** Email: `trim()` + `toLowerCase()`. */
 export function NormalizeEmail(): PropertyDecorator {
   return Transform(({ value }: TransformArgs) => normalizeEmailValue(value));
+}
+
+/**
+ * Telefone opcional normalizado para E.164: preserva `undefined`/`null`,
+ * string vazia vira `null`, demais descartam a máscara e prefixam `+`.
+ * Combinar com `@IsOptional()` + `@IsE164Phone()`.
+ */
+export function NormalizeOptionalPhone(): PropertyDecorator {
+  return Transform(({ value }: TransformArgs) =>
+    normalizeOptionalPhoneE164Value(value),
+  );
 }
 
 /**

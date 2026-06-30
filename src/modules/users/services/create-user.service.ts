@@ -3,7 +3,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
-import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
+import { httpError } from '@/common/exceptions/http-error.util';
 import { maskEmail } from '@/common/utils/mask-email.util';
 import { Uf, UserRole } from '@/generated/prisma/client';
 import { InviteTokenService } from '@/modules/tokens/services/invite-token.service';
@@ -59,13 +59,11 @@ export class CreateUserService {
     const { groupId, state } = await this.resolveGroupAndState(input);
 
     if (await this.userRepository.existsByEmail(input.email)) {
-      throw new CustomHttpException(
-        this.errorMessageService.getMessage(
-          ErrorCode.EMAIL_ALREADY_REGISTERED,
-          { EMAIL: input.email },
-        ),
-        HttpStatus.CONFLICT,
+      throw httpError(
+        this.errorMessageService,
         ErrorCode.EMAIL_ALREADY_REGISTERED,
+        HttpStatus.CONFLICT,
+        { EMAIL: input.email },
       );
     }
 
@@ -76,7 +74,7 @@ export class CreateUserService {
       role: input.role,
       groupId,
       state,
-      ...(input.phone !== undefined && { phone: input.phone }),
+      phone: input.phone,
       invitedById: input.actorId,
       invitedAt: now,
       createdBy: input.actorId,
@@ -84,7 +82,7 @@ export class CreateUserService {
 
     const invite = await this.inviteTokenService.createInviteToken(user.id, {
       role: user.role,
-      ...(input.actorName !== undefined && { invitedByName: input.actorName }),
+      invitedByName: input.actorName,
     });
 
     this.eventEmitter.emit(
@@ -129,12 +127,11 @@ export class CreateUserService {
         input.actorId,
       );
       if (!actorRecord?.groupId || !actorRecord.state) {
-        throw new CustomHttpException(
-          this.errorMessageService.getMessage(ErrorCode.FORBIDDEN, {
-            RESOURCE: 'user',
-          }),
-          HttpStatus.FORBIDDEN,
+        throw httpError(
+          this.errorMessageService,
           ErrorCode.FORBIDDEN,
+          HttpStatus.FORBIDDEN,
+          { RESOURCE: 'user' },
         );
       }
       return {
@@ -144,12 +141,11 @@ export class CreateUserService {
     }
 
     if (!input.groupId || !input.state) {
-      throw new CustomHttpException(
-        this.errorMessageService.getMessage(ErrorCode.VALIDATION_FAILED, {
-          DETAILS: 'groupId e state são obrigatórios para a role informada',
-        }),
-        HttpStatus.BAD_REQUEST,
+      throw httpError(
+        this.errorMessageService,
         ErrorCode.VALIDATION_FAILED,
+        HttpStatus.BAD_REQUEST,
+        { DETAILS: 'groupId e state são obrigatórios para a role informada' },
       );
     }
     return { groupId: input.groupId, state: input.state };

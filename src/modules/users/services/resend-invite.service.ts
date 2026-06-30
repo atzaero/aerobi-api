@@ -3,7 +3,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
-import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
+import { httpError } from '@/common/exceptions/http-error.util';
 import { maskEmail } from '@/common/utils/mask-email.util';
 import { resolveActorGroupScope } from '@/common/utils/group-scope.util';
 import { UserRole } from '@/generated/prisma/client';
@@ -67,12 +67,11 @@ export class ResendInviteService {
     );
 
     if (scope.kind === 'none') {
-      throw new CustomHttpException(
-        this.errorMessageService.getMessage(ErrorCode.FORBIDDEN, {
-          RESOURCE: 'user',
-        }),
-        HttpStatus.FORBIDDEN,
+      throw httpError(
+        this.errorMessageService,
         ErrorCode.FORBIDDEN,
+        HttpStatus.FORBIDDEN,
+        { RESOURCE: 'user' },
       );
     }
 
@@ -83,26 +82,25 @@ export class ResendInviteService {
       (scope.kind === 'group' &&
         !isTargetManageableInGroup(user, scope.groupId))
     ) {
-      throw new CustomHttpException(
-        this.errorMessageService.getMessage(ErrorCode.USER_NOT_FOUND, {
-          ID: input.userId,
-        }),
-        HttpStatus.NOT_FOUND,
+      throw httpError(
+        this.errorMessageService,
         ErrorCode.USER_NOT_FOUND,
+        HttpStatus.NOT_FOUND,
+        { ID: input.userId },
       );
     }
 
     if (user.acceptedInviteAt) {
-      throw new CustomHttpException(
-        this.errorMessageService.getMessage(ErrorCode.INVITE_ALREADY_ACCEPTED),
-        HttpStatus.CONFLICT,
+      throw httpError(
+        this.errorMessageService,
         ErrorCode.INVITE_ALREADY_ACCEPTED,
+        HttpStatus.CONFLICT,
       );
     }
 
     const invite = await this.inviteTokenService.createInviteToken(user.id, {
       role: user.role,
-      ...(input.actorName !== undefined && { invitedByName: input.actorName }),
+      invitedByName: input.actorName,
     });
 
     this.eventEmitter.emit(

@@ -43,9 +43,9 @@ export class ListUsersService {
     const { rows, total } = await this.userRepository.findManyPaginated({
       skip,
       take: limit,
-      ...(query.search !== undefined && { search: query.search }),
-      ...(query.role !== undefined && { role: query.role }),
-      ...(groupFilter !== undefined && { groupId: groupFilter }),
+      search: query.search,
+      role: query.role,
+      groupId: groupFilter,
     });
 
     return new UsersPaginatedResponseDto(

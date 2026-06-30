@@ -13,9 +13,10 @@ import { Uf, UserRole } from '@/generated/prisma/client';
 
 import {
   NormalizeEmail,
-  TrimOptionalString,
+  NormalizeOptionalPhone,
   TrimString,
 } from '@/common/transform';
+import { IsE164Phone } from '@/common/validators/is-e164-phone.validator';
 
 export class CreateUserRequestDto {
   @ApiProperty({ format: 'email', example: 'piloto@aerobi.local' })
@@ -37,10 +38,10 @@ export class CreateUserRequestDto {
 
   @ApiPropertyOptional({ example: '+55 11 99999-0000' })
   @IsOptional()
-  @TrimOptionalString()
-  @IsString()
+  @NormalizeOptionalPhone()
+  @IsE164Phone()
   @MaxLength(32)
-  phone?: string;
+  phone?: string | null;
 
   /**
    * Grupo de aeródromos do novo user. **Obrigatório quando o ator é ADMIN** e

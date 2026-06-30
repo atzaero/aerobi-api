@@ -9,7 +9,7 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 
-import { UpdateUserRequestDto } from '../dtos/update-user-request.dto';
+import { AdminUpdateUserRequestDto } from '../dtos/admin-update-user-request.dto';
 import { UserResponseDto } from '../dtos/user-response.dto';
 
 export function UpdateUserDocs() {
@@ -17,10 +17,13 @@ export function UpdateUserDocs() {
     Patch(':id'),
     ApiBearerAuth(),
     ApiOperation({
-      summary: 'Atualiza um usuário (self ou ADMIN; role só ADMIN)',
+      summary:
+        'Edição administrativa de usuário (ADMIN/COORDINATOR; escopo de grupo no service)',
+      description:
+        'Edita name/email/role/phone de outro usuário. COORDINATOR gere apenas operator/technical/coordinator do próprio grupo e nunca promove a ADMIN. Trocar o email revoga as sessões do alvo e notifica ambos os endereços. Auto-edição de perfil: PATCH /users/me.',
     }),
     ApiParam({ name: 'id', format: 'uuid' }),
-    ApiBody({ type: UpdateUserRequestDto }),
+    ApiBody({ type: AdminUpdateUserRequestDto }),
     ApiOkResponse({ type: UserResponseDto }),
     ApiForbiddenResponse(),
     ApiNotFoundResponse(),

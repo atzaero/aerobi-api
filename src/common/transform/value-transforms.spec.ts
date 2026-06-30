@@ -1,5 +1,6 @@
 import {
   normalizeEmailValue,
+  normalizeOptionalPhoneE164Value,
   optionalQueryBooleanValue,
   trimOptionalStringValue,
   trimStringValue,
@@ -41,6 +42,35 @@ describe('value-transforms', () => {
 
     it('passa adiante não-strings', () => {
       expect(normalizeEmailValue(null)).toBe(null);
+    });
+  });
+
+  describe('normalizeOptionalPhoneE164Value', () => {
+    it('preserva undefined e null (semântica PATCH)', () => {
+      expect(normalizeOptionalPhoneE164Value(undefined)).toBe(undefined);
+      expect(normalizeOptionalPhoneE164Value(null)).toBe(null);
+    });
+
+    it('converte string vazia (ou só espaços) para null', () => {
+      expect(normalizeOptionalPhoneE164Value('')).toBe(null);
+      expect(normalizeOptionalPhoneE164Value('   ')).toBe(null);
+    });
+
+    it('descarta a máscara e prefixa + aos dígitos', () => {
+      expect(normalizeOptionalPhoneE164Value('+55 11 99999-9999')).toBe(
+        '+5511999999999',
+      );
+      expect(normalizeOptionalPhoneE164Value('(11) 99999-9999')).toBe(
+        '+11999999999',
+      );
+    });
+
+    it('devolve o valor trimado quando não há dígito (deixa o validador rejeitar)', () => {
+      expect(normalizeOptionalPhoneE164Value('  abc ')).toBe('abc');
+    });
+
+    it('passa adiante não-strings definidos', () => {
+      expect(normalizeOptionalPhoneE164Value(123)).toBe(123);
     });
   });
 

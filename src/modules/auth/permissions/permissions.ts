@@ -25,6 +25,7 @@ export type AuthzAction =
   | 'list'
   | 'read'
   | 'create'
+  | 'edit' // editar dados de um registro; em `user` é distinto de `update`
   | 'update'
   | 'update-observation'
   | 'delete'
@@ -66,14 +67,20 @@ export const PERMISSIONS: Record<
     delete: [UserRole.ADMIN],
     export: [UserRole.ADMIN, UserRole.COORDINATOR],
   },
-  // Usuários: admin cadastra admin/coordinator; coordinator adiciona/remove
-  // operator/técnico — o recorte por **role-alvo** é validado na action, não
-  // nesta matriz. `update` = reset de senha (só admin).
+  // Usuários: admin gere qualquer um; coordinator gere usuários do **próprio
+  // grupo** (operator/technical/coordinator) — o recorte por role-alvo e por
+  // grupo é validado no service, não nesta matriz. Espelha o web:
+  // `edit` = editar dados (nome/email/role/phone); `update` = reset de senha
+  // (só admin, dispara link); `read`/`export` espelham `list` (coordinator
+  // restrito ao próprio grupo, resolvido no service).
   user: {
     list: [UserRole.ADMIN, UserRole.COORDINATOR],
+    read: [UserRole.ADMIN, UserRole.COORDINATOR],
     create: [UserRole.ADMIN, UserRole.COORDINATOR],
+    edit: [UserRole.ADMIN, UserRole.COORDINATOR],
     update: [UserRole.ADMIN],
     delete: [UserRole.ADMIN, UserRole.COORDINATOR],
+    export: [UserRole.ADMIN, UserRole.COORDINATOR],
   },
   // Auditoria: leitura interna (admin/coordinator).
   audit: {

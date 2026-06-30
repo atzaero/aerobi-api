@@ -4,7 +4,7 @@ import type { Uf, User, UserRole } from '@/generated/prisma/client';
 export interface CreateUserData {
   email: string;
   name: string;
-  phone?: string;
+  phone?: string | null;
   role: UserRole;
   /**
    * Grupo de aeródromos do user. `null` para ADMIN global (sem grupo);
@@ -22,6 +22,7 @@ export interface CreateUserData {
 /** Atualização parcial de User — só inclui campos que mudam. */
 export interface UpdateUserData {
   name?: string;
+  email?: string;
   phone?: string | null;
   timezone?: string | null;
   role?: UserRole;
@@ -32,17 +33,22 @@ export interface UpdateUserData {
   updatedBy?: string;
 }
 
-/** Filtros opcionais da listagem paginada (GET /users). */
-export interface ListUsersParams {
-  skip: number;
-  take: number;
+/**
+ * Filtros compartilhados por listagem e export: `search` (email/nome ILIKE),
+ * `role` (igualdade) e `groupId`. Para COORDINATOR o `groupId` é forçado pelo
+ * service (próprio grupo); ADMIN informa livremente. Reusados pelo `buildWhere`
+ * do repositório — manter um único contrato evita divergência silenciosa.
+ */
+export interface ExportUsersFilters {
   search?: string;
   role?: UserRole;
-  /**
-   * Restringe a um grupo de aeródromos. Forçado pelo service para COORDINATOR
-   * (próprio grupo); ADMIN pode informá-lo livremente como filtro.
-   */
   groupId?: string;
+}
+
+/** Filtros da listagem paginada (GET /users): os de export + paginação. */
+export interface ListUsersParams extends ExportUsersFilters {
+  skip: number;
+  take: number;
 }
 
 /** Resultado de listagem paginada — rows + total para construir metadata. */
@@ -50,6 +56,9 @@ export interface ListUsersResult {
   rows: User[];
   total: number;
 }
+
+/** User com o nome do grupo resolvido (join), para a coluna "Grupo" do export. */
+export type UserWithGroupName = User & { group: { name: string } | null };
 
 /**
  * Contrato do repositório de Users.
@@ -76,4 +85,13 @@ export interface IUserRepository {
   softDelete(id: string, deletedBy?: string): Promise<User>;
 
   findManyPaginated(params: ListUsersParams): Promise<ListUsersResult>;
+
+  /** Busca ativos para export (com nome do grupo), ordenados `createdAt DESC`. */
+  findManyForExport(
+    filters: ExportUsersFilters,
+    take: number,
+  ): Promise<UserWithGroupName[]>;
+
+  /** Conta ativos que casam os filtros (para sinalizar truncamento no export). */
+  countForExport(filters: ExportUsersFilters): Promise<number>;
 }
