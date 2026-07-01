@@ -2,6 +2,7 @@ import { Controller, Get, Query, Res, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 
+import { applyCsvDownloadHeaders } from '@/common/utils/csv-download.util';
 import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator';
 import { RequirePermission } from '@/modules/auth/decorators/require-permission.decorator';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
@@ -23,11 +24,6 @@ import { ExportUsersService } from '../services/export-users.service';
 export class ExportUsersController {
   constructor(private readonly service: ExportUsersService) {}
 
-  /**
-   * Headers de download setados **dentro do handler**, só depois do service
-   * resolver — nunca via `@Header`, que o Nest aplica antes de executar o
-   * handler. Se o service lançar, o `AllExceptionsFilter` responde JSON.
-   */
   @Get('export')
   @RequirePermission('user', 'export')
   @ExportUsersDocs()
@@ -37,16 +33,7 @@ export class ExportUsersController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<string> {
     const { csv, truncated, total } = await this.service.execute(query, actor);
-    res.set({
-      'Content-Type': 'text/csv; charset=utf-8',
-      'Content-Disposition': 'attachment; filename="users.csv"',
-    });
-    if (truncated) {
-      res.set({
-        'X-Export-Truncated': 'true',
-        'X-Export-Total': String(total),
-      });
-    }
+    applyCsvDownloadHeaders(res, 'users.csv', { truncated, total });
     return csv;
   }
 }
