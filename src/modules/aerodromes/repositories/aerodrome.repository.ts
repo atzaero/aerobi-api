@@ -1,32 +1,48 @@
 import { Injectable } from '@nestjs/common';
 
-import { Prisma, type Aerodrome } from '@/generated/prisma/client';
+import { Prisma } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 
-import type { IAerodromeRepository } from './aerodrome.repository.interface';
+import type {
+  AerodromeWithGroup,
+  IAerodromeRepository,
+} from './aerodrome.repository.interface';
 
 const activeWhere: Pick<Prisma.AerodromeWhereInput, 'deletedAt'> = {
   deletedAt: null,
 };
 
+/**
+ * Carrega a UF do grupo em toda leitura/escrita: a UF do aeródromo é derivada de
+ * `group.uf` (não é coluna própria), e o mapper a expõe no response.
+ */
+const includeGroupUf = {
+  group: { select: { uf: true } },
+} satisfies Prisma.AerodromeInclude;
+
 @Injectable()
 export class AerodromeRepository implements IAerodromeRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  create(data: Prisma.AerodromeCreateInput): Promise<Aerodrome> {
-    return this.prisma.aerodrome.create({ data });
+  create(data: Prisma.AerodromeCreateInput): Promise<AerodromeWithGroup> {
+    return this.prisma.aerodrome.create({ data, include: includeGroupUf });
   }
 
-  update(id: string, data: Prisma.AerodromeUpdateInput): Promise<Aerodrome> {
+  update(
+    id: string,
+    data: Prisma.AerodromeUpdateInput,
+  ): Promise<AerodromeWithGroup> {
     return this.prisma.aerodrome.update({
       where: { id, ...activeWhere },
       data,
+      include: includeGroupUf,
     });
   }
 
-  findById(id: string): Promise<Aerodrome | null> {
+  findById(id: string): Promise<AerodromeWithGroup | null> {
     return this.prisma.aerodrome.findFirst({
       where: { id, ...activeWhere },
+      include: includeGroupUf,
     });
   }
 
@@ -34,14 +50,15 @@ export class AerodromeRepository implements IAerodromeRepository {
     where: Prisma.AerodromeWhereInput,
     skip: number,
     take: number,
-  ): Promise<Aerodrome[]> {
+  ): Promise<AerodromeWithGroup[]> {
     return this.prisma.aerodrome.findMany({
       where: {
         AND: [{ ...where }, activeWhere],
       },
       skip,
       take,
-      orderBy: [{ icao: 'asc' }],
+      orderBy: [{ createdAt: 'desc' }],
+      include: includeGroupUf,
     });
   }
 
@@ -53,7 +70,7 @@ export class AerodromeRepository implements IAerodromeRepository {
     });
   }
 
-  softDelete(id: string, deletedBy: string): Promise<Aerodrome> {
+  softDelete(id: string, deletedBy: string): Promise<AerodromeWithGroup> {
     return this.prisma.aerodrome.update({
       where: { id, ...activeWhere },
       data: {
@@ -61,6 +78,14 @@ export class AerodromeRepository implements IAerodromeRepository {
         deletedBy,
         updatedBy: deletedBy,
       },
+      include: includeGroupUf,
+    });
+  }
+
+  findActiveGroup(groupId: string): Promise<{ id: string } | null> {
+    return this.prisma.group.findFirst({
+      where: { id: groupId, deletedAt: null },
+      select: { id: true },
     });
   }
 }

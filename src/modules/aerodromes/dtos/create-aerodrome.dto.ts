@@ -1,189 +1,237 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import {
   IsBoolean,
   IsNotEmpty,
   IsOptional,
   IsString,
   IsUUID,
+  Matches,
   MaxLength,
+  ValidateIf,
 } from 'class-validator';
 
+import {
+  NormalizeOptionalPhone,
+  TrimOptionalString,
+  TrimString,
+} from '@/common/transform';
+import { IsE164Phone } from '@/common/validators/is-e164-phone.validator';
+
+import { IsDmsCoordinate } from '../validators/is-dms-coordinate.validator';
+
+/** Comprimento máximo da observação pública (paridade com o web). */
+export const AERODROME_OBSERVATION_MAX_LENGTH = 2000;
+
+/** `true` quando o campo condicional de pista veio preenchido. */
+const isRunwayFieldFilled = (value: unknown): boolean =>
+  value !== undefined && value !== null && value !== '';
+
+/** Subconjunto lido pelos `@ValidateIf` da pista condicional. */
+type RunwayConditionInput = {
+  construction?: boolean;
+  length?: string;
+  width?: string;
+};
+
+/**
+ * Entrada de criação de um aeródromo, alinhada ao schema Zod de
+ * `aerobi-web/src/app/actions/aerodromes/create`. A UF **não** entra no payload
+ * (é derivada do grupo no read); `isView`, `createdBy` e as URLs legadas
+ * (`imgUrl`/`kmlUrl`/ordinances/…) também não: `isView` nasce `false` no service,
+ * `createdBy` é o ator autenticado, e as URLs pertencem a slices próprias
+ * (imagem → #430, KML → geojson). Os campos de pista
+ * (`designation`/`length`/`width`/`resistance`/`surface`) são obrigatórios
+ * quando o aeródromo **não** está em construção.
+ */
 export class CreateAerodromeDTO {
   @ApiProperty({ format: 'uuid' })
   @IsUUID('4')
   groupId!: string;
 
-  @ApiProperty({ example: 'SDXX' })
+  @ApiProperty({
+    example: 'SDXX',
+    description:
+      'ICAO — 4 caracteres alfanuméricos (normalizado em maiúsculas)',
+  })
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim().toUpperCase() : value,
+  )
   @IsString()
   @IsNotEmpty()
-  @MaxLength(32)
+  @Matches(/^[A-Za-z0-9]{4}$/, {
+    message: 'ICAO deve ter 4 caracteres alfanuméricos',
+  })
   icao!: string;
 
-  @ApiPropertyOptional({ maxLength: 64 })
-  @IsOptional()
-  @IsString()
-  ciad?: string;
-
-  @ApiPropertyOptional({ maxLength: 500 })
-  @IsOptional()
-  @IsString()
-  designation?: string;
-
-  @ApiPropertyOptional({ maxLength: 64 })
-  @IsOptional()
-  @IsString()
-  length?: string;
-
-  @ApiPropertyOptional({ maxLength: 64 })
-  @IsOptional()
-  @IsString()
-  width?: string;
-
-  @ApiPropertyOptional({ maxLength: 64 })
-  @IsOptional()
-  @IsString()
-  resistance?: string;
-
-  @ApiPropertyOptional({ maxLength: 64 })
-  @IsOptional()
-  @IsString()
-  surface?: string;
-
-  @ApiPropertyOptional({ maxLength: 64 })
-  @IsOptional()
-  @IsString()
-  altitude?: string;
-
   @ApiProperty()
+  @TrimString()
   @IsString()
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Nome é obrigatório' })
   @MaxLength(500)
   name!: string;
 
+  @ApiPropertyOptional({ maxLength: 6 })
+  @IsOptional()
+  @TrimOptionalString()
+  @IsString()
+  @MaxLength(6, { message: 'CIAD deve ter até 6 caracteres' })
+  ciad?: string;
+
   @ApiPropertyOptional({ maxLength: 255 })
   @IsOptional()
+  @TrimOptionalString()
   @IsString()
+  @MaxLength(255)
   municipality?: string;
 
-  @ApiProperty({
-    description: 'Coordenada texto (mantido igual ao modelo legado)',
+  @ApiPropertyOptional({
+    description: 'Telefone de emergência em E.164 (ex.: +55 11 99999-9999)',
   })
+  @IsOptional()
+  @NormalizeOptionalPhone()
+  @IsE164Phone()
+  @MaxLength(32)
+  emergencyPhone?: string | null;
+
+  @ApiProperty({ example: '03°27\'18.50"S', description: 'Latitude em DMS' })
+  @TrimString()
   @IsString()
-  @IsNotEmpty()
-  @MaxLength(64)
+  @IsNotEmpty({ message: 'Latitude é obrigatória' })
+  @IsDmsCoordinate({ message: 'Latitude inválida (ex.: 03°27\'18.50"S)' })
   latitude!: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: '041°36\'16.91"W', description: 'Longitude em DMS' })
+  @TrimString()
   @IsString()
-  @IsNotEmpty()
-  @MaxLength(64)
+  @IsNotEmpty({ message: 'Longitude é obrigatória' })
+  @IsDmsCoordinate({ message: 'Longitude inválida (ex.: 041°36\'16.91"W)' })
   longitude!: string;
 
-  @ApiPropertyOptional({ maxLength: 64 })
-  @IsOptional()
+  @ApiProperty({ description: 'Altitude em pés — apenas dígitos' })
+  @TrimString()
   @IsString()
-  latitudeFormatted?: string;
-
-  @ApiPropertyOptional({ maxLength: 64 })
-  @IsOptional()
-  @IsString()
-  longitudeFormatted?: string;
+  @IsNotEmpty({ message: 'Altitude é obrigatória' })
+  @Matches(/^\d+$/, { message: 'Altitude aceita apenas números' })
+  altitude!: string;
 
   @ApiPropertyOptional({ maxLength: 255 })
   @IsOptional()
+  @TrimOptionalString()
   @IsString()
+  @MaxLength(255)
   operation?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({
+    description: 'Código da estação meteorológica — apenas dígitos',
+  })
   @IsOptional()
-  @IsBoolean()
-  lit?: boolean;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsBoolean()
-  fueling?: boolean;
-
-  @ApiPropertyOptional()
-  @IsOptional()
+  @TrimOptionalString()
   @IsString()
-  observation?: string;
+  @Matches(/^\d+$/, { message: 'Código da estação aceita apenas números' })
+  weatherStationCode?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ default: false })
   @IsOptional()
   @IsBoolean()
   construction?: boolean;
 
-  @ApiProperty()
+  @ApiPropertyOptional({
+    description: 'Designação da pista (obrigatória se não em construção)',
+  })
+  @ValidateIf((o: RunwayConditionInput) => o.construction !== true)
+  @TrimOptionalString()
+  @IsString()
+  @IsNotEmpty({
+    message: 'Designação é obrigatória quando não está em construção',
+  })
+  @MaxLength(500)
+  designation?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Comprimento da pista em metros — apenas dígitos (obrigatório se não em construção)',
+  })
+  @ValidateIf(
+    (o: RunwayConditionInput) =>
+      o.construction !== true || isRunwayFieldFilled(o.length),
+  )
+  @TrimOptionalString()
+  @IsNotEmpty({
+    message: 'Comprimento é obrigatório quando não está em construção',
+  })
+  @Matches(/^\d+$/, { message: 'Comprimento aceita apenas números' })
+  length?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Largura da pista em metros — apenas dígitos (obrigatória se não em construção)',
+  })
+  @ValidateIf(
+    (o: RunwayConditionInput) =>
+      o.construction !== true || isRunwayFieldFilled(o.width),
+  )
+  @TrimOptionalString()
+  @IsNotEmpty({
+    message: 'Largura é obrigatória quando não está em construção',
+  })
+  @Matches(/^\d+$/, { message: 'Largura aceita apenas números' })
+  width?: string;
+
+  @ApiPropertyOptional({
+    description: 'Resistência da pista (obrigatória se não em construção)',
+  })
+  @ValidateIf((o: RunwayConditionInput) => o.construction !== true)
+  @TrimOptionalString()
+  @IsString()
+  @IsNotEmpty({
+    message: 'Resistência é obrigatória quando não está em construção',
+  })
+  @MaxLength(64)
+  resistance?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Tipo de superfície da pista (obrigatório se não em construção)',
+  })
+  @ValidateIf((o: RunwayConditionInput) => o.construction !== true)
+  @TrimOptionalString()
+  @IsString()
+  @IsNotEmpty({
+    message: 'Tipo de superfície é obrigatório quando não está em construção',
+  })
+  @MaxLength(64)
+  surface?: string;
+
+  @ApiPropertyOptional({
+    default: true,
+    description: 'Aeródromo aberto (default true)',
+  })
+  @IsOptional()
   @IsBoolean()
-  isOpen!: boolean;
+  isOpen?: boolean;
 
-  @ApiProperty()
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
   @IsBoolean()
-  isView!: boolean;
+  weatherStationDisplay?: boolean;
 
-  @ApiPropertyOptional({ maxLength: 64 })
+  @ApiPropertyOptional({ default: false })
   @IsOptional()
-  @IsString()
-  weatherStationCode?: string;
+  @IsBoolean()
+  lit?: boolean;
 
-  @ApiPropertyOptional({ maxLength: 255 })
+  @ApiPropertyOptional({ default: false })
   @IsOptional()
-  @IsString()
-  weatherStationDisplay?: string;
+  @IsBoolean()
+  fueling?: boolean;
 
-  @ApiPropertyOptional({ maxLength: 128 })
+  @ApiPropertyOptional({ maxLength: AERODROME_OBSERVATION_MAX_LENGTH })
   @IsOptional()
+  @TrimOptionalString()
   @IsString()
-  fileType?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  imgUrl?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  kmlUrl?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  registrationOrdinanceUrl?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  planOrdinanceUrl?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  grantTermUrl?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  aeronauticalStudyUrl?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  weatherUrl?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  windUrl?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  videoUrl?: string;
-
-  @ApiPropertyOptional({ maxLength: 255 })
-  @IsOptional()
-  @IsString()
-  createdBy?: string;
+  @MaxLength(AERODROME_OBSERVATION_MAX_LENGTH, {
+    message: 'Observação deve ter até 2000 caracteres',
+  })
+  observation?: string;
 }

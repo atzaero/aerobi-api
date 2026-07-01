@@ -17,13 +17,11 @@ describe('FindAerodromeByIdController', () => {
 
   it('id do param', async () => {
     const params: AerodromeParamDTO = {
-      aerodromeId: '77777777-7777-4777-8777-777777777777',
+      id: '77777777-7777-4777-8777-777777777777',
     };
     const row = new AerodromeResponseDTO();
     execute.mockResolvedValue(row);
     await expect(controller.handle(params)).resolves.toBe(row);
-    expect(execute).toHaveBeenCalledWith({
-      id: params.aerodromeId,
-    });
+    expect(execute).toHaveBeenCalledWith({ id: params.id });
   });
 });

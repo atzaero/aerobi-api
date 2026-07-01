@@ -3,7 +3,7 @@ import { ErrorMessageService } from '@/common/error-messages/error-message.servi
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 
 import type { AerodromeRepository } from '../repositories/aerodrome.repository';
-import { buildAerodromeFixture } from '../testing/aerodrome.entity.fixture';
+import { buildAerodromeWithGroupFixture } from '../testing/aerodrome.entity.fixture';
 
 import { FindAerodromeByIdService } from './find-aerodrome-by-id.service';
 
@@ -19,9 +19,10 @@ describe('FindAerodromeByIdService', () => {
 
   const id = '11111111-1111-4111-8111-111111111111';
 
-  it('sucesso', async () => {
-    findById.mockResolvedValue(buildAerodromeFixture({ id }));
-    await expect(service.execute({ id })).resolves.toMatchObject({ id });
+  it('sucesso: expõe uf derivada do grupo', async () => {
+    findById.mockResolvedValue(buildAerodromeWithGroupFixture({ id }));
+    const out = await service.execute({ id });
+    expect(out).toMatchObject({ id, uf: 'PI' });
   });
 
   it('404', async () => {

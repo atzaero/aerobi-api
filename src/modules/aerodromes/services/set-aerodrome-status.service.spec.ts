@@ -7,53 +7,49 @@ import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-
 import type { AerodromeRepository } from '../repositories/aerodrome.repository';
 import { buildAerodromeWithGroupFixture } from '../testing/aerodrome.entity.fixture';
 
-import { RemoveAerodromeService } from './remove-aerodrome.service';
+import { SetAerodromeStatusService } from './set-aerodrome-status.service';
 
-describe('RemoveAerodromeService', () => {
-  let service: RemoveAerodromeService;
+describe('SetAerodromeStatusService', () => {
+  let service: SetAerodromeStatusService;
   let findById: jest.Mock;
-  let softDelete: jest.Mock;
+  let update: jest.Mock;
 
   const id = '11111111-1111-4111-8111-111111111111';
-  const admin: AuthenticatedUser = {
-    id: 'admin-9',
-    email: 'a@x',
-    role: UserRole.ADMIN,
+  const actor: AuthenticatedUser = {
+    id: 'c1',
+    email: 'c@x',
+    role: UserRole.COORDINATOR,
   };
 
   beforeEach(() => {
     findById = jest.fn();
-    softDelete = jest.fn();
-    const repo = {
-      findById,
-      softDelete,
-    } as unknown as AerodromeRepository;
-    service = new RemoveAerodromeService(repo, new ErrorMessageService());
+    update = jest.fn();
+    const repo = { findById, update } as unknown as AerodromeRepository;
+    service = new SetAerodromeStatusService(repo, new ErrorMessageService());
   });
 
   it('404', async () => {
     findById.mockResolvedValue(null);
     try {
-      await service.execute(id, admin);
+      await service.execute(id, { field: 'isOpen', value: false }, actor);
       throw new Error('expected');
     } catch (e) {
       expect((e as CustomHttpException).getErrorCode()).toBe(
         ErrorCode.RESOURCE_NOT_FOUND,
       );
     }
-    expect(softDelete).not.toHaveBeenCalled();
+    expect(update).not.toHaveBeenCalled();
   });
 
-  it('soft delete com ator real', async () => {
+  it('altera só o campo informado + ator real', async () => {
     findById.mockResolvedValue(buildAerodromeWithGroupFixture({ id }));
-    softDelete.mockResolvedValue(
-      buildAerodromeWithGroupFixture({
-        id,
-        deletedBy: admin.id,
-        deletedAt: new Date('2027-01-01T00:00:00.000Z'),
-      }),
+    update.mockResolvedValue(
+      buildAerodromeWithGroupFixture({ id, isOpen: false }),
     );
-    await service.execute(id, admin);
-    expect(softDelete).toHaveBeenCalledWith(id, admin.id);
+    await service.execute(id, { field: 'isOpen', value: false }, actor);
+    expect(update).toHaveBeenCalledWith(id, {
+      isOpen: false,
+      updatedBy: actor.id,
+    });
   });
 });

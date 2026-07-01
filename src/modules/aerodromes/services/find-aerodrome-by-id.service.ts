@@ -1,8 +1,7 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
-import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
-import { ErrorCode } from '@/common/enums/error-code.enum';
+import { resourceNotFound } from '@/common/utils/resource-not-found.util';
 
 import { AerodromeResponseDTO } from '../dtos/aerodrome-response.dto';
 import { AerodromeMapper } from '../mappers/aerodrome.mapper';
@@ -20,16 +19,10 @@ export class FindAerodromeByIdService {
   async execute(
     input: FindAerodromeByIdServiceInput,
   ): Promise<AerodromeResponseDTO> {
+    /** Escopo por grupo já validado pelo `GroupScopeGuard`; aqui só a existência. */
     const entity = await this.repo.findById(input.id);
     if (!entity) {
-      throw new CustomHttpException(
-        this.errorMessageService.getMessage(ErrorCode.RESOURCE_NOT_FOUND, {
-          RESOURCE: 'Aeródromo',
-          ID: input.id,
-        }),
-        HttpStatus.NOT_FOUND,
-        ErrorCode.RESOURCE_NOT_FOUND,
-      );
+      throw resourceNotFound(this.errorMessageService, 'Aeródromo', input.id);
     }
     return AerodromeMapper.toApiRow(entity);
   }

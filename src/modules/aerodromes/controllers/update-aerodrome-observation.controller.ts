@@ -10,25 +10,30 @@ import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '@/modules/auth/guards/permissions.guard';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
-import { UpdateAerodromeDocs } from '../docs/update-aerodrome.docs';
+import { UpdateAerodromeObservationDocs } from '../docs/update-aerodrome-observation.docs';
 import { AerodromeParamDTO } from '../dtos/aerodrome-param.dto';
 import { AerodromeResponseDTO } from '../dtos/aerodrome-response.dto';
-import { UpdateAerodromeDTO } from '../dtos/update-aerodrome.dto';
-import { UpdateAerodromeService } from '../services/update-aerodrome.service';
+import { UpdateAerodromeObservationDTO } from '../dtos/update-aerodrome-observation.dto';
+import { UpdateAerodromeObservationService } from '../services/update-aerodrome-observation.service';
 
+/**
+ * Atualiza apenas a observação pública. Permissão dedicada
+ * `aerodrome:update-observation` (inclui OPERATOR, além de ADMIN/COORDINATOR) +
+ * escopo por grupo.
+ */
 @ApiTags('Aerodromes')
 @Controller('aerodromes')
 @UseGuards(JwtAuthGuard, PermissionsGuard, GroupScopeGuard)
-export class UpdateAerodromeController {
-  constructor(private readonly service: UpdateAerodromeService) {}
+export class UpdateAerodromeObservationController {
+  constructor(private readonly service: UpdateAerodromeObservationService) {}
 
-  @Patch(':id')
-  @RequirePermission('aerodrome', 'update')
+  @Patch(':id/observation')
+  @RequirePermission('aerodrome', 'update-observation')
   @RequiresGroupScope(GroupScopeSubject.AERODROME)
-  @UpdateAerodromeDocs()
+  @UpdateAerodromeObservationDocs()
   handle(
     @Param() { id }: AerodromeParamDTO,
-    @Body() dto: UpdateAerodromeDTO,
+    @Body() dto: UpdateAerodromeObservationDTO,
     @CurrentUser() actor: AuthenticatedUser,
   ): Promise<AerodromeResponseDTO> {
     return this.service.execute(id, dto, actor);
