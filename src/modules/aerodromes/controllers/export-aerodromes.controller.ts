@@ -9,31 +9,32 @@ import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '@/modules/auth/guards/permissions.guard';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
-import { ExportGroupsDocs } from '../docs/export-groups.docs';
-import { ExportGroupsQueryDTO } from '../dtos/export-groups-query.dto';
-import { ExportGroupsService } from '../services/export-groups.service';
+import { ExportAerodromesDocs } from '../docs/export-aerodromes.docs';
+import { ExportAerodromesQueryDTO } from '../dtos/export-aerodromes-query.dto';
+import { ExportAerodromesService } from '../services/export-aerodromes.service';
 
 /**
- * `GET /groups/export`. Deve ser registrado **antes** do
- * `FindGroupByIdController` no módulo, senão a rota cai no handler de
- * `:id` (e `export` falha a validação de UUID).
+ * `GET /aerodromes/export`. Deve ser registrado **antes** do
+ * `FindAerodromeByIdController` no módulo, senão a rota cai no handler de `:id`
+ * (e `export` falha a validação de UUID). Reusa a permissão `aerodrome:list`
+ * (paridade com o web, que dispara o export pelo gate da listagem).
  */
-@ApiTags('Groups')
-@Controller('groups')
+@ApiTags('Aerodromes')
+@Controller('aerodromes')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
-export class ExportGroupsController {
-  constructor(private readonly service: ExportGroupsService) {}
+export class ExportAerodromesController {
+  constructor(private readonly service: ExportAerodromesService) {}
 
   @Get('export')
-  @RequirePermission('group', 'export')
-  @ExportGroupsDocs()
+  @RequirePermission('aerodrome', 'list')
+  @ExportAerodromesDocs()
   async handle(
-    @Query() query: ExportGroupsQueryDTO,
+    @Query() query: ExportAerodromesQueryDTO,
     @CurrentUser() actor: AuthenticatedUser,
     @Res({ passthrough: true }) res: Response,
   ): Promise<string> {
     const { csv, truncated, total } = await this.service.execute(query, actor);
-    applyCsvDownloadHeaders(res, 'groups.csv', { truncated, total });
+    applyCsvDownloadHeaders(res, 'aerodromes.csv', { truncated, total });
     return csv;
   }
 }
