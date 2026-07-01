@@ -17,13 +17,16 @@ import { UserRole } from '@/generated/prisma/client';
  *  - `none`  — COORDINATOR sem `groupId` (provisionamento incompleto):
  *              não enxerga/gere nada (nunca "fail open").
  *
- * Restringe **só** COORDINATOR; ADMIN (e qualquer papel fora do conjunto) → `all`.
- * Coerente com entidades cuja matriz só inclui ADMIN/COORDINATOR (ex.: `user`,
- * `group`). Para entidades operacionais o web usa um resolver mais amplo
- * (`resolveOperationalScope`), que não se aplica aqui.
+ * Restringe os papéis do conjunto configurado; ADMIN (e qualquer papel fora
+ * dele) → `all`. Duas entradas públicas partilham o núcleo:
+ *  - `resolveActorGroupScope` — recursos **administrativos** (só COORDINATOR;
+ *    matriz ADMIN/COORDINATOR, ex.: `user`, `group`).
+ *  - `resolveOperationalActorScope` — recursos **operacionais** (COORDINATOR +
+ *    OPERATOR + TECHNICAL; espelha `resolveOperationalScope` do web, ex.:
+ *    `aerodrome` e os módulos pendurados nele).
  *
- * Vive em `src/common/` por ser transversal: consumido por `users` e
- * `groups` (e próximos módulos da migração Firebase→API).
+ * Vive em `src/common/` por ser transversal: consumido por `users`, `groups`,
+ * `aerodromes` (e próximos módulos da migração Firebase→API).
  */
 export type UserGroupScope =
   | { kind: 'all' }
@@ -41,39 +44,53 @@ export interface ActorGroupLookup {
 }
 
 /**
- * Deriva o `UserGroupScope` a partir do papel + grupo do ator. Interno: o ponto
- * de entrada é o `resolveActorGroupScope` (que encapsula o lookup e o
- * short-circuit de ADMIN sem consulta).
+ * Papéis restritos ao próprio grupo em recursos **administrativos** (users,
+ * groups): só COORDINATOR. ADMIN é global.
  */
-function resolveUserGroupScope(
-  actorRole: UserRole,
-  actorGroupId: string | null,
-): UserGroupScope {
-  if (actorRole !== UserRole.COORDINATOR) return { kind: 'all' };
+const GROUP_SCOPED_ROLES: readonly UserRole[] = [UserRole.COORDINATOR];
+
+/**
+ * Papéis restritos ao próprio grupo em recursos **operacionais** (aeródromos e
+ * módulos pendurados neles): COORDINATOR + OPERATOR + TECHNICAL — espelha
+ * `resolveOperationalScope` do `aerobi-web`. ADMIN continua global.
+ */
+const OPERATIONAL_SCOPED_ROLES: readonly UserRole[] = [
+  UserRole.COORDINATOR,
+  UserRole.OPERATOR,
+  UserRole.TECHNICAL,
+];
+
+/**
+ * Projeta o `groupId` do ator num `UserGroupScope` já sabendo que o papel é
+ * restrito: sem grupo provisionado → `none` (vê página vazia, nunca "fail
+ * open"); com grupo → `group`.
+ */
+function scopeFromActorGroupId(actorGroupId: string | null): UserGroupScope {
   if (!actorGroupId) return { kind: 'none' };
   return { kind: 'group', groupId: actorGroupId };
 }
 
 /**
- * Resolve o `UserGroupScope` do ator buscando o grupo no DB **apenas quando
- * necessário**: ADMIN (e papéis não-restritos) curto-circuitam para `all` sem
- * consulta; só COORDINATOR dispara o `lookup` do próprio registro. Centraliza o
- * padrão usado por list/remove/resend (users) e pela list/export de grupos.
+ * Núcleo compartilhado: resolve o `UserGroupScope` do ator buscando o grupo no
+ * DB **apenas quando necessário**. Papéis fora de `scopedRoles` (sempre ADMIN, e
+ * — no caso administrativo — também OPERATOR/TECHNICAL) curto-circuitam para
+ * `all` sem consulta; só os papéis restritos disparam o `lookup`.
  *
  * O ator **não encontrado / inativo** (registro `null` — token ainda válido mas
  * usuário soft-deletado, já que a `JwtStrategy` não revalida contra o DB) é
  * tratado como conta removida (**401 `ACCOUNT_DELETED`**) num único ponto, em
  * vez de virar `none` e mascarar a desativação com resultado vazio. É distinto
- * de um registro existente sem `groupId` (= `none`, COORDINATOR sem
- * grupo provisionado, que legitimamente vê página vazia).
+ * de um registro existente sem `groupId` (= `none`, papel restrito sem grupo
+ * provisionado, que legitimamente vê página vazia).
  */
-export async function resolveActorGroupScope(
+async function resolveScopeForRoles(
   actorRole: UserRole,
   actorId: string,
   lookup: ActorGroupLookup,
   errorMessageService: ErrorMessageService,
+  scopedRoles: readonly UserRole[],
 ): Promise<UserGroupScope> {
-  if (actorRole !== UserRole.COORDINATOR) return { kind: 'all' };
+  if (!scopedRoles.includes(actorRole)) return { kind: 'all' };
 
   const record = await lookup.findActiveById(actorId);
   if (record === null) {
@@ -84,5 +101,44 @@ export async function resolveActorGroupScope(
     );
   }
 
-  return resolveUserGroupScope(actorRole, record.groupId);
+  return scopeFromActorGroupId(record.groupId);
+}
+
+/**
+ * Escopo para recursos **administrativos** (só COORDINATOR restrito). Centraliza
+ * o padrão usado por list/remove/resend (users) e pela list/export de grupos.
+ */
+export function resolveActorGroupScope(
+  actorRole: UserRole,
+  actorId: string,
+  lookup: ActorGroupLookup,
+  errorMessageService: ErrorMessageService,
+): Promise<UserGroupScope> {
+  return resolveScopeForRoles(
+    actorRole,
+    actorId,
+    lookup,
+    errorMessageService,
+    GROUP_SCOPED_ROLES,
+  );
+}
+
+/**
+ * Escopo para recursos **operacionais** (COORDINATOR + OPERATOR + TECHNICAL
+ * restritos ao próprio grupo). Usado por list/export de aeródromos e dos módulos
+ * pendurados no aeródromo. Espelha `resolveOperationalScope` do `aerobi-web`.
+ */
+export function resolveOperationalActorScope(
+  actorRole: UserRole,
+  actorId: string,
+  lookup: ActorGroupLookup,
+  errorMessageService: ErrorMessageService,
+): Promise<UserGroupScope> {
+  return resolveScopeForRoles(
+    actorRole,
+    actorId,
+    lookup,
+    errorMessageService,
+    OPERATIONAL_SCOPED_ROLES,
+  );
 }

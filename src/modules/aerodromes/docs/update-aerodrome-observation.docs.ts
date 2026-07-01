@@ -1,5 +1,6 @@
 import { applyDecorators } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
   ApiBearerAuth,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
@@ -11,18 +12,23 @@ import {
 
 import { AerodromeResponseDTO } from '../dtos/aerodrome-response.dto';
 
-export function FindAerodromeByIdDocs() {
+export function UpdateAerodromeObservationDocs() {
   return applyDecorators(
     ApiBearerAuth(),
     ApiOperation({
-      summary: 'Busca um aeródromo por ID',
+      summary: 'Atualiza a observação pública do aeródromo',
       description:
-        'Requer `aerodrome:read`. Escopo por grupo: ADMIN acessa qualquer aeródromo; COORDINATOR/OPERATOR/TECHNICAL só o do próprio grupo.',
+        'Requer `aerodrome:update-observation` (ADMIN, COORDINATOR ou OPERATOR). Atualiza apenas `observation` (máx. 2000); vazio ou ausente limpa o campo.',
     }),
     ApiParam({ name: 'id', format: 'uuid', description: 'Identificador' }),
     ApiOkResponse({ type: AerodromeResponseDTO }),
+    ApiBadRequestResponse({
+      description: 'Observação acima de 2000 caracteres.',
+    }),
     ApiUnauthorizedResponse({ description: 'Token ausente ou inválido.' }),
-    ApiForbiddenResponse({ description: 'Sem permissão `aerodrome:read`.' }),
+    ApiForbiddenResponse({
+      description: 'Sem permissão `aerodrome:update-observation`.',
+    }),
     ApiNotFoundResponse({
       description: 'Inexistente ou fora do escopo do ator.',
     }),

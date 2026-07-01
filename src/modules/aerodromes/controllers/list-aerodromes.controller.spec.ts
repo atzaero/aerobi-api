@@ -1,3 +1,6 @@
+import { UserRole } from '@/generated/prisma/client';
+import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
+
 import { AerodromesPaginatedResponseDTO } from '../dtos/aerodromes-paginated-response.dto';
 import type { ListAerodromesService } from '../services/list-aerodromes.service';
 
@@ -7,6 +10,12 @@ describe('ListAerodromesController', () => {
   let controller: ListAerodromesController;
   let execute: jest.Mock;
 
+  const actor: AuthenticatedUser = {
+    id: 'u1',
+    email: 'u@x',
+    role: UserRole.ADMIN,
+  };
+
   beforeEach(() => {
     execute = jest.fn();
     controller = new ListAerodromesController({
@@ -14,11 +23,11 @@ describe('ListAerodromesController', () => {
     } as unknown as ListAerodromesService);
   });
 
-  it('delega query', async () => {
-    const q = { groupId: '44444444-4444-4444-8444-444444444444', icao: 'sb' };
+  it('delega query + ator', async () => {
+    const q = { search: 'sb' };
     const p = new AerodromesPaginatedResponseDTO([], 1, 10, 0);
     execute.mockResolvedValue(p);
-    await expect(controller.handle(q)).resolves.toBe(p);
-    expect(execute).toHaveBeenCalledWith(q);
+    await expect(controller.handle(q, actor)).resolves.toBe(p);
+    expect(execute).toHaveBeenCalledWith(q, actor);
   });
 });

@@ -287,6 +287,7 @@ model Aerodrome {
   latitudeFormatted        String?  @map("latitude_formatted")
   longitudeFormatted       String?  @map("longitude_formatted")
   operation                String?  @map("operation")
+  emergencyPhone           String?  @map("emergency_phone")
   lit                      Boolean? @map("lit")
   fueling                  Boolean? @map("fueling")
   observation              String?  @map("observation") @db.Text
@@ -294,7 +295,7 @@ model Aerodrome {
   isOpen                   Boolean  @map("is_open")
   isView                   Boolean  @map("is_view")
   weatherStationCode       String?  @map("weather_station_code")
-  weatherStationDisplay    String?  @map("weather_station_display")
+  weatherStationDisplay    Boolean? @map("weather_station_display")
   fileType                 String?  @map("file_type")
   imgUrl                   String?  @map("img_url") @db.Text
   kmlUrl                   String?  @map("kml_url") @db.Text

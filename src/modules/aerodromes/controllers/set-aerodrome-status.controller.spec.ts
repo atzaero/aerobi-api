@@ -3,40 +3,33 @@ import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-
 
 import { AerodromeParamDTO } from '../dtos/aerodrome-param.dto';
 import { AerodromeResponseDTO } from '../dtos/aerodrome-response.dto';
-import { UpdateAerodromeDTO } from '../dtos/update-aerodrome.dto';
-import type { UpdateAerodromeService } from '../services/update-aerodrome.service';
+import { SetAerodromeStatusDTO } from '../dtos/set-aerodrome-status.dto';
+import type { SetAerodromeStatusService } from '../services/set-aerodrome-status.service';
 
-import { UpdateAerodromeController } from './update-aerodrome.controller';
+import { SetAerodromeStatusController } from './set-aerodrome-status.controller';
 
-describe('UpdateAerodromeController', () => {
-  let controller: UpdateAerodromeController;
+describe('SetAerodromeStatusController', () => {
+  let controller: SetAerodromeStatusController;
   let execute: jest.Mock;
 
   const actor: AuthenticatedUser = {
-    id: 'u1',
-    email: 'u@x',
-    role: UserRole.ADMIN,
+    id: 'c1',
+    email: 'c@x',
+    role: UserRole.COORDINATOR,
   };
 
   beforeEach(() => {
     execute = jest.fn();
-    controller = new UpdateAerodromeController({
+    controller = new SetAerodromeStatusController({
       execute,
-    } as unknown as UpdateAerodromeService);
+    } as unknown as SetAerodromeStatusService);
   });
 
   it('delega id, body e ator', async () => {
     const params: AerodromeParamDTO = {
       id: '77777777-7777-4777-8777-777777777777',
     };
-    const body: UpdateAerodromeDTO = {
-      groupId: '44444444-4444-4444-8444-444444444444',
-      icao: 'SDXX',
-      name: 'Nome',
-      latitude: '03°27\'18.50"S',
-      longitude: '041°36\'16.91"W',
-      altitude: '100',
-    };
+    const body: SetAerodromeStatusDTO = { field: 'isOpen', value: false };
     const row = new AerodromeResponseDTO();
     execute.mockResolvedValue(row);
     await expect(controller.handle(params, body, actor)).resolves.toBe(row);

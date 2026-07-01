@@ -1,16 +1,18 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 
-import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
-import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { ErrorCode } from '@/common/enums/error-code.enum';
+import { ErrorMessageService } from '@/common/error-messages/error-message.service';
+import { httpError } from '@/common/exceptions/http-error.util';
+import { resourceNotFound } from '@/common/utils/resource-not-found.util';
+import { isUniqueConstraintError } from '@/common/utils/prisma-error.util';
+import { UserRole } from '@/generated/prisma/client';
+import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
 import { AerodromeResponseDTO } from '../dtos/aerodrome-response.dto';
 import { UpdateAerodromeDTO } from '../dtos/update-aerodrome.dto';
 import { AerodromeMapper } from '../mappers/aerodrome.mapper';
-import { patchAerodromeToPrisma } from '../mappers/aerodrome.prisma.mapper';
+import { buildAerodromeUpdateInput } from '../mappers/aerodrome.prisma.mapper';
 import { AerodromeRepository } from '../repositories/aerodrome.repository';
-
-export type UpdateAerodromeServiceInput = UpdateAerodromeDTO & { id: string };
 
 @Injectable()
 export class UpdateAerodromeService {
@@ -20,27 +22,61 @@ export class UpdateAerodromeService {
   ) {}
 
   async execute(
-    input: UpdateAerodromeServiceInput,
+    id: string,
+    dto: UpdateAerodromeDTO,
+    actor: AuthenticatedUser,
   ): Promise<AerodromeResponseDTO> {
-    const { id, groupId, ...dto } = input;
+    /**
+     * O `GroupScopeGuard` já garantiu que o recurso pertence ao grupo do ator
+     * (ADMIN faz bypass); aqui a existência (404) e as regras de negócio.
+     */
     const existing = await this.repo.findById(id);
     if (!existing) {
-      throw new CustomHttpException(
-        this.errorMessageService.getMessage(ErrorCode.RESOURCE_NOT_FOUND, {
-          RESOURCE: 'Aeródromo',
-          ID: id,
-        }),
-        HttpStatus.NOT_FOUND,
-        ErrorCode.RESOURCE_NOT_FOUND,
+      throw resourceNotFound(this.errorMessageService, 'Aeródromo', id);
+    }
+
+    const isMovingGroup = dto.groupId !== existing.groupId;
+
+    /** COORDINATOR não move o aeródromo entre grupos (só ADMIN pode). */
+    if (isMovingGroup && actor.role !== UserRole.ADMIN) {
+      throw httpError(
+        this.errorMessageService,
+        ErrorCode.FORBIDDEN,
+        HttpStatus.FORBIDDEN,
+        { RESOURCE: 'Aeródromo' },
       );
     }
 
-    const patch = patchAerodromeToPrisma(dto);
-    if (groupId !== undefined) {
-      patch.group = { connect: { id: groupId } };
+    /** Grupo de destino (quando muda) precisa existir e estar ativo. */
+    if (isMovingGroup) {
+      const group = await this.repo.findActiveGroup(dto.groupId);
+      if (!group) {
+        throw httpError(
+          this.errorMessageService,
+          ErrorCode.VALIDATION_FAILED,
+          HttpStatus.BAD_REQUEST,
+          { DETAILS: 'Grupo inválido ou inexistente' },
+        );
+      }
     }
 
-    const updated = await this.repo.update(id, patch);
-    return AerodromeMapper.toApiRow(updated);
+    try {
+      const updated = await this.repo.update(
+        id,
+        buildAerodromeUpdateInput(dto, actor.id),
+      );
+      return AerodromeMapper.toApiRow(updated);
+    } catch (err) {
+      /** `@@unique([groupId, icao])` — ICAO já usado no grupo. */
+      if (isUniqueConstraintError(err)) {
+        throw httpError(
+          this.errorMessageService,
+          ErrorCode.CONFLICT,
+          HttpStatus.CONFLICT,
+          { DETAILS: `Já existe um aeródromo ${dto.icao} neste grupo` },
+        );
+      }
+      throw err;
+    }
   }
 }

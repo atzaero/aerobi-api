@@ -1,11 +1,20 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
+import { Uf } from '@/generated/prisma/client';
+
 export class AerodromeResponseDTO {
   @ApiProperty({ format: 'uuid' })
   id!: string;
 
   @ApiProperty({ format: 'uuid' })
   groupId!: string;
+
+  @ApiPropertyOptional({
+    enum: Uf,
+    nullable: true,
+    description: 'UF derivada do grupo (não é coluna do aeródromo)',
+  })
+  uf!: Uf | null;
 
   @ApiProperty()
   icao!: string;
@@ -52,6 +61,13 @@ export class AerodromeResponseDTO {
   @ApiPropertyOptional({ nullable: true, type: String })
   operation!: string | null;
 
+  @ApiPropertyOptional({
+    nullable: true,
+    type: String,
+    description: 'Telefone de emergência em E.164',
+  })
+  emergencyPhone!: string | null;
+
   @ApiPropertyOptional({ nullable: true, type: Boolean })
   lit!: boolean | null;
 
@@ -73,8 +89,8 @@ export class AerodromeResponseDTO {
   @ApiPropertyOptional({ nullable: true, type: String })
   weatherStationCode!: string | null;
 
-  @ApiPropertyOptional({ nullable: true, type: String })
-  weatherStationDisplay!: string | null;
+  @ApiPropertyOptional({ nullable: true, type: Boolean })
+  weatherStationDisplay!: boolean | null;
 
   @ApiPropertyOptional({ nullable: true, type: String })
   fileType!: string | null;

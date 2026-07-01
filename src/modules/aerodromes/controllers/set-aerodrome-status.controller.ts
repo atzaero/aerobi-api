@@ -10,25 +10,29 @@ import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '@/modules/auth/guards/permissions.guard';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
-import { UpdateAerodromeDocs } from '../docs/update-aerodrome.docs';
+import { SetAerodromeStatusDocs } from '../docs/set-aerodrome-status.docs';
 import { AerodromeParamDTO } from '../dtos/aerodrome-param.dto';
 import { AerodromeResponseDTO } from '../dtos/aerodrome-response.dto';
-import { UpdateAerodromeDTO } from '../dtos/update-aerodrome.dto';
-import { UpdateAerodromeService } from '../services/update-aerodrome.service';
+import { SetAerodromeStatusDTO } from '../dtos/set-aerodrome-status.dto';
+import { SetAerodromeStatusService } from '../services/set-aerodrome-status.service';
 
+/**
+ * Alterna um campo de status (`isOpen`/`isView`/`weatherStationDisplay`/`lit`).
+ * Reusa a permissão `aerodrome:update` (paridade com o web) + escopo por grupo.
+ */
 @ApiTags('Aerodromes')
 @Controller('aerodromes')
 @UseGuards(JwtAuthGuard, PermissionsGuard, GroupScopeGuard)
-export class UpdateAerodromeController {
-  constructor(private readonly service: UpdateAerodromeService) {}
+export class SetAerodromeStatusController {
+  constructor(private readonly service: SetAerodromeStatusService) {}
 
-  @Patch(':id')
+  @Patch(':id/status')
   @RequirePermission('aerodrome', 'update')
   @RequiresGroupScope(GroupScopeSubject.AERODROME)
-  @UpdateAerodromeDocs()
+  @SetAerodromeStatusDocs()
   handle(
     @Param() { id }: AerodromeParamDTO,
-    @Body() dto: UpdateAerodromeDTO,
+    @Body() dto: SetAerodromeStatusDTO,
     @CurrentUser() actor: AuthenticatedUser,
   ): Promise<AerodromeResponseDTO> {
     return this.service.execute(id, dto, actor);

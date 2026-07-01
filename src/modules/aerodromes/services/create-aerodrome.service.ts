@@ -1,4 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
+
+import { ErrorCode } from '@/common/enums/error-code.enum';
+import { ErrorMessageService } from '@/common/error-messages/error-message.service';
+import { httpError } from '@/common/exceptions/http-error.util';
+import { resolveActorGroupScope } from '@/common/utils/group-scope.util';
+import { isUniqueConstraintError } from '@/common/utils/prisma-error.util';
+import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
+import { UserRepository } from '@/modules/users/repositories/user.repository';
 
 import { AerodromeResponseDTO } from '../dtos/aerodrome-response.dto';
 import { CreateAerodromeDTO } from '../dtos/create-aerodrome.dto';
@@ -8,10 +16,70 @@ import { AerodromeRepository } from '../repositories/aerodrome.repository';
 
 @Injectable()
 export class CreateAerodromeService {
-  constructor(private readonly repo: AerodromeRepository) {}
+  constructor(
+    private readonly repo: AerodromeRepository,
+    private readonly userRepository: UserRepository,
+    private readonly errorMessageService: ErrorMessageService,
+  ) {}
 
-  async execute(dto: CreateAerodromeDTO): Promise<AerodromeResponseDTO> {
-    const created = await this.repo.create(buildAerodromeCreateInput(dto));
-    return AerodromeMapper.toApiRow(created);
+  async execute(
+    dto: CreateAerodromeDTO,
+    actor: AuthenticatedUser,
+  ): Promise<AerodromeResponseDTO> {
+    /**
+     * Escopo de criação (espelha `resolveGroupScope` do web): COORDINATOR só cria
+     * no próprio grupo; ADMIN em qualquer grupo. Como o recurso ainda não existe,
+     * não há `GroupScopeGuard` de `:id` — o escopo é aplicado aqui. COORDINATOR
+     * sem grupo (`none`) não cria nada.
+     */
+    const scope = await resolveActorGroupScope(
+      actor.role,
+      actor.id,
+      this.userRepository,
+      this.errorMessageService,
+    );
+    if (
+      scope.kind === 'none' ||
+      (scope.kind === 'group' && dto.groupId !== scope.groupId)
+    ) {
+      throw httpError(
+        this.errorMessageService,
+        ErrorCode.FORBIDDEN,
+        HttpStatus.FORBIDDEN,
+        { RESOURCE: 'Aeródromo' },
+      );
+    }
+
+    /**
+     * O grupo precisa existir e estar ativo (paridade: o web deriva a UF do grupo
+     * e lança `VALIDATION_FAILED` quando inválido/removido).
+     */
+    const group = await this.repo.findActiveGroup(dto.groupId);
+    if (!group) {
+      throw httpError(
+        this.errorMessageService,
+        ErrorCode.VALIDATION_FAILED,
+        HttpStatus.BAD_REQUEST,
+        { DETAILS: 'Grupo inválido ou inexistente' },
+      );
+    }
+
+    try {
+      const created = await this.repo.create(
+        buildAerodromeCreateInput(dto, actor.id),
+      );
+      return AerodromeMapper.toApiRow(created);
+    } catch (err) {
+      /** `@@unique([groupId, icao])` — ICAO já usado no grupo (corrida ou duplicata). */
+      if (isUniqueConstraintError(err)) {
+        throw httpError(
+          this.errorMessageService,
+          ErrorCode.CONFLICT,
+          HttpStatus.CONFLICT,
+          { DETAILS: `Já existe um aeródromo ${dto.icao} neste grupo` },
+        );
+      }
+      throw err;
+    }
   }
 }

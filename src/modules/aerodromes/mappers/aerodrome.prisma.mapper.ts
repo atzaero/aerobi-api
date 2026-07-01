@@ -1,68 +1,119 @@
 import type { Prisma } from '@/generated/prisma/client';
 
 import { CreateAerodromeDTO } from '../dtos/create-aerodrome.dto';
+import { AerodromeStatusField } from '../dtos/set-aerodrome-status.dto';
 import { UpdateAerodromeDTO } from '../dtos/update-aerodrome.dto';
 
+/**
+ * Normaliza a observação pública: string vazia/ausente vira `null` (campo
+ * limpo). Centraliza a regra do web (`value && length > 0 ? value : null`) para
+ * que create, update completo e o endpoint dedicado gravem o mesmo valor.
+ */
+export function normalizeObservation(
+  value: string | null | undefined,
+): string | null {
+  return value && value.length > 0 ? value : null;
+}
+
+/**
+ * Monta o input de criação. `createdBy` é o ator autenticado (auditoria com ator
+ * real). `isView` nasce **`false`** — o aeródromo é publicado só depois, via
+ * update/set-status — espelhando o `is_view: false` hardcoded do web. Os defaults
+ * dos toggles (`isOpen` true; `weatherStationDisplay`/`lit`/`fueling`/
+ * `construction` false) também seguem o web. A UF **não** é persistida (derivada
+ * do grupo no read).
+ */
 export function buildAerodromeCreateInput(
   dto: CreateAerodromeDTO,
+  createdBy: string,
 ): Prisma.AerodromeCreateInput {
-  const { groupId, ...fields } = dto;
   return {
-    ...fields,
-    group: { connect: { id: groupId } },
+    group: { connect: { id: dto.groupId } },
+    icao: dto.icao,
+    name: dto.name,
+    ciad: dto.ciad ?? null,
+    municipality: dto.municipality ?? null,
+    emergencyPhone: dto.emergencyPhone ?? null,
+    latitude: dto.latitude,
+    longitude: dto.longitude,
+    altitude: dto.altitude,
+    operation: dto.operation ?? null,
+    weatherStationCode: dto.weatherStationCode ?? null,
+    designation: dto.designation ?? null,
+    length: dto.length ?? null,
+    width: dto.width ?? null,
+    resistance: dto.resistance ?? null,
+    surface: dto.surface ?? null,
+    observation: normalizeObservation(dto.observation),
+    construction: dto.construction ?? false,
+    isOpen: dto.isOpen ?? true,
+    isView: false,
+    weatherStationDisplay: dto.weatherStationDisplay ?? false,
+    lit: dto.lit ?? false,
+    fueling: dto.fueling ?? false,
+    createdBy,
   };
 }
 
-export function patchAerodromeToPrisma(
+/**
+ * Monta o input da edição completa (full edit). Espelha o update do web, que
+ * reenvia todos os campos: os opcionais ausentes viram `null` (não são
+ * preservados). O `group` reconecta ao `dto.groupId` — a checagem de escopo
+ * (COORDINATOR não move entre grupos) é responsabilidade do service, executada
+ * **antes** deste builder. A UF continua derivada do grupo.
+ */
+export function buildAerodromeUpdateInput(
   dto: UpdateAerodromeDTO,
+  updatedBy: string,
 ): Prisma.AerodromeUpdateInput {
-  const data: Prisma.AerodromeUpdateInput = {};
-  if (dto.icao !== undefined) data.icao = dto.icao;
-  if (dto.ciad !== undefined) data.ciad = dto.ciad;
-  if (dto.designation !== undefined) data.designation = dto.designation;
-  if (dto.length !== undefined) data.length = dto.length;
-  if (dto.width !== undefined) data.width = dto.width;
-  if (dto.resistance !== undefined) data.resistance = dto.resistance;
-  if (dto.surface !== undefined) data.surface = dto.surface;
-  if (dto.altitude !== undefined) data.altitude = dto.altitude;
-  if (dto.name !== undefined) data.name = dto.name;
-  if (dto.municipality !== undefined) data.municipality = dto.municipality;
-  if (dto.latitude !== undefined) data.latitude = dto.latitude;
-  if (dto.longitude !== undefined) data.longitude = dto.longitude;
-  if (dto.latitudeFormatted !== undefined) {
-    data.latitudeFormatted = dto.latitudeFormatted;
-  }
-  if (dto.longitudeFormatted !== undefined) {
-    data.longitudeFormatted = dto.longitudeFormatted;
-  }
-  if (dto.operation !== undefined) data.operation = dto.operation;
-  if (dto.lit !== undefined) data.lit = dto.lit;
-  if (dto.fueling !== undefined) data.fueling = dto.fueling;
-  if (dto.observation !== undefined) data.observation = dto.observation;
-  if (dto.construction !== undefined) data.construction = dto.construction;
-  if (dto.isOpen !== undefined) data.isOpen = dto.isOpen;
-  if (dto.isView !== undefined) data.isView = dto.isView;
-  if (dto.weatherStationCode !== undefined) {
-    data.weatherStationCode = dto.weatherStationCode;
-  }
-  if (dto.weatherStationDisplay !== undefined) {
-    data.weatherStationDisplay = dto.weatherStationDisplay;
-  }
-  if (dto.fileType !== undefined) data.fileType = dto.fileType;
-  if (dto.imgUrl !== undefined) data.imgUrl = dto.imgUrl;
-  if (dto.kmlUrl !== undefined) data.kmlUrl = dto.kmlUrl;
-  if (dto.registrationOrdinanceUrl !== undefined) {
-    data.registrationOrdinanceUrl = dto.registrationOrdinanceUrl;
-  }
-  if (dto.planOrdinanceUrl !== undefined) {
-    data.planOrdinanceUrl = dto.planOrdinanceUrl;
-  }
-  if (dto.grantTermUrl !== undefined) data.grantTermUrl = dto.grantTermUrl;
-  if (dto.aeronauticalStudyUrl !== undefined) {
-    data.aeronauticalStudyUrl = dto.aeronauticalStudyUrl;
-  }
-  if (dto.weatherUrl !== undefined) data.weatherUrl = dto.weatherUrl;
-  if (dto.windUrl !== undefined) data.windUrl = dto.windUrl;
-  if (dto.videoUrl !== undefined) data.videoUrl = dto.videoUrl;
-  return data;
+  return {
+    group: { connect: { id: dto.groupId } },
+    icao: dto.icao,
+    name: dto.name,
+    ciad: dto.ciad ?? null,
+    municipality: dto.municipality ?? null,
+    emergencyPhone: dto.emergencyPhone ?? null,
+    latitude: dto.latitude,
+    longitude: dto.longitude,
+    altitude: dto.altitude,
+    operation: dto.operation ?? null,
+    weatherStationCode: dto.weatherStationCode ?? null,
+    designation: dto.designation ?? null,
+    length: dto.length ?? null,
+    width: dto.width ?? null,
+    resistance: dto.resistance ?? null,
+    surface: dto.surface ?? null,
+    observation: normalizeObservation(dto.observation),
+    construction: dto.construction ?? false,
+    isOpen: dto.isOpen ?? true,
+    isView: dto.isView ?? false,
+    weatherStationDisplay: dto.weatherStationDisplay ?? false,
+    lit: dto.lit ?? false,
+    fueling: dto.fueling ?? false,
+    updatedBy,
+  };
+}
+
+/**
+ * Patch de alternância de um único campo de status (set-status). Atualiza só o
+ * campo informado + a auditoria, espelhando o `ref.update({ [field]: value })`
+ * do web.
+ */
+export function buildAerodromeStatusPatch(
+  field: AerodromeStatusField,
+  value: boolean,
+  updatedBy: string,
+): Prisma.AerodromeUpdateInput {
+  return { [field]: value, updatedBy };
+}
+
+/**
+ * Patch de atualização apenas da observação. `null` limpa o campo (vazio→null é
+ * resolvido no service, por paridade com o transform do web).
+ */
+export function buildAerodromeObservationPatch(
+  observation: string | null,
+  updatedBy: string,
+): Prisma.AerodromeUpdateInput {
+  return { observation, updatedBy };
 }
