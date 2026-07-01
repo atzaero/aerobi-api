@@ -13,7 +13,7 @@ Atualizado após remover da `TechnicalVisit` a cópia de dados do aeródromo (IC
 | `LandingRequest` | `uf`, `icao`, `answer` | — |
 | `TechnicalVisit` | **Removidos:** pista + ICAO/CIAD + `aerodrome_name` + `city` + `visitor_name` | Visitante: `visit_by` (uid) → `users`; cadastro do aeródromo via join |
 | `PilotLanding` | — | `local_icao` / `local_name` vs `aerodrome_id` opcional |
-| `AerodromeFeedback` | `icao` | — |
+| `Feedback` | `icao` | — |
 | `Geojson` | `legacy_*` | Metadados espelham doc Firestore; vínculo é `aerodrome_id` |
 
 ## `PilotLanding`
@@ -33,7 +33,7 @@ Atualizado após remover da `TechnicalVisit` a cópia de dados do aeródromo (IC
 - Campos como `kind`, paths de storage espelham o documento Firestore; a **fonte de verdade estrutural** é `aerodrome_id` (1:1).
 - **`geo_json` opcional** quando `status = ERROR` — alinhado ao legado sem payload inline.
 
-## `AerodromeFeedback`
+## `Feedback`
 
 - Rate limit: `(session_hash, aerodrome_id, feedback_date)` — sem `icao` duplicado.
 

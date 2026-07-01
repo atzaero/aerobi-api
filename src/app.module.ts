@@ -4,7 +4,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
 
 import { ErrorMessageModule } from '@/common/error-messages/error-message.module';
-import { AerodromeFeedbacksModule } from '@/modules/aerodrome-feedbacks/aerodrome-feedbacks.module';
+import { FeedbacksModule } from '@/modules/feedbacks/feedbacks.module';
 import { AuthModule } from '@/modules/auth/auth.module';
 import { ConformityModule } from '@/modules/conformity/conformity.module';
 import { GeojsonsModule } from '@/modules/geojsons/geojsons.module';
@@ -49,7 +49,7 @@ import { PrismaModule } from '@/prisma/prisma.module';
     LandingRequestsModule,
     TechnicalVisitsModule,
     GeojsonsModule,
-    AerodromeFeedbacksModule,
+    FeedbacksModule,
     PilotLandingsModule,
     TokensModule,
     AuthModule,

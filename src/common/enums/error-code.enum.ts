@@ -121,7 +121,7 @@ export enum ErrorCode {
   STORAGE_DOWNLOAD_FAILED = 'STORAGE_DOWNLOAD_FAILED',
 
   // ---------------------------------------------------------------------------
-  // Feedbacks de aeródromo (módulo `aerodrome-feedbacks`)
+  // Feedbacks de aeródromo (módulo `feedbacks`)
   // ---------------------------------------------------------------------------
 
   /**
