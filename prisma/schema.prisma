@@ -220,12 +220,12 @@ enum LandingRequestStatus {
   REJECTED
 }
 
-enum AerodromeGeojsonStatus {
+enum GeojsonStatus {
   READY
   ERROR
 }
 
-enum AerodromeGeojsonKind {
+enum GeojsonKind {
   AERODROME_MAP
 }
 
@@ -310,7 +310,7 @@ model Aerodrome {
   landingRequests LandingRequest[]
   technicalVisits TechnicalVisit[]
   /// No máximo um GeoJSON operacional por aeródromo (1:1).
-  geojson         AerodromeGeojson?
+  geojson         Geojson?
   feedbacks       AerodromeFeedback[]
   pilotLandings   PilotLanding[]
 
@@ -584,7 +584,7 @@ model TechnicalVisit {
 }
 
 /// GeoJSON operacional inline (1:1 com o aeródromo; equivale a um doc na coleção `geojsons` no Firestore).
-model AerodromeGeojson {
+model Geojson {
   id String @id @default(uuid()) @db.Uuid
 
   /// Um registro por aeródromo operacional.
@@ -592,8 +592,8 @@ model AerodromeGeojson {
   aerodrome   Aerodrome @relation(fields: [aerodromeId], references: [id], onDelete: Restrict)
 
   /// Mantido para compatibilidade conceitual (ex.: `aerodrome_map`); o vínculo é único via `aerodrome_id`.
-  kind   AerodromeGeojsonKind
-  status AerodromeGeojsonStatus
+  kind   GeojsonKind
+  status GeojsonStatus
 
   /// GeoJSON RFC 7946 (jsonb). Opcional quando `status` = ERROR sem payload inline.
   geoJson      Json?               @map("geo_json")
@@ -621,7 +621,7 @@ model AerodromeGeojson {
   deletedBy String?   @map("deleted_by")
 
   @@index([status])
-  @@map("aerodrome_geojsons")
+  @@map("geojsons")
 }
 
 /// Avaliação pública (subcoleção `feedbacks` no Firestore).

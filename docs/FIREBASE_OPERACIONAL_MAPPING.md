@@ -28,7 +28,7 @@ A **fonte de verdade** do esquema relacional é [`schema.prisma`](../prisma/sche
 | `.../technicalVisit` | `TechnicalVisit` | `technical_visits` |
 | `landings` (raiz) | `PilotLanding` | `pilot_landings` |
 | `.../aerodromes/.../feedbacks` | `AerodromeFeedback` | `aerodrome_feedbacks` |
-| `geojsons` (raiz) | `AerodromeGeojson` | `aerodrome_geojsons` |
+| `geojsons` (raiz) | `Geojson` | `geojsons` |
 
 Não modelado como tabela operacional: `stateList/list`, `PI`, `admID`, coleção `users` (proposta futura).
 
@@ -38,7 +38,7 @@ Não modelado como tabela operacional: `stateList/list`, `PI`, `admID`, coleçã
 - **`LandingRequest`:** sem `uf`, `icao`, `answer`; só `status` (`PENDING` / `APPROVED` / `REJECTED`). ICAO via `aerodrome_id`.
 - **`reviewed_by` / `reviewed_at`:** no alvo, **uid** em coluna (`reviewed_by`), não JSON com nome/e-mail/role. O legado pode trazer objeto em `responseby`; na importação extrair o uid (ex. `responseby.uid`). Nome e perfil vêm da futura tabela `users` — mesma linha de `visit_by` em `TechnicalVisit`.
 - **`AerodromeFeedback`:** sem `icao`; rate limit único em `(session_hash, aerodrome_id, feedback_date)`. Ver também `feedback_date` vs `created_at` em [`OPERACIONAL_ANALISE_REDUNDANCIA.md`](./OPERACIONAL_ANALISE_REDUNDANCIA.md).
-- **`AerodromeGeojson`:** sem `legacy_state_id` / `legacy_icao`; `geo_json` opcional (`jsonb`) para linhas `ERROR`.
+- **`Geojson`:** sem `legacy_state_id` / `legacy_icao`; `geo_json` opcional (`jsonb`) para linhas `ERROR`.
 - **`PilotLanding`:** `landing_at` (`timestamptz`), não `landing_date` string.
 - **Auditoria “quem criou”:** coluna `created_by`, campo Prisma `createdBy`.
 - **`TechnicalVisit`:** sem cópia de ICAO/CIAD/pista nem `aerodrome_name`/`city`; visitante = `visit_by` (uid) → futura tabela `users` — não `visitor_name`. Legado: `VISITORNAME` no Firestore até a API gravar uid.
