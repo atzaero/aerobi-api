@@ -119,4 +119,15 @@ export enum ErrorCode {
 
   /** Falha ao baixar objeto do object storage. */
   STORAGE_DOWNLOAD_FAILED = 'STORAGE_DOWNLOAD_FAILED',
+
+  // ---------------------------------------------------------------------------
+  // Feedbacks de aeródromo (módulo `aerodrome-feedbacks`)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Limite diário de avaliação atingido: já existe um feedback para a mesma
+   * sessão anônima e aeródromo no dia (violação do `@@unique([sessionHash,
+   * aerodromeId, feedbackDate])`). Mapeado para 409.
+   */
+  FEEDBACK_DAILY_LIMIT_REACHED = 'FEEDBACK_DAILY_LIMIT_REACHED',
 }

@@ -1,18 +1,15 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsOptional, IsUUID } from 'class-validator';
-
-import { FeedbackRating } from '@/generated/prisma/client';
+import { IntersectionType } from '@nestjs/swagger';
 
 import { BasePaginationQueryDTO } from '@/common/dtos/base-pagination-query.dto';
 
-export class ListAerodromeFeedbacksQueryDTO extends BasePaginationQueryDTO {
-  @ApiPropertyOptional({ format: 'uuid' })
-  @IsOptional()
-  @IsUUID('4')
-  aerodromeId?: string;
+import { AerodromeFeedbackFilterQueryDTO } from './aerodrome-feedback-filter-query.dto';
 
-  @ApiPropertyOptional({ enum: FeedbackRating })
-  @IsOptional()
-  @IsEnum(FeedbackRating)
-  rating?: FeedbackRating;
-}
+/**
+ * Query de listagem interna: paginação (`page`/`limit`) + os filtros
+ * compartilhados de feedback. `IntersectionType` combina os dois DTOs sem
+ * duplicar campos.
+ */
+export class ListAerodromeFeedbacksQueryDTO extends IntersectionType(
+  BasePaginationQueryDTO,
+  AerodromeFeedbackFilterQueryDTO,
+) {}

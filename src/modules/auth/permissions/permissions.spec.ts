@@ -108,6 +108,7 @@ const EXPECTED: Record<
     list: [UserRole.ADMIN, UserRole.COORDINATOR],
     read: [UserRole.ADMIN, UserRole.COORDINATOR],
     delete: [UserRole.ADMIN, UserRole.COORDINATOR],
+    export: [UserRole.ADMIN, UserRole.COORDINATOR],
   },
   rab: {
     read: [UserRole.ADMIN, UserRole.COORDINATOR, UserRole.OPERATOR],

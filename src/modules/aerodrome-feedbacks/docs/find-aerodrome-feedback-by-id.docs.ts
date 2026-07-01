@@ -1,18 +1,31 @@
 import { applyDecorators } from '@nestjs/common';
 import {
+  ApiBearerAuth,
+  ApiForbiddenResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
-  ApiSecurity,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
 import { AerodromeFeedbackResponseDTO } from '../dtos/aerodrome-feedback-response.dto';
 
 export function FindAerodromeFeedbackByIdDocs() {
   return applyDecorators(
-    ApiSecurity('api_key'),
-    ApiOperation({ summary: 'Busca um(a) AerodromeFeedback por id' }),
-    ApiParam({ name: 'aerodromeFeedbackId', description: 'Identificador' }),
+    ApiBearerAuth(),
+    ApiOperation({
+      summary: 'Busca um feedback por id (moderação)',
+      description:
+        'Requer `feedback:read`. Escopo por grupo: ADMIN acessa qualquer ' +
+        'feedback; COORDINATOR só os de aeródromos do próprio grupo.',
+    }),
+    ApiParam({ name: 'id', format: 'uuid', description: 'Identificador' }),
     ApiOkResponse({ type: AerodromeFeedbackResponseDTO }),
+    ApiUnauthorizedResponse({ description: 'Token ausente ou inválido.' }),
+    ApiForbiddenResponse({ description: 'Sem permissão `feedback:read`.' }),
+    ApiNotFoundResponse({
+      description: 'Inexistente ou fora do escopo do ator.',
+    }),
   );
 }

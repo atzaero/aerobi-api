@@ -15,13 +15,13 @@ describe('FindAerodromeFeedbackByIdController', () => {
     } as unknown as FindAerodromeFeedbackByIdService);
   });
 
-  it('id do param', async () => {
+  it('usa o id do param', async () => {
     const params: AerodromeFeedbackParamDTO = {
-      aerodromeFeedbackId: '55555555-5555-4555-8555-555555555555',
+      id: '55555555-5555-4555-8555-555555555555',
     };
     const row = new AerodromeFeedbackResponseDTO();
     execute.mockResolvedValue(row);
     await expect(controller.handle(params)).resolves.toBe(row);
-    expect(execute).toHaveBeenCalledWith({ id: params.aerodromeFeedbackId });
+    expect(execute).toHaveBeenCalledWith({ id: params.id });
   });
 });

@@ -17,12 +17,11 @@ describe('CreateAerodromeFeedbackController', () => {
     } as unknown as CreateAerodromeFeedbackService);
   });
 
-  it('delega', async () => {
+  it('delega ao service', async () => {
     const dto: CreateAerodromeFeedbackDTO = {
       aerodromeId: '22222222-2222-4222-8222-222222222222',
       rating: FeedbackRating.POSITIVE,
       sessionHash: 'h',
-      feedbackDate: new Date('2024-01-01T00:00:00.000Z'),
     };
     const row = new AerodromeFeedbackResponseDTO();
     execute.mockResolvedValue(row);
