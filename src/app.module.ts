@@ -7,7 +7,7 @@ import { ErrorMessageModule } from '@/common/error-messages/error-message.module
 import { AerodromeFeedbacksModule } from '@/modules/aerodrome-feedbacks/aerodrome-feedbacks.module';
 import { AuthModule } from '@/modules/auth/auth.module';
 import { ConformityModule } from '@/modules/conformity/conformity.module';
-import { AerodromeGeojsonsModule } from '@/modules/aerodrome-geojsons/aerodrome-geojsons.module';
+import { GeojsonsModule } from '@/modules/geojsons/geojsons.module';
 import { GroupsModule } from '@/modules/groups/groups.module';
 import { AiswebModule } from '@/modules/aisweb/aisweb.module';
 import { AnacModule } from '@/modules/anac/anac.module';
@@ -48,7 +48,7 @@ import { PrismaModule } from '@/prisma/prisma.module';
     AerodromesModule,
     LandingRequestsModule,
     TechnicalVisitsModule,
-    AerodromeGeojsonsModule,
+    GeojsonsModule,
     AerodromeFeedbacksModule,
     PilotLandingsModule,
     TokensModule,

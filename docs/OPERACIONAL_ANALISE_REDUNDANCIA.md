@@ -14,7 +14,7 @@ Atualizado após remover da `TechnicalVisit` a cópia de dados do aeródromo (IC
 | `TechnicalVisit` | **Removidos:** pista + ICAO/CIAD + `aerodrome_name` + `city` + `visitor_name` | Visitante: `visit_by` (uid) → `users`; cadastro do aeródromo via join |
 | `PilotLanding` | — | `local_icao` / `local_name` vs `aerodrome_id` opcional |
 | `AerodromeFeedback` | `icao` | — |
-| `AerodromeGeojson` | `legacy_*` | Metadados espelham doc Firestore; vínculo é `aerodrome_id` |
+| `Geojson` | `legacy_*` | Metadados espelham doc Firestore; vínculo é `aerodrome_id` |
 
 ## `PilotLanding`
 
@@ -28,7 +28,7 @@ Atualizado após remover da `TechnicalVisit` a cópia de dados do aeródromo (IC
 - **Agora:** inspeção + `visit_by` + `modifier_users` + FK. Nome do visitante via `users`, não coluna duplicada.
 - **Trade-off:** PDFs/relatórios que precisem do ICAO “como na visita” devem buscar no aeródromo **atual** ou, no futuro, introduzir colunas opcionais de snapshot se o produto exigir.
 
-## `AerodromeGeojson`
+## `Geojson`
 
 - Campos como `kind`, paths de storage espelham o documento Firestore; a **fonte de verdade estrutural** é `aerodrome_id` (1:1).
 - **`geo_json` opcional** quando `status = ERROR` — alinhado ao legado sem payload inline.
