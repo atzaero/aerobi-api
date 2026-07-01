@@ -1,3 +1,10 @@
+# [2.6.0-beta.40](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.39...v2.6.0-beta.40) (2026-07-01)
+
+
+### Features
+
+* **aerodrome-feedbacks:** paridade com aerobi-web — separa público da moderação interna ([9f873c2](https://github.com/atzaero/aerobi-api/commit/9f873c272a9d4a0d23d7c02865c457a3555795cc)), closes [#370](https://github.com/atzaero/aerobi-api/issues/370)
+
 # [2.6.0-beta.39](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.38...v2.6.0-beta.39) (2026-07-01)
 
 
