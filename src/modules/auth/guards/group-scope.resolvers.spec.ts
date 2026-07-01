@@ -3,7 +3,7 @@ import type { PrismaService } from '@/prisma/prisma.service';
 import { groupScopeResolvers } from './group-scope.resolvers';
 import { GroupScopeSubject } from './group-scope.subject';
 
-describe('groupScopeResolvers[AERODROME_FEEDBACK]', () => {
+describe('groupScopeResolvers[FEEDBACK]', () => {
   const id = '11111111-1111-4111-8111-111111111111';
   let findFirst: jest.Mock;
   let prisma: PrismaService;
@@ -11,12 +11,12 @@ describe('groupScopeResolvers[AERODROME_FEEDBACK]', () => {
   beforeEach(() => {
     findFirst = jest.fn();
     prisma = {
-      aerodromeFeedback: { findFirst },
+      feedback: { findFirst },
     } as unknown as PrismaService;
   });
 
   const resolve = () =>
-    groupScopeResolvers[GroupScopeSubject.AERODROME_FEEDBACK](prisma, id);
+    groupScopeResolvers[GroupScopeSubject.FEEDBACK](prisma, id);
 
   it('resolve o groupId via FK aerodrome, filtrando ativos', async () => {
     findFirst.mockResolvedValue({ aerodrome: { groupId: 'g-7' } });

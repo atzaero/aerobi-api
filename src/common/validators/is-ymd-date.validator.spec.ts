@@ -6,7 +6,7 @@ import {
   isValidYmdDate,
 } from './is-ymd-date.validator';
 
-/** Espelha o uso real (`AerodromeFeedbackFilterQueryDTO`): campos opcionais. */
+/** Espelha o uso real (`FeedbackFilterQueryDTO`): campos opcionais. */
 class DateRange {
   @IsOptional()
   @IsYmdDate()

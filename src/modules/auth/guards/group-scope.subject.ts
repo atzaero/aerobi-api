@@ -12,8 +12,8 @@ export const GroupScopeSubject = {
   AERODROME: 'aerodrome',
   /** `LandingRequest` — resolve o `groupId` via FK para o aeródromo. */
   LANDING_REQUEST: 'landingRequest',
-  /** `AerodromeFeedback` — resolve o `groupId` via FK para o aeródromo. */
-  AERODROME_FEEDBACK: 'aerodromeFeedback',
+  /** `Feedback` — resolve o `groupId` via FK para o aeródromo. */
+  FEEDBACK: 'feedback',
 } as const;
 
 export type GroupScopeSubject =

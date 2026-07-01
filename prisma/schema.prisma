@@ -311,7 +311,7 @@ model Aerodrome {
   technicalVisits TechnicalVisit[]
   /// No máximo um GeoJSON operacional por aeródromo (1:1).
   geojson         Geojson?
-  feedbacks       AerodromeFeedback[]
+  feedbacks       Feedback[]
   pilotLandings   PilotLanding[]
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
@@ -625,7 +625,7 @@ model Geojson {
 }
 
 /// Avaliação pública (subcoleção `feedbacks` no Firestore).
-model AerodromeFeedback {
+model Feedback {
   id          String    @id @default(uuid()) @db.Uuid
   aerodromeId String    @map("aerodrome_id") @db.Uuid
   aerodrome   Aerodrome @relation(fields: [aerodromeId], references: [id], onDelete: Restrict)
@@ -645,7 +645,7 @@ model AerodromeFeedback {
 
   @@unique([sessionHash, aerodromeId, feedbackDate])
   @@index([aerodromeId, feedbackDate])
-  @@map("aerodrome_feedbacks")
+  @@map("feedbacks")
 }
 
 /// Tipos de token genérico usados pelo módulo `tokens` (email verification,
