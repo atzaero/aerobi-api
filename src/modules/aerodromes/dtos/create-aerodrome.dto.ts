@@ -45,12 +45,15 @@ type RunwayConditionInput = {
  * quando o aeródromo **não** está em construção.
  */
 export class CreateAerodromeDTO {
-  @ApiProperty({ format: 'uuid' })
+  @ApiProperty({
+    format: 'uuid',
+    example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+  })
   @IsUUID('4')
   groupId!: string;
 
   @ApiProperty({
-    example: 'SDXX',
+    example: 'SBSP',
     description:
       'ICAO — 4 caracteres alfanuméricos (normalizado em maiúsculas)',
   })
@@ -64,21 +67,21 @@ export class CreateAerodromeDTO {
   })
   icao!: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: 'Aeroporto de Congonhas' })
   @TrimString()
   @IsString()
   @IsNotEmpty({ message: 'Nome é obrigatório' })
   @MaxLength(500)
   name!: string;
 
-  @ApiPropertyOptional({ maxLength: 6 })
+  @ApiPropertyOptional({ maxLength: 6, example: 'SP0001' })
   @IsOptional()
   @TrimOptionalString()
   @IsString()
   @MaxLength(6, { message: 'CIAD deve ter até 6 caracteres' })
   ciad?: string;
 
-  @ApiPropertyOptional({ maxLength: 255 })
+  @ApiPropertyOptional({ maxLength: 255, example: 'São Paulo' })
   @IsOptional()
   @TrimOptionalString()
   @IsString()
@@ -86,6 +89,9 @@ export class CreateAerodromeDTO {
   municipality?: string;
 
   @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    example: '+5541999724341',
     description: 'Telefone de emergência em E.164 (ex.: +55 11 99999-9999)',
   })
   @IsOptional()
@@ -108,14 +114,17 @@ export class CreateAerodromeDTO {
   @IsDmsCoordinate({ message: 'Longitude inválida (ex.: 041°36\'16.91"W)' })
   longitude!: string;
 
-  @ApiProperty({ description: 'Altitude em pés — apenas dígitos' })
+  @ApiProperty({
+    example: '260',
+    description: 'Altitude em pés — apenas dígitos',
+  })
   @TrimString()
   @IsString()
   @IsNotEmpty({ message: 'Altitude é obrigatória' })
   @Matches(/^\d+$/, { message: 'Altitude aceita apenas números' })
   altitude!: string;
 
-  @ApiPropertyOptional({ maxLength: 255 })
+  @ApiPropertyOptional({ maxLength: 255, example: 'VFR' })
   @IsOptional()
   @TrimOptionalString()
   @IsString()
@@ -123,6 +132,7 @@ export class CreateAerodromeDTO {
   operation?: string;
 
   @ApiPropertyOptional({
+    example: '9133',
     description: 'Código da estação meteorológica — apenas dígitos',
   })
   @IsOptional()
@@ -131,12 +141,13 @@ export class CreateAerodromeDTO {
   @Matches(/^\d+$/, { message: 'Código da estação aceita apenas números' })
   weatherStationCode?: string;
 
-  @ApiPropertyOptional({ default: false })
+  @ApiPropertyOptional({ default: false, example: false })
   @IsOptional()
   @IsBoolean()
   construction?: boolean;
 
   @ApiPropertyOptional({
+    example: '02/20',
     description: 'Designação da pista (obrigatória se não em construção)',
   })
   @ValidateIf((o: RunwayConditionInput) => o.construction !== true)
@@ -149,6 +160,7 @@ export class CreateAerodromeDTO {
   designation?: string;
 
   @ApiPropertyOptional({
+    example: '1200',
     description:
       'Comprimento da pista em metros — apenas dígitos (obrigatório se não em construção)',
   })
@@ -164,6 +176,7 @@ export class CreateAerodromeDTO {
   length?: string;
 
   @ApiPropertyOptional({
+    example: '20',
     description:
       'Largura da pista em metros — apenas dígitos (obrigatória se não em construção)',
   })
@@ -179,6 +192,7 @@ export class CreateAerodromeDTO {
   width?: string;
 
   @ApiPropertyOptional({
+    example: '5700Kg/1.25MPa',
     description: 'Resistência da pista (obrigatória se não em construção)',
   })
   @ValidateIf((o: RunwayConditionInput) => o.construction !== true)
@@ -191,6 +205,7 @@ export class CreateAerodromeDTO {
   resistance?: string;
 
   @ApiPropertyOptional({
+    example: 'Asfalto',
     description:
       'Tipo de superfície da pista (obrigatório se não em construção)',
   })
@@ -205,28 +220,32 @@ export class CreateAerodromeDTO {
 
   @ApiPropertyOptional({
     default: true,
+    example: true,
     description: 'Aeródromo aberto (default true)',
   })
   @IsOptional()
   @IsBoolean()
   isOpen?: boolean;
 
-  @ApiPropertyOptional({ default: false })
+  @ApiPropertyOptional({ default: false, example: false })
   @IsOptional()
   @IsBoolean()
   weatherStationDisplay?: boolean;
 
-  @ApiPropertyOptional({ default: false })
+  @ApiPropertyOptional({ default: false, example: true })
   @IsOptional()
   @IsBoolean()
   lit?: boolean;
 
-  @ApiPropertyOptional({ default: false })
+  @ApiPropertyOptional({ default: false, example: false })
   @IsOptional()
   @IsBoolean()
   fueling?: boolean;
 
-  @ApiPropertyOptional({ maxLength: AERODROME_OBSERVATION_MAX_LENGTH })
+  @ApiPropertyOptional({
+    maxLength: AERODROME_OBSERVATION_MAX_LENGTH,
+    example: 'Atenção à linha elétrica na aproximação 20',
+  })
   @IsOptional()
   @TrimOptionalString()
   @IsString()

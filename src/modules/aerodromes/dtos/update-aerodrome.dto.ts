@@ -13,6 +13,7 @@ import { CreateAerodromeDTO } from './create-aerodrome.dto';
 export class UpdateAerodromeDTO extends CreateAerodromeDTO {
   @ApiPropertyOptional({
     default: false,
+    example: true,
     description:
       'Visível publicamente. Atenção: por ser edição completa, **omitir este campo o define como `false`** (despublica). Reenvie o valor atual para preservar a publicação. Para alternar só a visibilidade sem reenviar tudo, use `PATCH /aerodromes/:id/status`.',
   })
