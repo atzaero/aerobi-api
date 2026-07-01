@@ -1,3 +1,11 @@
+# [2.6.0-beta.39](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.38...v2.6.0-beta.39) (2026-07-01)
+
+
+### Features
+
+* **aerodromes:** auth JWT + escopo, paridade CRUD, set-status e observação ([#368](https://github.com/atzaero/aerobi-api/issues/368)) ([012add9](https://github.com/atzaero/aerobi-api/commit/012add9e42ccf7d6e16b29d1446b838563f1df0a)), closes [#353](https://github.com/atzaero/aerobi-api/issues/353) [#269](https://github.com/atzaero/aerobi-api/issues/269)
+* **aerodromes:** PR2/2 — export CSV ([#368](https://github.com/atzaero/aerobi-api/issues/368)) ([77061b5](https://github.com/atzaero/aerobi-api/commit/77061b51f36d18bb75a10127b191724e655926fd))
+
 # [2.6.0-beta.38](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.37...v2.6.0-beta.38) (2026-06-30)
 
 
