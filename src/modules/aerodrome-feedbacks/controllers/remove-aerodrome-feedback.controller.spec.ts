@@ -1,3 +1,6 @@
+import { UserRole } from '@/generated/prisma/client';
+import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
+
 import { AerodromeFeedbackParamDTO } from '../dtos/aerodrome-feedback-param.dto';
 import { AerodromeFeedbackResponseDTO } from '../dtos/aerodrome-feedback-response.dto';
 import type { RemoveAerodromeFeedbackService } from '../services/remove-aerodrome-feedback.service';
@@ -8,6 +11,12 @@ describe('RemoveAerodromeFeedbackController', () => {
   let controller: RemoveAerodromeFeedbackController;
   let execute: jest.Mock;
 
+  const actor: AuthenticatedUser = {
+    id: 'actor-9',
+    email: 'a@a.com',
+    role: UserRole.COORDINATOR,
+  };
+
   beforeEach(() => {
     execute = jest.fn();
     controller = new RemoveAerodromeFeedbackController({
@@ -15,16 +24,16 @@ describe('RemoveAerodromeFeedbackController', () => {
     } as unknown as RemoveAerodromeFeedbackService);
   });
 
-  it('deletedBy system', async () => {
+  it('usa o id do param e o ator autenticado como deletedBy', async () => {
     const params: AerodromeFeedbackParamDTO = {
-      aerodromeFeedbackId: '55555555-5555-4555-8555-555555555555',
+      id: '55555555-5555-4555-8555-555555555555',
     };
     const row = new AerodromeFeedbackResponseDTO();
     execute.mockResolvedValue(row);
-    await expect(controller.handle(params)).resolves.toBe(row);
+    await expect(controller.handle(params, actor)).resolves.toBe(row);
     expect(execute).toHaveBeenCalledWith({
-      id: params.aerodromeFeedbackId,
-      deletedBy: 'system',
+      id: params.id,
+      deletedBy: actor.id,
     });
   });
 });

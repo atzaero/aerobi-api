@@ -126,4 +126,11 @@ export const messages: Record<ErrorCode, { message: string }> = {
   [ErrorCode.STORAGE_DOWNLOAD_FAILED]: {
     message: 'Falha ao baixar o arquivo do armazenamento: [ERROR_MESSAGE].',
   },
+
+  // ---------------------------------------------------------------------------
+  // Feedbacks de aeródromo
+  // ---------------------------------------------------------------------------
+  [ErrorCode.FEEDBACK_DAILY_LIMIT_REACHED]: {
+    message: 'Já existe avaliação para esta sessão hoje.',
+  },
 } as const;

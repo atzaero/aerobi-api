@@ -190,11 +190,13 @@ export const PERMISSIONS: Record<
   },
   // Avaliação pública do aeródromo: o **envio** é público/anônimo e o **resumo**
   // é leitura pública; nenhum dos dois passa por esta matriz. O RBAC cobre só a
-  // **moderação** interna — admin/coordinator listam e removem (soft delete).
+  // **moderação** interna — admin/coordinator listam, exportam e removem (soft
+  // delete). `export` espelha o `list` (coordinator exporta só o próprio grupo).
   feedback: {
     list: [UserRole.ADMIN, UserRole.COORDINATOR],
     read: [UserRole.ADMIN, UserRole.COORDINATOR],
     delete: [UserRole.ADMIN, UserRole.COORDINATOR],
+    export: [UserRole.ADMIN, UserRole.COORDINATOR],
   },
   // Consulta ao RAB (ANAC) de aeronaves: operator consulta; coordinator/admin
   // acima.

@@ -1,7 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
 import {
-  IsDate,
   IsEnum,
   IsNotEmpty,
   IsOptional,
@@ -10,9 +8,14 @@ import {
   MaxLength,
 } from 'class-validator';
 
+import { TrimOptionalString, TrimString } from '@/common/transform';
 import { FeedbackRating } from '@/generated/prisma/client';
 
-/** Body POST /aerodrome-feedbacks */
+/**
+ * Body do `POST /aerodrome-feedbacks` (envio público/anônimo). `feedbackDate`
+ * (dia UTC do rate-limit) e `createdBy` são **derivados no servidor** — o
+ * cliente não os informa (paridade com o envio público do `aerobi-web`).
+ */
 export class CreateAerodromeFeedbackDTO {
   @ApiProperty({
     description: 'Aeródromo avaliado',
@@ -25,10 +28,11 @@ export class CreateAerodromeFeedbackDTO {
   @IsEnum(FeedbackRating)
   rating!: FeedbackRating;
 
-  @ApiPropertyOptional({ description: 'Comentário livre', maxLength: 10000 })
+  @ApiPropertyOptional({ description: 'Comentário livre', maxLength: 500 })
   @IsOptional()
+  @TrimOptionalString()
   @IsString()
-  @MaxLength(10000)
+  @MaxLength(500)
   comment?: string;
 
   @ApiProperty({
@@ -36,23 +40,9 @@ export class CreateAerodromeFeedbackDTO {
       'Identificador de sessão anonimizada (único por dia/aeródromo)',
     example: 'sess-a1b2c3',
   })
+  @TrimString()
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
   sessionHash!: string;
-
-  @ApiProperty({
-    description:
-      'Data da avaliação (timezone local convertido a Date ISO midnigh UTC)',
-    example: '2024-06-01T00:00:00.000Z',
-  })
-  @Type(() => Date)
-  @IsDate()
-  feedbackDate!: Date;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  createdBy?: string;
 }

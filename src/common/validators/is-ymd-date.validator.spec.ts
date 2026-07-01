@@ -1,4 +1,51 @@
-import { isValidYmdDate } from './is-ymd-date.validator';
+import { IsOptional, validateSync } from 'class-validator';
+
+import {
+  IsYmdDate,
+  IsYmdDateOnOrAfter,
+  isValidYmdDate,
+} from './is-ymd-date.validator';
+
+/** Espelha o uso real (`AerodromeFeedbackFilterQueryDTO`): campos opcionais. */
+class DateRange {
+  @IsOptional()
+  @IsYmdDate()
+  startDate?: string;
+
+  @IsOptional()
+  @IsYmdDate()
+  @IsYmdDateOnOrAfter('startDate')
+  endDate?: string;
+}
+
+function build(startDate?: string, endDate?: string): DateRange {
+  const dto = new DateRange();
+  dto.startDate = startDate;
+  dto.endDate = endDate;
+  return dto;
+}
+
+function failingProps(dto: DateRange): string[] {
+  return validateSync(dto).map((e) => e.property);
+}
+
+describe('IsYmdDateOnOrAfter', () => {
+  it('aceita endDate igual ou posterior a startDate', () => {
+    expect(failingProps(build('2026-01-01', '2026-01-01'))).toEqual([]);
+    expect(failingProps(build('2026-01-01', '2026-12-31'))).toEqual([]);
+  });
+
+  it('rejeita endDate anterior a startDate', () => {
+    expect(failingProps(build('2026-12-31', '2026-01-01'))).toContain(
+      'endDate',
+    );
+  });
+
+  it('não dispara quando um dos campos está ausente (ambos opcionais)', () => {
+    expect(failingProps(build(undefined, '2026-01-01'))).toEqual([]);
+    expect(failingProps(build('2026-01-01', undefined))).toEqual([]);
+  });
+});
 
 describe('isValidYmdDate', () => {
   it('aceita datas de calendário válidas', () => {

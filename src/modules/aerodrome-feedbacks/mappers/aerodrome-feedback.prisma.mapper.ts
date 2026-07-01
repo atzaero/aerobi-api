@@ -1,35 +1,38 @@
-import type { Prisma } from '@/generated/prisma/client';
+import type { FeedbackRating, Prisma } from '@/generated/prisma/client';
 
-import { CreateAerodromeFeedbackDTO } from '../dtos/create-aerodrome-feedback.dto';
-import { UpdateAerodromeFeedbackDTO } from '../dtos/update-aerodrome-feedback.dto';
-
-export function buildAerodromeFeedbackCreateInput(
-  dto: CreateAerodromeFeedbackDTO,
-): Prisma.AerodromeFeedbackCreateInput {
-  return {
-    aerodrome: {
-      connect: { id: dto.aerodromeId },
-    },
-    rating: dto.rating,
-    comment: dto.comment,
-    sessionHash: dto.sessionHash,
-    feedbackDate: dto.feedbackDate,
-    createdBy: dto.createdBy,
-  };
+/**
+ * Dados já resolvidos para persistir um feedback: os campos do cliente
+ * (`aerodromeId`/`rating`/`comment`/`sessionHash`) mais os **derivados no
+ * servidor** (`feedbackDate` = dia UTC). `createdBy` é sempre `null` (envio
+ * anônimo, sem ator).
+ */
+export interface AerodromeFeedbackCreateData {
+  aerodromeId: string;
+  rating: FeedbackRating;
+  comment?: string | null;
+  sessionHash: string;
+  feedbackDate: Date;
 }
 
-export function patchAerodromeFeedbackToPrisma(
-  dto: UpdateAerodromeFeedbackDTO,
-): Prisma.AerodromeFeedbackUpdateInput {
-  const data: Prisma.AerodromeFeedbackUpdateInput = {};
-  if (dto.rating !== undefined) data.rating = dto.rating;
-  if (dto.comment !== undefined) data.comment = dto.comment;
-  if (dto.sessionHash !== undefined) data.sessionHash = dto.sessionHash;
-  if (dto.feedbackDate !== undefined) data.feedbackDate = dto.feedbackDate;
-  if (dto.aerodromeId !== undefined) {
-    data.aerodrome = {
-      connect: { id: dto.aerodromeId },
-    };
-  }
-  return data;
+/**
+ * Projeta os dados resolvidos no `create` do Prisma. Builder puro (sem I/O):
+ * concentra a montagem do payload de escrita, deixando o repositório só persistir.
+ */
+export function buildAerodromeFeedbackCreateInput(
+  data: AerodromeFeedbackCreateData,
+): Prisma.AerodromeFeedbackCreateInput {
+  return {
+    aerodrome: { connect: { id: data.aerodromeId } },
+    rating: data.rating,
+    /**
+     * Normaliza "sem comentário" a um único estado: `undefined`, `null` e a
+     * string vazia (ex.: cliente enviou só espaços, trimados no DTO) viram
+     * `null` — evita que dois inputs semanticamente iguais gravem valores
+     * distintos.
+     */
+    comment: data.comment ? data.comment : null,
+    sessionHash: data.sessionHash,
+    feedbackDate: data.feedbackDate,
+    createdBy: null,
+  };
 }

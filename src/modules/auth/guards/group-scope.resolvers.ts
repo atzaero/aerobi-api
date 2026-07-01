@@ -52,4 +52,13 @@ export const groupScopeResolvers: Record<GroupScopeSubject, GroupResolver> = {
 
     return landingRequest?.aerodrome.groupId ?? null;
   },
+
+  [GroupScopeSubject.AERODROME_FEEDBACK]: async (prisma, id) => {
+    const feedback = await prisma.aerodromeFeedback.findFirst({
+      where: { id, deletedAt: null },
+      select: { aerodrome: { select: { groupId: true } } },
+    });
+
+    return feedback?.aerodrome.groupId ?? null;
+  },
 };

@@ -1,10 +1,12 @@
 import { applyDecorators } from '@nestjs/common';
 import {
+  ApiBearerAuth,
   ApiExtraModels,
+  ApiForbiddenResponse,
   ApiOkResponse,
   ApiOperation,
   ApiQuery,
-  ApiSecurity,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
 import { PaginationMetadataUtil } from '@/common/utils/pagination.util';
@@ -15,25 +17,37 @@ import { AerodromeFeedbackResponseDTO } from '../dtos/aerodrome-feedback-respons
 
 export function ListAerodromeFeedbacksDocs() {
   return applyDecorators(
-    ApiSecurity('api_key'),
+    ApiBearerAuth(),
     ApiExtraModels(
       PaginationMetadataUtil,
       AerodromeFeedbackResponseDTO,
       AerodromeFeedbacksPaginatedResponseDTO,
     ),
-    ApiOperation({ summary: 'Lista paginada de Aerodrome Feedbacks' }),
+    ApiOperation({
+      summary: 'Lista paginada de feedbacks (moderação)',
+      description:
+        'Requer `feedback:list`. Escopo por grupo: ADMIN vê todos; COORDINATOR ' +
+        'só os de aeródromos do próprio grupo. Ordena por `createdAt` DESC.',
+    }),
     ApiQuery({ name: 'page', required: false, example: 1 }),
     ApiQuery({ name: 'limit', required: false, example: 10 }),
+    ApiQuery({ name: 'aerodromeId', required: false, format: 'uuid' }),
+    ApiQuery({ name: 'rating', required: false, enum: FeedbackRating }),
     ApiQuery({
-      name: 'aerodromeId',
+      name: 'startDate',
       required: false,
-      format: 'uuid',
+      description:
+        'Início do intervalo de feedbackDate (YYYY-MM-DD, inclusivo)',
+      example: '2026-01-01',
     }),
     ApiQuery({
-      name: 'rating',
+      name: 'endDate',
       required: false,
-      enum: FeedbackRating,
+      description: 'Fim do intervalo de feedbackDate (YYYY-MM-DD, inclusivo)',
+      example: '2026-12-31',
     }),
     ApiOkResponse({ type: AerodromeFeedbacksPaginatedResponseDTO }),
+    ApiUnauthorizedResponse({ description: 'Token ausente ou inválido.' }),
+    ApiForbiddenResponse({ description: 'Sem permissão `feedback:list`.' }),
   );
 }
