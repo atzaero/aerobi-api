@@ -1,21 +1,22 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import { IsBoolean, IsOptional } from 'class-validator';
 
 import { CreateAerodromeDTO } from './create-aerodrome.dto';
 
 /**
- * Edição completa (full edit) de um aeródromo — espelha o update do `aerobi-web`,
- * que reenvia todos os campos do create. Herda todas as validações (inclusive a
- * pista condicional) e acrescenta `isView` (publicação), editável só aqui e no
- * set-status. O `groupId` só pode mudar por ADMIN — o service bloqueia a troca de
- * grupo por COORDINATOR.
+ * Edição parcial (semântica PATCH): todos os campos do create tornam-se
+ * opcionais (`PartialType` aplica `@IsOptional`), então só o que é enviado é
+ * validado e atualizado — omitir um campo **não** o altera (o service/builder
+ * traduz ausência em no-op no Prisma). A pista condicional só é exigida quando
+ * seus campos (ou `construction`) são de fato enviados. `isView` (publicação) é
+ * editável aqui e no `PATCH /:id/status`. O `groupId` só pode mudar por ADMIN.
  */
-export class UpdateAerodromeDTO extends CreateAerodromeDTO {
+export class UpdateAerodromeDTO extends PartialType(CreateAerodromeDTO) {
   @ApiPropertyOptional({
     default: false,
     example: true,
     description:
-      'Visível publicamente. Atenção: por ser edição completa, **omitir este campo o define como `false`** (despublica). Reenvie o valor atual para preservar a publicação. Para alternar só a visibilidade sem reenviar tudo, use `PATCH /aerodromes/:id/status`.',
+      'Visível publicamente. Só é alterado quando enviado; para alternar apenas a visibilidade use `PATCH /aerodromes/:id/status`.',
   })
   @IsOptional()
   @IsBoolean()

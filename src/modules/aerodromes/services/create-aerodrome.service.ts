@@ -4,7 +4,6 @@ import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { httpError } from '@/common/exceptions/http-error.util';
 import { resolveActorGroupScope } from '@/common/utils/group-scope.util';
-import { isUniqueConstraintError } from '@/common/utils/prisma-error.util';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 import { UserRepository } from '@/modules/users/repositories/user.repository';
 
@@ -13,6 +12,11 @@ import { CreateAerodromeDTO } from '../dtos/create-aerodrome.dto';
 import { AerodromeMapper } from '../mappers/aerodrome.mapper';
 import { buildAerodromeCreateInput } from '../mappers/aerodrome.prisma.mapper';
 import { AerodromeRepository } from '../repositories/aerodrome.repository';
+
+import {
+  assertActiveGroup,
+  rethrowAerodromeUniqueConflict,
+} from './aerodrome-write.helpers';
 
 @Injectable()
 export class CreateAerodromeService {
@@ -50,19 +54,7 @@ export class CreateAerodromeService {
       );
     }
 
-    /**
-     * O grupo precisa existir e estar ativo (paridade: o web deriva a UF do grupo
-     * e lança `VALIDATION_FAILED` quando inválido/removido).
-     */
-    const group = await this.repo.findActiveGroup(dto.groupId);
-    if (!group) {
-      throw httpError(
-        this.errorMessageService,
-        ErrorCode.VALIDATION_FAILED,
-        HttpStatus.BAD_REQUEST,
-        { DETAILS: 'Grupo inválido ou inexistente' },
-      );
-    }
+    await assertActiveGroup(this.repo, this.errorMessageService, dto.groupId);
 
     try {
       const created = await this.repo.create(
@@ -70,16 +62,7 @@ export class CreateAerodromeService {
       );
       return AerodromeMapper.toApiRow(created);
     } catch (err) {
-      /** `@@unique([groupId, icao])` — ICAO já usado no grupo (corrida ou duplicata). */
-      if (isUniqueConstraintError(err)) {
-        throw httpError(
-          this.errorMessageService,
-          ErrorCode.CONFLICT,
-          HttpStatus.CONFLICT,
-          { DETAILS: `Já existe um aeródromo ${dto.icao} neste grupo` },
-        );
-      }
-      throw err;
+      rethrowAerodromeUniqueConflict(err, this.errorMessageService, dto.icao);
     }
   }
 }

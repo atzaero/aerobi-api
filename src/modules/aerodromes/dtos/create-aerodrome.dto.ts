@@ -30,8 +30,11 @@ const isRunwayFieldFilled = (value: unknown): boolean =>
 /** Subconjunto lido pelos `@ValidateIf` da pista condicional. */
 type RunwayConditionInput = {
   construction?: boolean;
+  designation?: string;
   length?: string;
   width?: string;
+  resistance?: string;
+  surface?: string;
 };
 
 /**
@@ -150,7 +153,10 @@ export class CreateAerodromeDTO {
     example: '02/20',
     description: 'Designação da pista (obrigatória se não em construção)',
   })
-  @ValidateIf((o: RunwayConditionInput) => o.construction !== true)
+  @ValidateIf(
+    (o: RunwayConditionInput) =>
+      o.construction !== true || isRunwayFieldFilled(o.designation),
+  )
   @TrimOptionalString()
   @IsString()
   @IsNotEmpty({
@@ -195,7 +201,10 @@ export class CreateAerodromeDTO {
     example: '5700Kg/1.25MPa',
     description: 'Resistência da pista (obrigatória se não em construção)',
   })
-  @ValidateIf((o: RunwayConditionInput) => o.construction !== true)
+  @ValidateIf(
+    (o: RunwayConditionInput) =>
+      o.construction !== true || isRunwayFieldFilled(o.resistance),
+  )
   @TrimOptionalString()
   @IsString()
   @IsNotEmpty({
@@ -209,7 +218,10 @@ export class CreateAerodromeDTO {
     description:
       'Tipo de superfície da pista (obrigatório se não em construção)',
   })
-  @ValidateIf((o: RunwayConditionInput) => o.construction !== true)
+  @ValidateIf(
+    (o: RunwayConditionInput) =>
+      o.construction !== true || isRunwayFieldFilled(o.surface),
+  )
   @TrimOptionalString()
   @IsString()
   @IsNotEmpty({

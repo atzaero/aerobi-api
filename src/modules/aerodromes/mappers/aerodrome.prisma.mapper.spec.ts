@@ -5,8 +5,8 @@ import {
   buildAerodromeCreateInput,
   buildAerodromeObservationPatch,
   buildAerodromeStatusPatch,
-  buildAerodromeUpdateInput,
   normalizeObservation,
+  patchAerodromeToPrisma,
 } from './aerodrome.prisma.mapper';
 
 describe('aerodrome prisma builders', () => {
@@ -37,20 +37,35 @@ describe('aerodrome prisma builders', () => {
     expect(input.createdBy).toBe('actor-1');
   });
 
-  it('update reconecta o grupo, respeita isView e grava updatedBy', () => {
-    const dto: UpdateAerodromeDTO = { ...baseCreate(), isView: true };
-    const input = buildAerodromeUpdateInput(dto, 'actor-2');
-    expect(input.group).toEqual({ connect: { id: gid } });
-    expect(input.isView).toBe(true);
-    expect(input.updatedBy).toBe('actor-2');
+  it('patch parcial: escreve só o enviado; ausentes ficam undefined (no-op)', () => {
+    const dto: UpdateAerodromeDTO = { name: 'Novo', isView: true };
+    const patch = patchAerodromeToPrisma(dto, 'actor-2');
+    expect(patch.name).toBe('Novo');
+    expect(patch.isView).toBe(true);
+    expect(patch.updatedBy).toBe('actor-2');
+    /** Campos omitidos NÃO viram null (senão apagariam dados): ficam undefined. */
+    expect(patch.group).toBeUndefined();
+    expect(patch.icao).toBeUndefined();
+    expect(patch.ciad).toBeUndefined();
+    expect(patch.isOpen).toBeUndefined();
   });
 
-  it('update: opcionais ausentes viram null (full edit)', () => {
-    const input = buildAerodromeUpdateInput(baseCreate(), 'actor-2');
-    expect(input.ciad).toBeNull();
-    expect(input.municipality).toBeNull();
-    expect(input.emergencyPhone).toBeNull();
-    expect(input.isView).toBe(false);
+  it('patch: groupId presente reconecta o grupo', () => {
+    expect(patchAerodromeToPrisma({ groupId: gid }, 'a').group).toEqual({
+      connect: { id: gid },
+    });
+  });
+
+  it('patch: observação vazia enviada vira null; ausente fica undefined (no-op)', () => {
+    expect(
+      patchAerodromeToPrisma({ observation: '' }, 'a').observation,
+    ).toBeNull();
+    expect(patchAerodromeToPrisma({ observation: 'X' }, 'a').observation).toBe(
+      'X',
+    );
+    expect(
+      patchAerodromeToPrisma({ name: 'só nome' }, 'a').observation,
+    ).toBeUndefined();
   });
 
   it('status patch altera só o campo informado + updatedBy', () => {
@@ -74,13 +89,9 @@ describe('aerodrome prisma builders', () => {
     expect(normalizeObservation('Atenção')).toBe('Atenção');
   });
 
-  it('create/update normalizam observação vazia para null', () => {
+  it('create normaliza observação vazia para null', () => {
     expect(
       buildAerodromeCreateInput({ ...baseCreate(), observation: '' }, 'a')
-        .observation,
-    ).toBeNull();
-    expect(
-      buildAerodromeUpdateInput({ ...baseCreate(), observation: '' }, 'a')
         .observation,
     ).toBeNull();
   });

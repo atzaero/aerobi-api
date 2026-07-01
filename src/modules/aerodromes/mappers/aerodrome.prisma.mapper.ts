@@ -56,40 +56,46 @@ export function buildAerodromeCreateInput(
 }
 
 /**
- * Monta o input da edição completa (full edit). Espelha o update do web, que
- * reenvia todos os campos: os opcionais ausentes viram `null` (não são
- * preservados). O `group` reconecta ao `dto.groupId` — a checagem de escopo
- * (COORDINATOR não move entre grupos) é responsabilidade do service, executada
- * **antes** deste builder. A UF continua derivada do grupo.
+ * Monta o patch da **edição parcial** (semântica PATCH). Campos `undefined`
+ * (ausentes no payload) viram no-op no Prisma — o padrão do repo para PATCH: só
+ * o que o cliente enviou é atualizado, sem apagar/resetar o resto (nem o status
+ * setado via `PATCH /:id/status`). O `group` só reconecta quando `groupId` vem
+ * no payload (a checagem de escopo COORDINATOR-não-move fica no service, antes
+ * deste builder); `observation` só é normalizada (vazio→null) quando enviada. A
+ * UF continua derivada do grupo.
  */
-export function buildAerodromeUpdateInput(
+export function patchAerodromeToPrisma(
   dto: UpdateAerodromeDTO,
   updatedBy: string,
 ): Prisma.AerodromeUpdateInput {
   return {
-    group: { connect: { id: dto.groupId } },
+    group:
+      dto.groupId !== undefined ? { connect: { id: dto.groupId } } : undefined,
     icao: dto.icao,
     name: dto.name,
-    ciad: dto.ciad ?? null,
-    municipality: dto.municipality ?? null,
-    emergencyPhone: dto.emergencyPhone ?? null,
+    ciad: dto.ciad,
+    municipality: dto.municipality,
+    emergencyPhone: dto.emergencyPhone,
     latitude: dto.latitude,
     longitude: dto.longitude,
     altitude: dto.altitude,
-    operation: dto.operation ?? null,
-    weatherStationCode: dto.weatherStationCode ?? null,
-    designation: dto.designation ?? null,
-    length: dto.length ?? null,
-    width: dto.width ?? null,
-    resistance: dto.resistance ?? null,
-    surface: dto.surface ?? null,
-    observation: normalizeObservation(dto.observation),
-    construction: dto.construction ?? false,
-    isOpen: dto.isOpen ?? true,
-    isView: dto.isView ?? false,
-    weatherStationDisplay: dto.weatherStationDisplay ?? false,
-    lit: dto.lit ?? false,
-    fueling: dto.fueling ?? false,
+    operation: dto.operation,
+    weatherStationCode: dto.weatherStationCode,
+    designation: dto.designation,
+    length: dto.length,
+    width: dto.width,
+    resistance: dto.resistance,
+    surface: dto.surface,
+    observation:
+      dto.observation !== undefined
+        ? normalizeObservation(dto.observation)
+        : undefined,
+    construction: dto.construction,
+    isOpen: dto.isOpen,
+    isView: dto.isView,
+    weatherStationDisplay: dto.weatherStationDisplay,
+    lit: dto.lit,
+    fueling: dto.fueling,
     updatedBy,
   };
 }

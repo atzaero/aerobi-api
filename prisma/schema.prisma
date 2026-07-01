@@ -321,7 +321,11 @@ model Aerodrome {
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
   deletedBy String?   @map("deleted_by")
 
-  @@unique([groupId, icao])
+  /// Unicidade de (groupId, icao) apenas entre aeródromos ATIVOS, garantida por
+  /// índice único parcial `WHERE deleted_at IS NULL` (migration
+  /// 20260701012000_aerodrome_partial_unique_icao). O Prisma não modela índice
+  /// parcial no schema — NÃO re-adicionar `@@unique([groupId, icao])` (voltaria a
+  /// reservar o ICAO de registros soft-deletados e a impedir a recriação).
   @@index([groupId])
   @@index([icao, isView])
   @@map("aerodromes")
