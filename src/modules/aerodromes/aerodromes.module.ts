@@ -5,6 +5,7 @@ import { UsersModule } from '@/modules/users/users.module';
 import { PrismaModule } from '@/prisma/prisma.module';
 
 import { CreateAerodromeController } from './controllers/create-aerodrome.controller';
+import { ExportAerodromesController } from './controllers/export-aerodromes.controller';
 import { FindAerodromeByIdController } from './controllers/find-aerodrome-by-id.controller';
 import { ListAerodromesController } from './controllers/list-aerodromes.controller';
 import { RemoveAerodromeController } from './controllers/remove-aerodrome.controller';
@@ -15,6 +16,7 @@ import { UpdateAerodromeObservationController } from './controllers/update-aerod
 import { AerodromeRepository } from './repositories/aerodrome.repository';
 
 import { CreateAerodromeService } from './services/create-aerodrome.service';
+import { ExportAerodromesService } from './services/export-aerodromes.service';
 import { FindAerodromeByIdService } from './services/find-aerodrome-by-id.service';
 import { ListAerodromesService } from './services/list-aerodromes.service';
 import { RemoveAerodromeService } from './services/remove-aerodrome.service';
@@ -35,6 +37,12 @@ import { UpdateAerodromeObservationService } from './services/update-aerodrome-o
     UpdateAerodromeObservationController,
     SetAerodromeStatusController,
     ListAerodromesController,
+    /**
+     * `/export` deve preceder `/:id` (Express 5 não tem regex no param de rota):
+     * senão `GET /aerodromes/export` cai no handler de busca por id. A invariante
+     * é travada por `aerodromes.module.spec.ts`.
+     */
+    ExportAerodromesController,
     FindAerodromeByIdController,
     RemoveAerodromeController,
   ],
@@ -45,6 +53,7 @@ import { UpdateAerodromeObservationService } from './services/update-aerodrome-o
     UpdateAerodromeObservationService,
     SetAerodromeStatusService,
     ListAerodromesService,
+    ExportAerodromesService,
     FindAerodromeByIdService,
     RemoveAerodromeService,
   ],
