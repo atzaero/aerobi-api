@@ -4,11 +4,12 @@ Lógica de negócio. Um arquivo por operação.
 
 ## Arquivos
 
-- `create-feedback.service.ts`
-- `update-feedback.service.ts`
+- `create-feedback.service.ts` — envio público (rate limit diário por `session_hash`).
+- `summary-feedbacks.service.ts` — agregação pública por rating.
 - `list-feedbacks.service.ts` — usa `resolvePaginationParams` + `FeedbacksPaginatedResponseDTO`.
 - `find-feedback-by-id.service.ts`
 - `remove-feedback.service.ts` — soft delete.
+- `export-feedbacks.service.ts` — export CSV.
 
 Cada service tem um `*.spec.ts` irmão.
 
