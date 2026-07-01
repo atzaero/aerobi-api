@@ -57,7 +57,13 @@ export class AerodromeRepository implements IAerodromeRepository {
       },
       skip,
       take,
-      orderBy: [{ createdAt: 'desc' }],
+      /**
+       * `id` como desempate estável: `createdAt` não é único (registros criados
+       * na mesma transação/`createMany` compartilham o `now()`), então sem um
+       * segundo critério a paginação por offset poderia duplicar/pular linhas
+       * empatadas.
+       */
+      orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
       include: includeGroupUf,
     });
   }

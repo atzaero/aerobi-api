@@ -11,7 +11,7 @@ import { Uf } from '@/generated/prisma/client';
 export class AerodromeResponseDTO {
   @ApiProperty({
     format: 'uuid',
-    example: '2bciwhj6-0000-4000-8000-000000000001',
+    example: '9f1e2d3c-4b5a-4c6d-8e7f-0a1b2c3d4e5f',
   })
   id!: string;
 
