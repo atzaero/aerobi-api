@@ -1,41 +1,14 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
-import {
-  IsBoolean,
-  IsOptional,
-  IsString,
-  IsUUID,
-  MaxLength,
-} from 'class-validator';
+import { IntersectionType } from '@nestjs/swagger';
 
 import { BasePaginationQueryDTO } from '@/common/dtos/base-pagination-query.dto';
 
-export class ListAerodromesQueryDTO extends BasePaginationQueryDTO {
-  @ApiPropertyOptional({
-    description: 'Filtra pelo grupo de aeródromos',
-    format: 'uuid',
-  })
-  @IsOptional()
-  @IsUUID('4')
-  groupId?: string;
+import { AerodromeFilterQueryDTO } from './aerodrome-filter-query.dto';
 
-  @ApiPropertyOptional({
-    description: 'Filtra ICAO por substring case insensitive',
-    example: 'SD',
-  })
-  @IsOptional()
-  @IsString()
-  @MaxLength(16)
-  icao?: string;
-
-  @ApiPropertyOptional({ description: 'Filtra por visibilidade pública' })
-  @IsOptional()
-  @Transform(({ value }) => {
-    if (value === undefined || value === null || value === '') {
-      return undefined;
-    }
-    return value === true || value === 'true' || value === '1';
-  })
-  @IsBoolean()
-  isView?: boolean;
-}
+/**
+ * Query de listagem: paginação (`page`/`limit`) + os filtros compartilhados de
+ * aeródromo. `IntersectionType` combina os dois DTOs sem duplicar os campos.
+ */
+export class ListAerodromesQueryDTO extends IntersectionType(
+  BasePaginationQueryDTO,
+  AerodromeFilterQueryDTO,
+) {}

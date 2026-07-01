@@ -1,17 +1,12 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
-import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
-import { ErrorCode } from '@/common/enums/error-code.enum';
+import { resourceNotFound } from '@/common/utils/resource-not-found.util';
+import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
 import { AerodromeResponseDTO } from '../dtos/aerodrome-response.dto';
 import { AerodromeMapper } from '../mappers/aerodrome.mapper';
 import { AerodromeRepository } from '../repositories/aerodrome.repository';
-
-export type RemoveAerodromeServiceInput = {
-  id: string;
-  deletedBy: string;
-};
 
 @Injectable()
 export class RemoveAerodromeService {
@@ -21,20 +16,19 @@ export class RemoveAerodromeService {
   ) {}
 
   async execute(
-    input: RemoveAerodromeServiceInput,
+    id: string,
+    actor: AuthenticatedUser,
   ): Promise<AerodromeResponseDTO> {
-    const existing = await this.repo.findById(input.id);
+    /**
+     * `aerodrome:delete` é ADMIN-only (`PermissionsGuard`), sem escopo por grupo —
+     * a existência (404) é responsabilidade deste service. Soft-delete simples,
+     * **sem cascata** (não fecha filhos nem toca storage), com ator real.
+     */
+    const existing = await this.repo.findById(id);
     if (!existing) {
-      throw new CustomHttpException(
-        this.errorMessageService.getMessage(ErrorCode.RESOURCE_NOT_FOUND, {
-          RESOURCE: 'Aeródromo',
-          ID: input.id,
-        }),
-        HttpStatus.NOT_FOUND,
-        ErrorCode.RESOURCE_NOT_FOUND,
-      );
+      throw resourceNotFound(this.errorMessageService, 'Aeródromo', id);
     }
-    const deleted = await this.repo.softDelete(input.id, input.deletedBy);
+    const deleted = await this.repo.softDelete(id, actor.id);
     return AerodromeMapper.toApiRow(deleted);
   }
 }

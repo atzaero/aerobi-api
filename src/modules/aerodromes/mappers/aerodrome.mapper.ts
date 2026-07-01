@@ -1,12 +1,18 @@
-import type { Aerodrome } from '@/generated/prisma/client';
-
 import { AerodromeResponseDTO } from '../dtos/aerodrome-response.dto';
+import type { AerodromeWithGroup } from '../repositories/aerodrome.repository.interface';
 
+/**
+ * Projeta a entidade Prisma (com a UF do grupo carregada) no response da API.
+ * A `uf` vem de `group.uf` (derivada, não é coluna do aeródromo); os campos
+ * legados de URL/formatação continuam expostos para não regredir o contrato de
+ * leitura, ainda que não sejam mais aceitos no create/update.
+ */
 export class AerodromeMapper {
-  static toApiRow(entity: Aerodrome): AerodromeResponseDTO {
+  static toApiRow(entity: AerodromeWithGroup): AerodromeResponseDTO {
     const row = new AerodromeResponseDTO();
     row.id = entity.id;
     row.groupId = entity.groupId;
+    row.uf = entity.group?.uf ?? null;
     row.icao = entity.icao;
     row.ciad = entity.ciad;
     row.designation = entity.designation;
@@ -22,6 +28,7 @@ export class AerodromeMapper {
     row.latitudeFormatted = entity.latitudeFormatted;
     row.longitudeFormatted = entity.longitudeFormatted;
     row.operation = entity.operation;
+    row.emergencyPhone = entity.emergencyPhone;
     row.lit = entity.lit;
     row.fueling = entity.fueling;
     row.observation = entity.observation;
@@ -49,7 +56,7 @@ export class AerodromeMapper {
     return row;
   }
 
-  static toApiRows(entities: Aerodrome[]): AerodromeResponseDTO[] {
+  static toApiRows(entities: AerodromeWithGroup[]): AerodromeResponseDTO[] {
     return entities.map((e) => AerodromeMapper.toApiRow(e));
   }
 }

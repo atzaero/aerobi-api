@@ -287,6 +287,7 @@ model Aerodrome {
   latitudeFormatted        String?  @map("latitude_formatted")
   longitudeFormatted       String?  @map("longitude_formatted")
   operation                String?  @map("operation")
+  emergencyPhone           String?  @map("emergency_phone")
   lit                      Boolean? @map("lit")
   fueling                  Boolean? @map("fueling")
   observation              String?  @map("observation") @db.Text
@@ -294,7 +295,7 @@ model Aerodrome {
   isOpen                   Boolean  @map("is_open")
   isView                   Boolean  @map("is_view")
   weatherStationCode       String?  @map("weather_station_code")
-  weatherStationDisplay    String?  @map("weather_station_display")
+  weatherStationDisplay    Boolean? @map("weather_station_display")
   fileType                 String?  @map("file_type")
   imgUrl                   String?  @map("img_url") @db.Text
   kmlUrl                   String?  @map("kml_url") @db.Text
@@ -320,7 +321,11 @@ model Aerodrome {
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
   deletedBy String?   @map("deleted_by")
 
-  @@unique([groupId, icao])
+  /// Unicidade de (groupId, icao) apenas entre aeródromos ATIVOS, garantida por
+  /// índice único parcial `WHERE deleted_at IS NULL` (migration
+  /// 20260701012000_aerodrome_partial_unique_icao). O Prisma não modela índice
+  /// parcial no schema — NÃO re-adicionar `@@unique([groupId, icao])` (voltaria a
+  /// reservar o ICAO de registros soft-deletados e a impedir a recriação).
   @@index([groupId])
   @@index([icao, isView])
   @@map("aerodromes")

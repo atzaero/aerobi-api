@@ -1,9 +1,11 @@
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
+import { UserRole } from '@/generated/prisma/client';
+import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
 import type { AerodromeRepository } from '../repositories/aerodrome.repository';
-import { buildAerodromeFixture } from '../testing/aerodrome.entity.fixture';
+import { buildAerodromeWithGroupFixture } from '../testing/aerodrome.entity.fixture';
 
 import { RemoveAerodromeService } from './remove-aerodrome.service';
 
@@ -11,6 +13,13 @@ describe('RemoveAerodromeService', () => {
   let service: RemoveAerodromeService;
   let findById: jest.Mock;
   let softDelete: jest.Mock;
+
+  const id = '11111111-1111-4111-8111-111111111111';
+  const admin: AuthenticatedUser = {
+    id: 'admin-9',
+    email: 'a@x',
+    role: UserRole.ADMIN,
+  };
 
   beforeEach(() => {
     findById = jest.fn();
@@ -22,30 +31,29 @@ describe('RemoveAerodromeService', () => {
     service = new RemoveAerodromeService(repo, new ErrorMessageService());
   });
 
-  const id = '11111111-1111-4111-8111-111111111111';
-
   it('404', async () => {
     findById.mockResolvedValue(null);
     try {
-      await service.execute({ id, deletedBy: 'x' });
+      await service.execute(id, admin);
       throw new Error('expected');
     } catch (e) {
       expect((e as CustomHttpException).getErrorCode()).toBe(
         ErrorCode.RESOURCE_NOT_FOUND,
       );
     }
+    expect(softDelete).not.toHaveBeenCalled();
   });
 
-  it('soft delete', async () => {
-    findById.mockResolvedValue(buildAerodromeFixture({ id }));
+  it('soft delete com ator real', async () => {
+    findById.mockResolvedValue(buildAerodromeWithGroupFixture({ id }));
     softDelete.mockResolvedValue(
-      buildAerodromeFixture({
+      buildAerodromeWithGroupFixture({
         id,
-        deletedBy: 'd',
+        deletedBy: admin.id,
         deletedAt: new Date('2027-01-01T00:00:00.000Z'),
       }),
     );
-    await service.execute({ id, deletedBy: 'd' });
-    expect(softDelete).toHaveBeenCalledWith(id, 'd');
+    await service.execute(id, admin);
+    expect(softDelete).toHaveBeenCalledWith(id, admin.id);
   });
 });

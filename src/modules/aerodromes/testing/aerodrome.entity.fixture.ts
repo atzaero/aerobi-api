@@ -1,5 +1,7 @@
 import type { Aerodrome } from '@/generated/prisma/client';
 
+import type { AerodromeWithGroup } from '../repositories/aerodrome.repository.interface';
+
 const ts = new Date('2024-06-01T12:00:00.000Z');
 const gid = '44444444-4444-4444-8444-444444444444';
 
@@ -24,6 +26,7 @@ export function buildAerodromeFixture(
     latitudeFormatted: null,
     longitudeFormatted: null,
     operation: null,
+    emergencyPhone: null,
     lit: null,
     fueling: null,
     observation: null,
@@ -49,5 +52,19 @@ export function buildAerodromeFixture(
     deletedAt: null,
     deletedBy: null,
     ...overrides,
+  };
+}
+
+/**
+ * Fixture no formato retornado pelo repositório (aeródromo + UF do grupo). A UF
+ * é derivada de `group.uf`; o default `PI` espelha os dados reais do Firestore.
+ */
+export function buildAerodromeWithGroupFixture(
+  overrides: Partial<AerodromeWithGroup> = {},
+): AerodromeWithGroup {
+  const { group, ...aerodromeOverrides } = overrides;
+  return {
+    ...buildAerodromeFixture(aerodromeOverrides),
+    group: group ?? { uf: 'PI' },
   };
 }
