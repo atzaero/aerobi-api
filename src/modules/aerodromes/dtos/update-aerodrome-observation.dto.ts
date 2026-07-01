@@ -14,6 +14,7 @@ export class UpdateAerodromeObservationDTO {
   @ApiPropertyOptional({
     maxLength: AERODROME_OBSERVATION_MAX_LENGTH,
     nullable: true,
+    example: 'Atenção à linha elétrica na aproximação 31',
     description: 'Observação pública; vazio ou ausente limpa o campo',
   })
   @IsOptional()

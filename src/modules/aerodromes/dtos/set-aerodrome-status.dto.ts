@@ -21,13 +21,13 @@ export type AerodromeStatusField = (typeof AERODROME_STATUS_FIELDS)[number];
  * atualiza apenas o campo informado.
  */
 export class SetAerodromeStatusDTO {
-  @ApiProperty({ enum: AERODROME_STATUS_FIELDS })
+  @ApiProperty({ enum: AERODROME_STATUS_FIELDS, example: 'isOpen' })
   @IsIn(AERODROME_STATUS_FIELDS, {
     message: 'field deve ser um de: isOpen, isView, weatherStationDisplay, lit',
   })
   field!: AerodromeStatusField;
 
-  @ApiProperty()
+  @ApiProperty({ example: false })
   @IsBoolean()
   value!: boolean;
 }
