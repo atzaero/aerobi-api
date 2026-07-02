@@ -1,3 +1,10 @@
+# [2.6.0-beta.41](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.40...v2.6.0-beta.41) (2026-07-02)
+
+
+### Features
+
+* **contact:** add Fale Conosco module with public create and admin moderation ([#443](https://github.com/atzaero/aerobi-api/issues/443)) ([ff01355](https://github.com/atzaero/aerobi-api/commit/ff01355a0c43c31fd45af3b0882655a4c92fffdf)), closes [#375](https://github.com/atzaero/aerobi-api/issues/375)
+
 # [2.6.0-beta.40](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.39...v2.6.0-beta.40) (2026-07-01)
 
 
