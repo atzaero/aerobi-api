@@ -7,6 +7,7 @@ import { ErrorMessageModule } from '@/common/error-messages/error-message.module
 import { FeedbacksModule } from '@/modules/feedbacks/feedbacks.module';
 import { AuthModule } from '@/modules/auth/auth.module';
 import { ConformityModule } from '@/modules/conformity/conformity.module';
+import { ContactModule } from '@/modules/contact/contact.module';
 import { GeojsonsModule } from '@/modules/geojsons/geojsons.module';
 import { GroupsModule } from '@/modules/groups/groups.module';
 import { AiswebModule } from '@/modules/aisweb/aisweb.module';
@@ -55,6 +56,7 @@ import { PrismaModule } from '@/prisma/prisma.module';
     AuthModule,
     UsersModule,
     ConformityModule,
+    ContactModule,
     NotificationsModule,
     StreamsModule,
   ],

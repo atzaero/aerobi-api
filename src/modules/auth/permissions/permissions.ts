@@ -44,6 +44,7 @@ export type AuthzSubject =
   | 'maintenance'
   | 'task'
   | 'feedback'
+  | 'contact'
   | 'rab'
   | 'aviascan_reading'
   | 'dashboard';
@@ -197,6 +198,14 @@ export const PERMISSIONS: Record<
     read: [UserRole.ADMIN, UserRole.COORDINATOR],
     delete: [UserRole.ADMIN, UserRole.COORDINATOR],
     export: [UserRole.ADMIN, UserRole.COORDINATOR],
+  },
+  // Fale conosco: envio público fora da matriz; moderação só ADMIN (espelha web).
+  contact: {
+    list: [UserRole.ADMIN],
+    read: [UserRole.ADMIN],
+    update: [UserRole.ADMIN],
+    delete: [UserRole.ADMIN],
+    export: [UserRole.ADMIN],
   },
   // Consulta ao RAB (ANAC) de aeronaves: operator consulta; coordinator/admin
   // acima.
