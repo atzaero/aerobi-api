@@ -35,17 +35,4 @@ export class StorageService {
   async download(key: string): Promise<Buffer> {
     return this.provider.download(key);
   }
-
-  /**
-   * Configura CORS no bucket — disponível apenas para provedores que suportam
-   * (ex. MinIO). Útil quando o frontend acessa as presigned URLs via fetch/XHR.
-   */
-  async configureBucketCors(allowedOrigins?: string[]): Promise<void> {
-    if (this.provider.configureBucketCors) {
-      return this.provider.configureBucketCors(allowedOrigins);
-    }
-    throw new Error(
-      'CORS configuration is not supported by this storage provider',
-    );
-  }
 }

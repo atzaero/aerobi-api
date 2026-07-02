@@ -9,7 +9,6 @@ describe('StorageService', () => {
   let remove: jest.Mock;
   let getPresignedUrl: jest.Mock;
   let download: jest.Mock;
-  let configureBucketCors: jest.Mock;
 
   const file = {
     originalname: 'a1b2.jpg',
@@ -29,13 +28,11 @@ describe('StorageService', () => {
     remove = jest.fn();
     getPresignedUrl = jest.fn();
     download = jest.fn();
-    configureBucketCors = jest.fn();
     service = buildService({
       upload,
       delete: remove,
       getPresignedUrl,
       download,
-      configureBucketCors,
     });
   });
 
@@ -68,25 +65,5 @@ describe('StorageService', () => {
 
     await expect(service.download('readings/k.jpg')).resolves.toBe(buffer);
     expect(download).toHaveBeenCalledWith('readings/k.jpg');
-  });
-
-  it('delega configureBucketCors quando suportado', async () => {
-    configureBucketCors.mockResolvedValue(undefined);
-
-    await service.configureBucketCors(['http://localhost:3000']);
-    expect(configureBucketCors).toHaveBeenCalledWith(['http://localhost:3000']);
-  });
-
-  it('lança quando o provider não suporta CORS', async () => {
-    const svcNoCors = buildService({
-      upload,
-      delete: remove,
-      getPresignedUrl,
-      download,
-    });
-
-    await expect(svcNoCors.configureBucketCors()).rejects.toThrow(
-      'CORS configuration is not supported',
-    );
   });
 });

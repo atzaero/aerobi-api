@@ -4,7 +4,6 @@ import { ConfigService } from '@nestjs/config';
 import {
   DeleteObjectCommand,
   GetObjectCommand,
-  PutBucketCorsCommand,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
@@ -61,9 +60,15 @@ export class MinioStorageProvider implements StorageProvider {
         this.configService.get<string>('MINIO_PUBLIC_ENDPOINT') ?? null,
       accessKey: this.configService.get<string>('MINIO_ACCESS_KEY') ?? '',
       secretKey: this.configService.get<string>('MINIO_SECRET_KEY') ?? '',
+      /**
+       * Bucket único por app/ambiente (`aerobi-{env}`). `MINIO_BUCKET` é a var
+       * canônica; `MINIO_BUCKET_READINGS` é lida como fallback deprecado durante
+       * a transição (remover após o cutover — épico #444 / issue #446).
+       */
       bucket:
+        this.configService.get<string>('MINIO_BUCKET') ??
         this.configService.get<string>('MINIO_BUCKET_READINGS') ??
-        'aerobi-dev-readings',
+        'aerobi-dev',
       region: this.configService.get<string>('MINIO_REGION') ?? 'sa-east-1',
     };
 
@@ -221,47 +226,6 @@ export class MinioStorageProvider implements StorageProvider {
         err,
         ErrorCode.STORAGE_DOWNLOAD_FAILED,
         'Falha ao baixar arquivo do MinIO',
-      );
-    }
-  }
-
-  /**
-   * Configura CORS no bucket para permitir leitura das presigned URLs pelo
-   * navegador (fetch/XHR cross-origin). Não lança em caso de falha — apenas
-   * loga, para não derrubar a aplicação.
-   */
-  async configureBucketCors(allowedOrigins: string[] = []): Promise<void> {
-    try {
-      const origins =
-        allowedOrigins.length > 0
-          ? allowedOrigins
-          : ['http://localhost:3000', 'http://localhost:3001'];
-
-      await this.internalClient.send(
-        new PutBucketCorsCommand({
-          Bucket: this.config.bucket,
-          CORSConfiguration: {
-            CORSRules: [
-              {
-                AllowedHeaders: ['*'],
-                AllowedMethods: ['GET', 'HEAD', 'OPTIONS'],
-                AllowedOrigins: origins,
-                ExposeHeaders: ['ETag', 'Content-Length'],
-                MaxAgeSeconds: 3600,
-              },
-            ],
-          },
-        }),
-      );
-
-      this.logger.log(
-        `CORS configurado no bucket ${this.config.bucket} para: ${origins.join(', ')}`,
-      );
-    } catch (err) {
-      const message = getErrorMessage(err);
-      this.logger.warn(
-        `Falha ao configurar CORS no bucket ${this.config.bucket}: ${message}. ` +
-          'Configure manualmente via console do MinIO se necessário.',
       );
     }
   }

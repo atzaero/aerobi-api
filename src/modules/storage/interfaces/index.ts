@@ -1,7 +1,7 @@
 /**
  * Contrato de um provedor de object storage. Opera sempre com a **key** do
- * objeto (ex. `readings/2026/06/<uuid>.jpg`) — a estratégia de nomenclatura é
- * responsabilidade do módulo consumidor (ex. `readings`), não do storage.
+ * objeto (ex. `movements/{movementId}/image/<uuid>.jpg`) — a key é montada pela
+ * gramática canônica em `../keys` (`buildStorageKey`), não pelo storage.
  *
  * Hoje implementado por `MinioStorageProvider`; novos provedores (S3, GCS, …)
  * podem ser adicionados via `StorageProviderFactory` sem alterar os consumidores.
@@ -18,7 +18,4 @@ export interface StorageProvider {
 
   /** Baixa o conteúdo do objeto como Buffer. */
   download(key: string): Promise<Buffer>;
-
-  /** Configura CORS no bucket (opcional — apenas provedores que suportam). */
-  configureBucketCors?(allowedOrigins?: string[]): Promise<void>;
 }
