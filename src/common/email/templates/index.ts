@@ -67,6 +67,21 @@ export const templates = {
       Verifique a operação e tome as providências de conformidade cabíveis.
     </p>
   `,
+  contact_receipt: `
+    <h1>Recebemos sua mensagem</h1>
+    <p>Olá [NAME],</p>
+    <p>
+      Sua mensagem foi registrada com sucesso. Guarde este e-mail como comprovante.
+    </p>
+    <p><strong>Nome:</strong> [NAME]</p>
+    <p><strong>E-mail:</strong> [EMAIL]</p>
+    <p><strong>Telefone:</strong> [PHONE]</p>
+    <p><strong>Tipo:</strong> [TYPE_LABEL]</p>
+    <p><strong>Mensagem:</strong> [MESSAGE]</p>
+    <p>
+      Nossa equipe analisará sua mensagem e entrará em contato quando necessário.
+    </p>
+  `,
 } as const;
 
 export type EmailTemplate = keyof typeof templates;

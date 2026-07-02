@@ -836,3 +836,62 @@ model GroupImage {
   @@index([groupId])
   @@map("group_images")
 }
+
+// =============================================================================
+// Fale conosco (`contact`). Espelha a coleção Firestore homônima do `aerobi-web`:
+// formulário público (`POST /contact`, X-API-Key) com comprovante por e-mail,
+// anti-abuso (honeypot, tempo mínimo de preenchimento, rate limit por
+// session_hash/e-mail/IP e chave `date` UTC) e moderação admin (listagem, export
+// CSV, status `pending`/`resolved`, soft-delete). Enums em lowercase para paridade
+// 1:1 com o web (`ContactType`, `ContactMessageStatus`).
+// =============================================================================
+
+/// Tipo da mensagem no formulário (espelha `type` na coleção `contact`).
+enum ContactType {
+  complaint
+  question
+  suggestion
+  other
+}
+
+/// Situação de triagem pela equipe admin (espelha `status` no Firestore).
+enum ContactMessageStatus {
+  pending
+  resolved
+}
+
+/// Mensagem do formulário público "Fale conosco" (coleção raiz `contact` no
+/// Firestore). `createdBy` permanece null em submissões públicas; `updatedBy` e
+/// `deletedBy` são preenchidos na moderação. `sessionHash` e `ipHash` são hashes
+/// anônimos para rate limit diário — não identificam o autor (LGPD).
+model Contact {
+  id          String               @id @default(uuid()) @db.Uuid
+  email       String
+  name        String
+  phone       String
+  message     String               @db.Text
+  type        ContactType
+  status      ContactMessageStatus @default(pending)
+  /// Hash estável da sessão do navegador (SHA-256 hex); par com `date` no índice anti-spam.
+  sessionHash String?              @map("session_hash")
+  /// Chave de rate-limit UTC (`YYYY-MM-DD`), espelha Firestore `date`.
+  date        String
+  /// Hash do IP do cliente para rate limit diário; par com `date` no índice anti-spam.
+  ipHash      String?              @map("ip_hash")
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdBy String?   @map("created_by")
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedBy String?   @map("updated_by")
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+  deletedBy String?   @map("deleted_by")
+
+  @@index([deletedAt])
+  @@index([status])
+  @@index([type])
+  @@index([sessionHash, date])
+  @@index([email, date])
+  @@index([ipHash, date])
+  @@index([createdAt])
+  @@map("contact")
+}
