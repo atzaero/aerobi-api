@@ -11,18 +11,10 @@ const from =
     map[key];
 
 describe('resolveStorageBucket', () => {
-  it('prefere MINIO_BUCKET', () => {
-    expect(
-      resolveStorageBucket(
-        from({ MINIO_BUCKET: 'aerobi-prod', MINIO_BUCKET_READINGS: 'legado' }),
-      ),
-    ).toBe('aerobi-prod');
-  });
-
-  it('cai para MINIO_BUCKET_READINGS (fallback deprecado)', () => {
-    expect(
-      resolveStorageBucket(from({ MINIO_BUCKET_READINGS: 'aerobi-staging' })),
-    ).toBe('aerobi-staging');
+  it('usa MINIO_BUCKET', () => {
+    expect(resolveStorageBucket(from({ MINIO_BUCKET: 'aerobi-prod' }))).toBe(
+      'aerobi-prod',
+    );
   });
 
   it('usa o default quando nada está setado ou vazio', () => {

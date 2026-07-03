@@ -60,8 +60,7 @@ export class MinioStorageProvider implements StorageProvider {
 
     /**
      * Bucket/region resolvidos por `storage.config` (fonte única compartilhada
-     * com os seeds): `MINIO_BUCKET` canônico → `MINIO_BUCKET_READINGS` fallback
-     * deprecado (remover no cutover, épico #444 / issue #446) → `aerobi-dev`.
+     * com os seeds): `MINIO_BUCKET` canônico → `aerobi-dev` (default).
      */
     this.config = {
       endpoint: get('MINIO_ENDPOINT') ?? '',

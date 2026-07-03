@@ -159,7 +159,7 @@ ora (renomear para `movements/` está fora do escopo desta epic). O banco guarda
 
 Variáveis (ver `.env.example`): `STORAGE_PROVIDER`, `MINIO_ENDPOINT`,
 `MINIO_PUBLIC_ENDPOINT` (assina presigned com host acessível ao navegador),
-`MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET_READINGS`, `MINIO_REGION`.
+`MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET`, `MINIO_REGION`.
 
 ## Estrutura
 

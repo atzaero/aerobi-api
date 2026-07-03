@@ -92,8 +92,8 @@ prefixo. Um bucket por app; outras apps na mesma instância usam `<app>-<env>`.
 ## Config
 
 - Envs: `MINIO_ENDPOINT` (interno), `MINIO_PUBLIC_ENDPOINT` (assinatura),
-  `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET` (canônico;
-  `MINIO_BUCKET_READINGS` é fallback deprecado), `MINIO_REGION`.
+  `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET` (bucket único do app),
+  `MINIO_REGION`.
 - Resolução de bucket/region: `storage.config.ts` (compartilhado com os seeds).
 - Provisionamento do bucket: `aerobi-ansible` (`roles/minio`) + `aerobi-local-infra`.
 
