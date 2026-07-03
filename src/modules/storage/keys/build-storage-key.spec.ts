@@ -52,18 +52,18 @@ describe('buildStorageKey', () => {
   it('rejeita itemId vazio ou com "/"', () => {
     expect(() =>
       buildStorageKey({
-        domain: StorageDomain.USERS,
+        domain: StorageDomain.AERODROMES,
         itemId: '  ',
-        docType: 'avatar',
+        docType: 'image',
         leaf: buildUuidLeaf(UUID, 'jpg'),
       }),
     ).toThrow(/itemId/);
 
     expect(() =>
       buildStorageKey({
-        domain: StorageDomain.USERS,
+        domain: StorageDomain.AERODROMES,
         itemId: 'a/b',
-        docType: 'avatar',
+        docType: 'image',
         leaf: buildUuidLeaf(UUID, 'jpg'),
       }),
     ).toThrow(/itemId/);
@@ -72,18 +72,18 @@ describe('buildStorageKey', () => {
   it('rejeita leaf vazia ou com "/"', () => {
     expect(() =>
       buildStorageKey({
-        domain: StorageDomain.USERS,
-        itemId: 'u1',
-        docType: 'avatar',
+        domain: StorageDomain.AERODROMES,
+        itemId: 'a1',
+        docType: 'image',
         leaf: '',
       }),
     ).toThrow(/leaf/);
 
     expect(() =>
       buildStorageKey({
-        domain: StorageDomain.USERS,
-        itemId: 'u1',
-        docType: 'avatar',
+        domain: StorageDomain.AERODROMES,
+        itemId: 'a1',
+        docType: 'image',
         leaf: 'sub/dir.jpg',
       }),
     ).toThrow(/leaf/);
@@ -92,8 +92,8 @@ describe('buildStorageKey', () => {
 
 describe('isValidDocType', () => {
   it('valida contra o vocabulário do domínio', () => {
-    expect(isValidDocType(StorageDomain.USERS, 'avatar')).toBe(true);
-    expect(isValidDocType(StorageDomain.USERS, 'identity_document')).toBe(true);
+    expect(isValidDocType(StorageDomain.AERODROMES, 'image')).toBe(true);
+    expect(isValidDocType(StorageDomain.AERODROMES, 'kml')).toBe(true);
     expect(isValidDocType(StorageDomain.GROUPS, 'images')).toBe(true);
     expect(isValidDocType(StorageDomain.GROUPS, 'image')).toBe(false);
   });

@@ -9,10 +9,8 @@
  * `technical-visits`, não `visitas`).
  */
 export enum StorageDomain {
-  USERS = 'users',
   GROUPS = 'groups',
   AERODROMES = 'aerodromes',
   TECHNICAL_VISITS = 'technical-visits',
   MOVEMENTS = 'movements',
-  LANDINGS = 'landings',
 }
