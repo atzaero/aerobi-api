@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
@@ -22,7 +24,7 @@ import {
 } from '../mappers/movement.prisma.mapper';
 import { MovementRepository } from '../repositories/movement.repository';
 import {
-  buildReadingImageKey,
+  buildMovementImageKey,
   isAllowedImageMimetype,
 } from '../utils/reading-image';
 import { MovementType } from '@/generated/prisma/enums';
@@ -106,16 +108,22 @@ export class CreateMovementService {
       origin,
     );
 
+    /**
+     * Id do movimento pré-gerado no app (uuid) para que a key da imagem
+     * (`movements/{movementId}/image/...`) possa referenciá-lo ANTES do insert —
+     * o upload precede a persistência (para compensar órfão em falha de INSERT).
+     * O mapper persiste este mesmo id, mantendo key ↔ linha consistentes.
+     */
+    const movementId = randomUUID();
+
     let imageKey: string | null = null;
     if (image) {
-      imageKey = buildReadingImageKey(
-        image.mimetype,
-        canonicalDto.reading_datetime,
-      );
+      imageKey = buildMovementImageKey(movementId, image.mimetype);
       await this.storage.upload(image, imageKey);
     }
 
     const created = await this.persist(
+      movementId,
       canonicalDto,
       imageKey,
       resolvedOrigin,
@@ -156,14 +164,15 @@ export class CreateMovementService {
    * compensa removendo o objeto do storage para não deixar lixo órfão.
    */
   private async persist(
+    id: string,
     dto: MovementCreateData,
     imageKey: string | null,
     origin: MovementOrigin,
-    snapshot: Parameters<typeof buildMovementCreateInput>[3],
+    snapshot: Parameters<typeof buildMovementCreateInput>[4],
   ) {
     try {
       return await this.repo.create(
-        buildMovementCreateInput(dto, imageKey, origin, snapshot),
+        buildMovementCreateInput(id, dto, imageKey, origin, snapshot),
       );
     } catch (err) {
       if (imageKey) {

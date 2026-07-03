@@ -1,6 +1,11 @@
 import { randomUUID } from 'node:crypto';
 
-import { MIME_TO_EXT } from '@/modules/storage/utils/image-mimetype';
+import {
+  StorageDomain,
+  buildStorageKey,
+  buildUuidLeaf,
+  resolveKeyExtension,
+} from '@/modules/storage/keys';
 
 export {
   ALLOWED_IMAGE_MIMETYPES,
@@ -14,16 +19,19 @@ export const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
 export const MAX_BATCH_FILES = 50;
 
 /**
- * Monta a key do objeto no MinIO no layout `readings/YYYY/MM/<uuid>.<ext>`,
- * particionando por ano/mês da leitura. A estratégia de nomenclatura vive aqui
- * (domínio), não no storage genérico.
+ * Monta a key da imagem do movimento no layout
+ * `movements/{movementId}/image/<uuid>.<ext>` — espelhando o banco (a linha do
+ * movimento é a dona da imagem). Delega à gramática canônica (`buildStorageKey`,
+ * módulo storage/keys) em vez de montar a string à mão.
  */
-export function buildReadingImageKey(
+export function buildMovementImageKey(
+  movementId: string,
   mimetype: string,
-  readingDatetime: Date,
 ): string {
-  const ext = MIME_TO_EXT[mimetype] ?? 'bin';
-  const year = readingDatetime.getUTCFullYear();
-  const month = String(readingDatetime.getUTCMonth() + 1).padStart(2, '0');
-  return `readings/${year}/${month}/${randomUUID()}.${ext}`;
+  return buildStorageKey({
+    domain: StorageDomain.MOVEMENTS,
+    itemId: movementId,
+    docType: 'image',
+    leaf: buildUuidLeaf(randomUUID(), resolveKeyExtension({ mimetype })),
+  });
 }
