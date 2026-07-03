@@ -1,6 +1,11 @@
 import { randomUUID } from 'node:crypto';
 
-import { MIME_TO_EXT } from '@/modules/storage/utils/image-mimetype';
+import {
+  StorageDomain,
+  buildStorageKey,
+  buildUuidLeaf,
+  resolveKeyExtension,
+} from '@/modules/storage/keys';
 
 export {
   ALLOWED_IMAGE_MIMETYPES,
@@ -57,11 +62,15 @@ export function detectImageMimetype(buffer: Buffer | undefined): string | null {
 }
 
 /**
- * Monta a key do objeto no MinIO no layout `groups/{groupId}/images/<uuid>.<ext>`,
- * particionando por grupo. A estratégia de nomenclatura vive no domínio, não no
- * storage genérico.
+ * Monta a key do objeto no MinIO no layout `groups/{groupId}/images/<uuid>.<ext>`.
+ * Delega à gramática canônica (`buildStorageKey`, módulo `storage/keys`) — o
+ * shape da key é preservado (zero migração).
  */
 export function buildGroupImageKey(groupId: string, mimetype: string): string {
-  const ext = MIME_TO_EXT[mimetype] ?? 'bin';
-  return `groups/${groupId}/images/${randomUUID()}.${ext}`;
+  return buildStorageKey({
+    domain: StorageDomain.GROUPS,
+    itemId: groupId,
+    docType: 'images',
+    leaf: buildUuidLeaf(randomUUID(), resolveKeyExtension({ mimetype })),
+  });
 }
