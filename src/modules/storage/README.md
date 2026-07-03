@@ -16,14 +16,13 @@ A key de um objeto tem sempre a forma:
   chave 1:1 na linha (`Movement.imageKey`, `Group.imageKey`) é a própria entidade;
   para **coleção** (N por item, ex. `technical_visit_images`) é a entidade-**raiz**
   (a visita), **nunca** a avó (o aeródromo). Valor = nome do módulo/rota (inglês).
-- **`docType`** — o tipo de arquivo (`avatar`, `image`, `kml`, `plan_ordinance`,
-  ou a `section` de uma visita). **snake_case**, sempre presente.
+- **`docType`** — o tipo de arquivo (`image`, `kml`, `plan_ordinance`, ou a
+  `section` de uma visita). **snake_case**, sempre presente.
 - **`fileId`** — `uuid` opaco. Nome original **nunca** vai na key (vai em coluna de
   metadado). `-{slug}` opcional para pastas de múltiplos arquivos.
 
 | Tabela dona da key | Prefixo |
 |---|---|
-| `users` | `users/{userId}/{docType}/…` |
 | `groups` (`Group.imageKey`) | `groups/{groupId}/images/…` |
 | `aerodromes` (`Aerodrome.imageKey`) | `aerodromes/{aerodromeId}/image/…` |
 | `technical_visit_images` (raiz `technical_visits`) | `technical-visits/{visitId}/{section}/…` |

@@ -1,14 +1,14 @@
 ---
 name: storage
-description: Padrão canônico de object storage (MinIO/S3) do aerobi-api ao ligar arquivos a uma entidade. Use quando for adicionar/alterar upload de imagem/arquivo/documento (avatar, imagem de grupo/aeródromo, fotos de visita, anexos), criar um novo docType, ou mexer em key de storage/bucket/presigned. Garante que a sessão monte a key certa (espelhando o banco), guarde a key e não a URL, e use buildStorageKey em vez de string à mão.
+description: Padrão canônico de object storage (MinIO/S3) do aerobi-api ao ligar arquivos a uma entidade. Use quando for adicionar/alterar upload de imagem/arquivo/documento (imagem de grupo/aeródromo, fotos de visita, documentos, anexos), criar um novo docType, ou mexer em key de storage/bucket/presigned. Garante que a sessão monte a key certa (espelhando o banco), guarde a key e não a URL, e use buildStorageKey em vez de string à mão.
 ---
 
 # Storage (MinIO/S3) — skill (aerobi-api)
 
 ## Acionar
 
-Ao adicionar/alterar storage de arquivos numa entidade: "avatar do usuário",
-"imagem do aeródromo", "fotos da visita", "anexo", "novo tipo de documento",
+Ao adicionar/alterar storage de arquivos numa entidade: "imagem do aeródromo",
+"imagem do grupo", "fotos da visita", "anexo", "novo tipo de documento",
 "subir no MinIO", "presigned URL", "bucket".
 
 ## Fonte
@@ -21,8 +21,8 @@ Guia completo e passo-a-passo: [`src/modules/storage/README.md`](../../../src/mo
 {entidade}/{itemId}/{docType}/{fileId}[-{slug}].{ext}
 ```
 
-- **entidade** = tabela **dona** do arquivo (coleção usa a entidade-**raiz**, nunca a avó). Ex.: `users`, `groups`, `aerodromes`, `technical-visits`, `movements`.
-- **docType** = tipo (`avatar`, `image`, `kml`, `plan_ordinance`, ou a `section`). snake_case, **sempre presente**.
+- **entidade** = tabela **dona** do arquivo (coleção usa a entidade-**raiz**, nunca a avó). Ex.: `groups`, `aerodromes`, `technical-visits`, `movements`.
+- **docType** = tipo (`image`, `kml`, `plan_ordinance`, ou a `section`). snake_case, **sempre presente**.
 - **fileId** = `uuid` opaco. Nome original em coluna de metadado, **nunca** na key.
 - Ambiente **é o bucket** (`aerobi-{dev,staging,prod}`), não prefixo.
 

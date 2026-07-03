@@ -32,9 +32,9 @@ export function slugifyFilename(filename: string): string {
 }
 
 /**
- * Leaf `{uuid}.{ext}` para pastas de **arquivo único** (avatar, imagem do grupo,
- * imagem do movimento). Sem extensão → apenas `{uuid}`. O `uuid` é injetado para
- * determinismo/testabilidade.
+ * Leaf `{uuid}.{ext}` para pastas de **arquivo único** (imagem do grupo, imagem
+ * do aeródromo, imagem do movimento). Sem extensão → apenas `{uuid}`. O `uuid` é
+ * injetado para determinismo/testabilidade.
  */
 export function buildUuidLeaf(uuid: string, ext: string): string {
   const normalized = ext.trim().toLowerCase().replace(/^\.+/, '');

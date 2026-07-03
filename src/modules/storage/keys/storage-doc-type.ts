@@ -8,11 +8,10 @@ import { StorageDomain } from './storage-domain.enum';
  *
  * Para `technical-visits` o `docType` é a **seção de inspeção** e espelha o enum
  * Prisma `TechnicalVisitImageSection` (#369) — manter em sincronia ao migrar
- * aquele módulo. `landings`/`aerodromes` cobrem o vocabulário previsto pelas
- * migrações #430/#369; estender aqui (e não por módulo) quando surgir novo tipo.
+ * aquele módulo. `aerodromes` cobre o vocabulário da migração #430. Registre aqui
+ * (e não por módulo) domínios/tipos novos quando forem escopados (ex.: landings).
  */
 export const STORAGE_DOC_TYPES = {
-  [StorageDomain.USERS]: ['avatar', 'identity_document'],
   [StorageDomain.GROUPS]: ['images'],
   [StorageDomain.AERODROMES]: [
     'image',
@@ -37,7 +36,6 @@ export const STORAGE_DOC_TYPES = {
     'extra',
   ],
   [StorageDomain.MOVEMENTS]: ['image'],
-  [StorageDomain.LANDINGS]: ['image'],
 } as const satisfies Record<StorageDomain, readonly string[]>;
 
 /** Union dos `docType` válidos para um domínio. */
