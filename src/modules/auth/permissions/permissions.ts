@@ -44,6 +44,7 @@ export type AuthzSubject =
   | 'maintenance'
   | 'task'
   | 'feedback'
+  | 'camera'
   | 'contact'
   | 'rab'
   | 'aviascan_reading'
@@ -198,6 +199,17 @@ export const PERMISSIONS: Record<
     read: [UserRole.ADMIN, UserRole.COORDINATOR],
     delete: [UserRole.ADMIN, UserRole.COORDINATOR],
     export: [UserRole.ADMIN, UserRole.COORDINATOR],
+  },
+  // Câmeras (metadados) do aeródromo: admin/coordinator gerenciam todas as ações
+  // (espelha a matriz `camera` do `aerobi-web` — coordinator também cria/edita/
+  // remove, diferente de `group`). O escopo por registro (coordinator só o próprio
+  // grupo) é resolvido server-side via `resolveActorGroupScope` + `GroupScopeGuard`.
+  camera: {
+    list: [UserRole.ADMIN, UserRole.COORDINATOR],
+    read: [UserRole.ADMIN, UserRole.COORDINATOR],
+    create: [UserRole.ADMIN, UserRole.COORDINATOR],
+    update: [UserRole.ADMIN, UserRole.COORDINATOR],
+    delete: [UserRole.ADMIN, UserRole.COORDINATOR],
   },
   // Fale conosco: envio público fora da matriz; moderação só ADMIN (espelha web).
   contact: {
