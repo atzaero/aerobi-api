@@ -1,3 +1,12 @@
+# [2.6.0-beta.44](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.43...v2.6.0-beta.44) (2026-07-03)
+
+
+### Features
+
+* **audit:** instrumenta groups (create/update/delete) com AuditRecorderService — [#367](https://github.com/atzaero/aerobi-api/issues/367) ([3fb77ca](https://github.com/atzaero/aerobi-api/commit/3fb77ca4a186205d6c11a8bd782ac67fa273c1d5))
+* **audit:** instrumenta users (create/update/delete/reset) com AuditRecorderService — [#367](https://github.com/atzaero/aerobi-api/issues/367) ([db3ed2f](https://github.com/atzaero/aerobi-api/commit/db3ed2fb4c35eca0a853721d1963151d2383501e))
+* **audit:** módulo AuditLog na API — fundação de gravação/leitura — [#367](https://github.com/atzaero/aerobi-api/issues/367) ([8bc0015](https://github.com/atzaero/aerobi-api/commit/8bc0015d4d84e1ddf1373b4b4e196b86ebd77c70)), closes [#353](https://github.com/atzaero/aerobi-api/issues/353)
+
 # [2.6.0-beta.43](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.42...v2.6.0-beta.43) (2026-07-03)
 
 
