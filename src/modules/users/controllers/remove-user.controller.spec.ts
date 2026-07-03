@@ -1,7 +1,6 @@
-import type { Request } from 'express';
-
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
+import { buildMockRequest } from '@/common/testing/http-request.mock';
 import { UserRole } from '@/generated/prisma/client';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
@@ -31,10 +30,7 @@ describe('RemoveUserController', () => {
       role: UserRole.ADMIN,
     };
     execute.mockResolvedValue(undefined);
-    const request = {
-      headers: { 'user-agent': 'jest-ua' },
-      ip: '9.9.9.9',
-    } as unknown as Request;
+    const request = buildMockRequest({ ip: '9.9.9.9', userAgent: 'jest-ua' });
 
     await expect(
       controller.handle({ id: 'target-id' }, actor, request),

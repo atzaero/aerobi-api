@@ -3,7 +3,7 @@ import { ErrorMessageService } from '@/common/error-messages/error-message.servi
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { AuditAction, UserRole } from '@/generated/prisma/client';
 import type { AuditRecorderService } from '@/modules/audit/services/audit-recorder.service';
-import type { RecordAuditContext } from '@/modules/audit/services/audit-recorder.service';
+import { buildAuditContextFixture } from '@/modules/audit/testing/audit-context.fixtures';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 import type { StorageService } from '@/modules/storage/services/storage.service';
 
@@ -19,11 +19,7 @@ const actor: AuthenticatedUser = {
   role: UserRole.ADMIN,
 };
 
-const auditContext: RecordAuditContext = {
-  actorId: actor.id,
-  actorEmail: actor.email,
-  actorRole: actor.role,
-};
+const auditContext = buildAuditContextFixture();
 
 const storage = {
   getPresignedUrl: jest.fn(),

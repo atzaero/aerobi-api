@@ -1,5 +1,4 @@
-import type { Request } from 'express';
-
+import { buildMockRequest } from '@/common/testing/http-request.mock';
 import { UserRole } from '@/generated/prisma/client';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
@@ -32,10 +31,7 @@ describe('UpdateUserController', () => {
     };
     const updated = { id: 'target-id', name: 'Novo Nome' } as UserResponseDto;
     execute.mockResolvedValue(updated);
-    const request = {
-      headers: { 'user-agent': 'jest-ua' },
-      ip: '9.9.9.9',
-    } as unknown as Request;
+    const request = buildMockRequest({ ip: '9.9.9.9', userAgent: 'jest-ua' });
 
     await expect(
       controller.handle({ id: 'target-id' }, dto, actor, request),

@@ -1,5 +1,4 @@
-import type { Request } from 'express';
-
+import { buildMockRequest } from '@/common/testing/http-request.mock';
 import { UserRole } from '@/generated/prisma/client';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
@@ -15,10 +14,7 @@ const actor: AuthenticatedUser = {
   role: UserRole.ADMIN,
 };
 
-const request = {
-  headers: { 'user-agent': 'jest-ua' },
-  ip: '9.9.9.9',
-} as unknown as Request;
+const request = buildMockRequest({ ip: '9.9.9.9', userAgent: 'jest-ua' });
 
 describe('RemoveGroupController', () => {
   let controller: RemoveGroupController;

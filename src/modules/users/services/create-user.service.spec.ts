@@ -5,6 +5,7 @@ import { ErrorMessageService } from '@/common/error-messages/error-message.servi
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { AuditAction, Uf, UserRole } from '@/generated/prisma/client';
 import type { AuditRecorderService } from '@/modules/audit/services/audit-recorder.service';
+import { buildAuditContextFixture } from '@/modules/audit/testing/audit-context.fixtures';
 import { InviteTokenService } from '@/modules/tokens/services/invite-token.service';
 
 import type { UserRepository } from '../repositories/user.repository';
@@ -118,13 +119,12 @@ describe('CreateUserService', () => {
       token: 'plain-invite',
       tokenRecord: { id: 't-1', expiresAt: new Date(Date.now() + 3600_000) },
     });
-    const auditContext = {
+    const auditContext = buildAuditContextFixture({
       actorId: 'admin-1',
       actorEmail: 'admin@x',
-      actorRole: UserRole.ADMIN,
       ipAddress: '1.2.3.4',
       userAgent: 'jest',
-    };
+    });
 
     await service.execute(
       {

@@ -1,5 +1,4 @@
-import type { Request } from 'express';
-
+import { buildMockRequest } from '@/common/testing/http-request.mock';
 import { UserRole } from '@/generated/prisma/client';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
@@ -29,10 +28,7 @@ describe('AdminResetPasswordController', () => {
       message: 'Se o e-mail existir, um link foi enviado.',
     };
     execute.mockResolvedValue(result);
-    const request = {
-      headers: { 'user-agent': 'jest-ua' },
-      ip: '9.9.9.9',
-    } as unknown as Request;
+    const request = buildMockRequest({ ip: '9.9.9.9', userAgent: 'jest-ua' });
 
     await expect(
       controller.handle({ id: 'target-id' }, actor, request),
