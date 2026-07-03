@@ -1,4 +1,4 @@
-import { applyDecorators, Get } from '@nestjs/common';
+import { applyDecorators } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiForbiddenResponse,
@@ -9,7 +9,6 @@ import {
 
 export function ExportContactsDocs() {
   return applyDecorators(
-    Get('export'),
     ApiBearerAuth(),
     ApiOperation({
       summary: 'Exporta mensagens de contato em CSV (ADMIN)',
