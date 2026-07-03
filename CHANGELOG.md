@@ -1,3 +1,10 @@
+# [2.6.0-beta.42](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.41...v2.6.0-beta.42) (2026-07-03)
+
+
+### Features
+
+* **storage:** fundação de key builders + MINIO_BUCKET ([93d3d5b](https://github.com/atzaero/aerobi-api/commit/93d3d5b447aaacf1afd6adbd9552c37b8bfea5c1)), closes [#369](https://github.com/atzaero/aerobi-api/issues/369) [#444](https://github.com/atzaero/aerobi-api/issues/444) [#445](https://github.com/atzaero/aerobi-api/issues/445)
+
 # [2.6.0-beta.41](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.40...v2.6.0-beta.41) (2026-07-02)
 
 
