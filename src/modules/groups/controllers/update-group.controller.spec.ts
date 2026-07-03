@@ -1,3 +1,4 @@
+import { buildMockRequest } from '@/common/testing/http-request.mock';
 import { UserRole } from '@/generated/prisma/client';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
@@ -14,6 +15,8 @@ const actor: AuthenticatedUser = {
   role: UserRole.ADMIN,
 };
 
+const request = buildMockRequest({ ip: '9.9.9.9', userAgent: 'jest-ua' });
+
 describe('UpdateGroupController', () => {
   let controller: UpdateGroupController;
   let execute: jest.Mock;
@@ -25,14 +28,27 @@ describe('UpdateGroupController', () => {
     } as unknown as UpdateGroupService);
   });
 
-  it('delega id, body e ator ao service', async () => {
+  it('delega id, body, ator e contexto de auditoria ao service', async () => {
     const params: GroupParamDTO = {
       id: '44444444-4444-4444-8444-444444444444',
     };
     const body: UpdateGroupDTO = { name: 'X' };
     const row = new GroupResponseDTO();
     execute.mockResolvedValue(row);
-    await expect(controller.handle(params, body, actor)).resolves.toBe(row);
-    expect(execute).toHaveBeenCalledWith(params.id, body, actor);
+
+    await expect(controller.handle(params, body, actor, request)).resolves.toBe(
+      row,
+    );
+
+    expect(execute).toHaveBeenCalledWith(
+      params.id,
+      body,
+      actor,
+      expect.objectContaining({
+        actorId: actor.id,
+        ipAddress: '9.9.9.9',
+        userAgent: 'jest-ua',
+      }),
+    );
   });
 });

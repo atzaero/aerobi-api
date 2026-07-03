@@ -933,3 +933,57 @@ model Contact {
   @@index([createdAt])
   @@map("contact")
 }
+
+// =============================================================================
+// Auditoria (audit log). Trilha **append-only** das ações de escrita
+// (CREATE/UPDATE/DELETE) sobre entidades do domínio — paridade com a coleção
+// `auditLogs` do `aerobi-web` (Firestore). Gravada internamente pelo
+// `AuditRecorderService` em cada mutação (best-effort: falha de auditoria nunca
+// derruba a ação de negócio). Diverge de propósito do padrão soft-delete dos
+// demais models: um log não se edita nem se apaga (é o ponto da trilha), então
+// só há `createdAt`. Sub-operações (SET_STATUS, DECIDE, RESET_PASSWORD, …) não
+// viram novas actions — entram em `metadata` (ex.: `{ scope: 'reset-password' }`),
+// como no web.
+// =============================================================================
+
+/// Ação auditada (espelha `auditActionEnum` do `aerobi-web`). Só o núcleo
+/// CREATE/UPDATE/DELETE; nuances de sub-operação vão em `AuditLog.metadata`.
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+/// Registro de auditoria append-only (espelha a coleção `auditLogs` do
+/// Firestore). Os campos `actor*` são **snapshot** no momento da ação:
+/// `actorId` sem FK rígida para `users.id` por ora (mesmo tratamento do uid
+/// Firebase legado — ver AGENTS.md) e nullable para cobrir ação pública/
+/// sistêmica (ex.: pedido de pouso criado sem login). `before`/`after` são
+/// recortes parciais (só os campos relevantes) e `metadata` guarda pares extras
+/// (`groupId`/`uf`/`scope`/…) usados para rastreio.
+model AuditLog {
+  id String @id @default(uuid()) @db.Uuid
+
+  actorId    String?   @map("actor_id")
+  actorEmail String?   @map("actor_email")
+  actorRole  UserRole? @map("actor_role")
+
+  action     AuditAction
+  entityType String      @map("entity_type")
+  entityId   String      @map("entity_id")
+
+  before   Json?
+  after    Json?
+  metadata Json?
+
+  ipAddress String? @map("ip_address")
+  userAgent String? @map("user_agent") @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([entityType, entityId, createdAt])
+  @@index([actorEmail])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

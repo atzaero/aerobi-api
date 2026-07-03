@@ -1,6 +1,8 @@
-import { Body, Controller, UseGuards } from '@nestjs/common';
+import { Body, Controller, Req, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import type { Request } from 'express';
 
+import { buildAuditContext } from '@/modules/audit/utils/audit-context.util';
 import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator';
 import { RequirePermission } from '@/modules/auth/decorators/require-permission.decorator';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
@@ -23,11 +25,15 @@ export class CreateUserController {
   handle(
     @Body() dto: CreateUserRequestDto,
     @CurrentUser() actor: AuthenticatedUser,
+    @Req() request: Request,
   ): Promise<UserResponseDto> {
-    return this.service.execute({
-      ...dto,
-      actorId: actor.id,
-      actorRole: actor.role,
-    });
+    return this.service.execute(
+      {
+        ...dto,
+        actorId: actor.id,
+        actorRole: actor.role,
+      },
+      buildAuditContext(actor, request),
+    );
   }
 }

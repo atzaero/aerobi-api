@@ -1,3 +1,4 @@
+import { buildMockRequest } from '@/common/testing/http-request.mock';
 import { UserRole } from '@/generated/prisma/client';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
@@ -27,10 +28,15 @@ describe('AdminResetPasswordController', () => {
       message: 'Se o e-mail existir, um link foi enviado.',
     };
     execute.mockResolvedValue(result);
+    const request = buildMockRequest({ ip: '9.9.9.9', userAgent: 'jest-ua' });
 
-    await expect(controller.handle({ id: 'target-id' }, actor)).resolves.toBe(
-      result,
+    await expect(
+      controller.handle({ id: 'target-id' }, actor, request),
+    ).resolves.toBe(result);
+    expect(execute).toHaveBeenCalledWith(
+      'target-id',
+      actor,
+      expect.objectContaining({ actorId: actor.id, ipAddress: '9.9.9.9' }),
     );
-    expect(execute).toHaveBeenCalledWith('target-id', actor);
   });
 });

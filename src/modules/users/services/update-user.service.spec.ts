@@ -2,9 +2,10 @@ import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import type { User } from '@/generated/prisma/client';
-import { UserRole } from '@/generated/prisma/client';
+import { AuditAction, UserRole } from '@/generated/prisma/client';
 import type { EventEmitter2 } from '@nestjs/event-emitter';
 
+import type { AuditRecorderService } from '@/modules/audit/services/audit-recorder.service';
 import type { RefreshTokenRepository } from '@/modules/auth/repositories/refresh-token.repository';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
@@ -39,6 +40,7 @@ describe('UpdateUserService (edição administrativa)', () => {
   let update: jest.Mock;
   let revokeAllForUser: jest.Mock;
   let emit: jest.Mock;
+  let record: jest.Mock;
 
   beforeEach(() => {
     findActiveById = jest.fn();
@@ -46,6 +48,7 @@ describe('UpdateUserService (edição administrativa)', () => {
     update = jest.fn();
     revokeAllForUser = jest.fn().mockResolvedValue(2);
     emit = jest.fn();
+    record = jest.fn();
 
     const userRepository = {
       findActiveById,
@@ -62,6 +65,7 @@ describe('UpdateUserService (edição administrativa)', () => {
       refreshTokenRepository,
       eventEmitter,
       new ErrorMessageService(),
+      { record } as unknown as AuditRecorderService,
     );
   });
 
@@ -98,6 +102,35 @@ describe('UpdateUserService (edição administrativa)', () => {
     expect(revokeAllForUser).not.toHaveBeenCalled();
     expect(emit).not.toHaveBeenCalled();
     expect(result.name).toBe('Novo');
+  });
+
+  it('grava auditoria UPDATE com before/after e metadata de mudanças', async () => {
+    const target = buildUserFixture({
+      id: 'u-1',
+      name: 'Old',
+      role: UserRole.OPERATOR,
+    });
+    withRepo(target);
+    update.mockResolvedValue(
+      buildUserFixture({ id: 'u-1', name: 'Novo', role: UserRole.OPERATOR }),
+    );
+
+    await service.execute('u-1', { name: 'Novo' }, ADMIN);
+
+    expect(record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: AuditAction.UPDATE,
+        entityType: 'user',
+        entityId: 'u-1',
+        metadata: { emailChanged: false, roleChanged: false },
+      }),
+      expect.any(Object),
+    );
+    const [firstCall] = record.mock.calls as Array<
+      [{ before: { name: string }; after: { name: string } }, unknown]
+    >;
+    expect(firstCall[0].before.name).toBe('Old');
+    expect(firstCall[0].after.name).toBe('Novo');
   });
 
   it('ADMIN troca email → valida unicidade, revoga sessões e emite evento', async () => {

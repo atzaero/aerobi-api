@@ -1,5 +1,6 @@
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
+import { buildMockRequest } from '@/common/testing/http-request.mock';
 import { UserRole } from '@/generated/prisma/client';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
@@ -37,13 +38,19 @@ describe('CreateUserController', () => {
     };
     const persisted = { id: 'new-id', email: dto.email } as UserResponseDto;
     execute.mockResolvedValue(persisted);
+    const request = buildMockRequest({ ip: '9.9.9.9', userAgent: 'jest-ua' });
 
-    await expect(controller.handle(dto, actor)).resolves.toBe(persisted);
-    expect(execute).toHaveBeenCalledWith({
-      ...dto,
-      actorId: 'admin-1',
-      actorRole: UserRole.ADMIN,
-    });
+    await expect(controller.handle(dto, actor, request)).resolves.toBe(
+      persisted,
+    );
+    expect(execute).toHaveBeenCalledWith(
+      { ...dto, actorId: 'admin-1', actorRole: UserRole.ADMIN },
+      expect.objectContaining({
+        actorId: 'admin-1',
+        ipAddress: '9.9.9.9',
+        userAgent: 'jest-ua',
+      }),
+    );
   });
 
   describe('autorização (@RequirePermission user:create)', () => {

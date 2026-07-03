@@ -91,6 +91,15 @@ Object storage por entidade segue um **padrão único** — passo-a-passo em [`s
 - Montar a key **sempre** via `buildStorageKey` (`src/modules/storage/keys/`) — `entidade`/`docType` tipados (`StorageDomain`/`STORAGE_DOC_TYPES`; registre tipos novos lá). Config de bucket/region compartilhada em `src/modules/storage/storage.config.ts` (app + seeds). Provisionamento: `aerobi-ansible` (`roles/minio`) + `aerobi-local-infra`.
 - Moldes: `groups` (coleção 1-imagem-ativa via tabela `GroupImage` + `*_key` desnormalizado) e `movements` (1:1 na linha, id pré-gerado no service). Skill de orientação: [`.claude/skills/storage/`](.claude/skills/storage/).
 
+## Auditoria (audit log)
+
+Trilha **append-only** das mutações do domínio — módulo `audit` (execução #367 da epic #353), fonte canônica em [`src/modules/audit/README.md`](src/modules/audit/README.md). O que não se deduz do código:
+
+- **Escrita interna, best-effort**: cada mutação chama `AuditRecorderService.record(input, context)` (não há rota HTTP de gravação — evita falsificar a trilha). A gravação **nunca** derruba a operação de negócio (falha é logada e engolida).
+- **Padrão de instrumentação** (implementado em `groups` e `users`, replicar nos próximos): módulo `imports: [AuditModule]`; o **controller** monta o contexto (ator + ip + user-agent) via `buildAuditContext(actor, request)` (`@Req()`) e o **service** grava após a mutação — o `before` só existe no service (estado pré-mutação). Um helper puro de **snapshot** (`{entidade}AuditSnapshot`) projeta só campos identificadores; **nunca** segredos (password) nem dados voláteis (URLs presigned).
+- **`action`** ∈ `{CREATE, UPDATE, DELETE}` apenas; sub-operações (SET_STATUS, DECIDE, RESET_PASSWORD, INVITE, …) vão em `metadata` (ex.: `{ scope: 'reset-password' }`), não viram novas actions. `entityType` é tipado no call-site (`AuditEntityType`, snake_case singular) e persistido como String — registre o tipo novo em `constants/audit-entity-type.ts` **e** o rótulo pt-BR em `mappers/audit-labels.ts` ao migrar um módulo.
+- **Leitura sem escopo de grupo**: `audit:list/read/export` (ADMIN/COORDINATOR) veem **todos** os logs (paridade com o web). `actor*` são snapshot nullable (ação pública/sistêmica); `actorId` sem FK rígida a `users.id` por ora (uid legado). Export CSV segue o padrão de `csv.util` (BOM/CRLF/RFC 4180, teto 50k).
+
 ## Novos recursos (checklist)
 
 1. **Modelo de dados**: se precisar de persistência nova, actualizar `prisma/schema.prisma` e migrações; `prisma generate` em dev/CI.

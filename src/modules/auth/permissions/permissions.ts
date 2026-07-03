@@ -84,10 +84,14 @@ export const PERMISSIONS: Record<
     delete: [UserRole.ADMIN, UserRole.COORDINATOR],
     export: [UserRole.ADMIN, UserRole.COORDINATOR],
   },
-  // Auditoria: leitura interna (admin/coordinator).
+  // Auditoria: leitura interna (admin/coordinator). `export` espelha o `list`
+  // (o aerobi-web reusa a permissão de `list` para exportar; aqui há action
+  // própria, alinhada ao padrão de export dos demais módulos). Sem escopo de
+  // grupo: admin e coordinator veem todos os logs.
   audit: {
     list: [UserRole.ADMIN, UserRole.COORDINATOR],
     read: [UserRole.ADMIN, UserRole.COORDINATOR],
+    export: [UserRole.ADMIN, UserRole.COORDINATOR],
   },
   // Aeródromos. `update` cobre os dados **e** os toggles de status (is_open,
   // is_view, weather_station_display, lit) — admin/coordinator.

@@ -3,6 +3,9 @@ import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { httpError } from '@/common/exceptions/http-error.util';
+import { AuditAction } from '@/generated/prisma/client';
+import { AuditRecorderService } from '@/modules/audit/services/audit-recorder.service';
+import type { RecordAuditContext } from '@/modules/audit/services/audit-recorder.service';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
 import type { PasswordResetResponseDto } from '../dtos/password-reset-response.dto';
@@ -27,11 +30,13 @@ export class AdminResetPasswordService {
     private readonly userRepository: UserRepository,
     private readonly requestPasswordResetService: RequestPasswordResetService,
     private readonly errorMessageService: ErrorMessageService,
+    private readonly auditRecorder: AuditRecorderService,
   ) {}
 
   async execute(
     id: string,
     actor: AuthenticatedUser,
+    auditContext: RecordAuditContext = {},
   ): Promise<PasswordResetResponseDto> {
     const user = await this.userRepository.findActiveById(id);
     if (!user) {
@@ -45,6 +50,21 @@ export class AdminResetPasswordService {
 
     this.logger.log(
       `Admin password reset triggered targetUserId=${id} by=${actor.id}`,
+    );
+
+    /**
+     * Sub-operação modelada como UPDATE + `metadata.scope` (paridade com o web):
+     * a ação não altera colunas snapshotáveis (dispara um link), então sem
+     * `before`/`after` — só o marcador de escopo.
+     */
+    await this.auditRecorder.record(
+      {
+        action: AuditAction.UPDATE,
+        entityType: 'user',
+        entityId: id,
+        metadata: { scope: 'reset-password' },
+      },
+      auditContext,
     );
 
     return this.requestPasswordResetService.execute({ email: user.email });

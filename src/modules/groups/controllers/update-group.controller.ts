@@ -1,6 +1,8 @@
-import { Body, Controller, Param, Patch, UseGuards } from '@nestjs/common';
+import { Body, Controller, Param, Patch, Req, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import type { Request } from 'express';
 
+import { buildAuditContext } from '@/modules/audit/utils/audit-context.util';
 import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator';
 import { RequirePermission } from '@/modules/auth/decorators/require-permission.decorator';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
@@ -26,7 +28,13 @@ export class UpdateGroupController {
     @Param() { id }: GroupParamDTO,
     @Body() dto: UpdateGroupDTO,
     @CurrentUser() actor: AuthenticatedUser,
+    @Req() request: Request,
   ): Promise<GroupResponseDTO> {
-    return this.service.execute(id, dto, actor);
+    return this.service.execute(
+      id,
+      dto,
+      actor,
+      buildAuditContext(actor, request),
+    );
   }
 }

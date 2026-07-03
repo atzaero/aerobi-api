@@ -1,3 +1,4 @@
+import { buildMockRequest } from '@/common/testing/http-request.mock';
 import { Uf, UserRole } from '@/generated/prisma/client';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
@@ -13,6 +14,8 @@ const actor: AuthenticatedUser = {
   role: UserRole.ADMIN,
 };
 
+const request = buildMockRequest({ ip: '9.9.9.9', userAgent: 'jest-ua' });
+
 describe('CreateGroupController', () => {
   let controller: CreateGroupController;
   let execute: jest.Mock;
@@ -24,14 +27,26 @@ describe('CreateGroupController', () => {
     } as unknown as CreateGroupService);
   });
 
-  it('delega passando o ator autenticado', async () => {
+  it('delega passando ator e contexto de auditoria', async () => {
     const dto: CreateGroupDTO = {
       uf: Uf.SP,
       name: 'G',
     };
     const row = new GroupResponseDTO();
     execute.mockResolvedValue(row);
-    await expect(controller.handle(dto, actor)).resolves.toBe(row);
-    expect(execute).toHaveBeenCalledWith(dto, actor);
+
+    await expect(controller.handle(dto, actor, request)).resolves.toBe(row);
+
+    expect(execute).toHaveBeenCalledWith(
+      dto,
+      actor,
+      expect.objectContaining({
+        actorId: actor.id,
+        actorEmail: actor.email,
+        actorRole: actor.role,
+        ipAddress: '9.9.9.9',
+        userAgent: 'jest-ua',
+      }),
+    );
   });
 });
