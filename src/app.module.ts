@@ -5,6 +5,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 
 import { ErrorMessageModule } from '@/common/error-messages/error-message.module';
 import { FeedbacksModule } from '@/modules/feedbacks/feedbacks.module';
+import { AuditModule } from '@/modules/audit/audit.module';
 import { AuthModule } from '@/modules/auth/auth.module';
 import { ConformityModule } from '@/modules/conformity/conformity.module';
 import { ContactModule } from '@/modules/contact/contact.module';
@@ -61,6 +62,7 @@ import { PrismaModule } from '@/prisma/prisma.module';
     NotificationsModule,
     StreamsModule,
     CamerasModule,
+    AuditModule,
   ],
 })
 export class AppModule {}

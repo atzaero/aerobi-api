@@ -57,6 +57,7 @@ const EXPECTED: Record<
   audit: {
     list: [UserRole.ADMIN, UserRole.COORDINATOR],
     read: [UserRole.ADMIN, UserRole.COORDINATOR],
+    export: [UserRole.ADMIN, UserRole.COORDINATOR],
   },
   aerodrome: {
     list: ALL_ROLES,
