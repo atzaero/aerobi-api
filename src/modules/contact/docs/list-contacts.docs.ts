@@ -1,4 +1,4 @@
-import { applyDecorators, Get } from '@nestjs/common';
+import { applyDecorators } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiForbiddenResponse,
@@ -10,7 +10,6 @@ import { ContactsPaginatedResponseDTO } from '../dtos/contacts-paginated-respons
 
 export function ListContactsDocs() {
   return applyDecorators(
-    Get(),
     ApiBearerAuth(),
     ApiOperation({
       summary: 'Lista mensagens de contato (ADMIN)',

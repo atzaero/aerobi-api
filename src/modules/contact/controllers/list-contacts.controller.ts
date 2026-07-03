@@ -1,4 +1,4 @@
-import { Controller, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
 import { RequirePermission } from '@/modules/auth/decorators/require-permission.decorator';
@@ -16,8 +16,9 @@ import { ListContactsService } from '../services/list-contacts.service';
 export class ListContactsController {
   constructor(private readonly service: ListContactsService) {}
 
-  @ListContactsDocs()
+  @Get()
   @RequirePermission('contact', 'list')
+  @ListContactsDocs()
   handle(
     @Query() query: ListContactsQueryDTO,
   ): Promise<ContactsPaginatedResponseDTO> {

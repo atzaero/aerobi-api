@@ -1,4 +1,4 @@
-import { Body, Controller, Param, UseGuards } from '@nestjs/common';
+import { Body, Controller, Param, Patch, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator';
@@ -21,8 +21,9 @@ import { UpdateContactStatusService } from '../services/update-contact-status.se
 export class UpdateContactStatusController {
   constructor(private readonly service: UpdateContactStatusService) {}
 
-  @UpdateContactStatusDocs()
+  @Patch(':id/status')
   @RequirePermission('contact', 'update')
+  @UpdateContactStatusDocs()
   handle(
     @Param() params: ContactParamDTO,
     @Body() dto: UpdateContactStatusDTO,
