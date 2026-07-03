@@ -1,3 +1,10 @@
+# [2.6.0-beta.43](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.42...v2.6.0-beta.43) (2026-07-03)
+
+
+### Features
+
+* **cameras:** módulo CRUD interno de câmeras (metadados no Postgres) — [#372](https://github.com/atzaero/aerobi-api/issues/372) ([bb4a3ac](https://github.com/atzaero/aerobi-api/commit/bb4a3ac1e3cc4c4dfd64deb447c5de6d2f0694b6)), closes [#473](https://github.com/atzaero/aerobi-api/issues/473) [#474](https://github.com/atzaero/aerobi-api/issues/474) [#475](https://github.com/atzaero/aerobi-api/issues/475) [#476](https://github.com/atzaero/aerobi-api/issues/476)
+
 # [2.6.0-beta.42](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.41...v2.6.0-beta.42) (2026-07-03)
 
 
