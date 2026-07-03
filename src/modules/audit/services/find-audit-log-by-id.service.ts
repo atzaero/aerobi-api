@@ -23,7 +23,11 @@ export class FindAuditLogByIdService {
     const log = await this.repository.findById(id);
 
     if (!log) {
-      throw resourceNotFound(this.errorMessageService, 'AuditLog', id);
+      throw resourceNotFound(
+        this.errorMessageService,
+        'Registro de auditoria',
+        id,
+      );
     }
 
     return toAuditLogResponse(log);
