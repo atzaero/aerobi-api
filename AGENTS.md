@@ -82,6 +82,15 @@ Camada de autenticação **humana** (login de usuário no painel) — convive co
 - **Módulos `auth/` e `users/`** (login/refresh/me/logout; CRUD de usuários, convite, password-reset): **já implementados** e registados em [`src/app.module.ts`](src/app.module.ts). Seguem o padrão de um controller/service por ação (ver `src/modules/auth/controllers/` e `src/modules/users/controllers/`). A fundação original (schema + ErrorCodes + templates de email + seed) continua descrita acima.
 - **Campos legados com Firebase uid** (`LandingRequest.reviewed_by`, `TechnicalVisit.visit_by`, auditoria `created_by`/`updated_by`/`deleted_by`, `Token.subject_id`): permanecem como `String` por ora. Migração para FK ao `users.id` ficará em PR/issue separada.
 
+## Armazenamento de arquivos (MinIO/S3)
+
+Object storage por entidade segue um **padrão único** — passo-a-passo em [`src/modules/storage/README.md`](src/modules/storage/README.md) (**fonte canônica**). O que não se deduz do código:
+
+- **Ambiente = bucket** (`aerobi-{dev,staging,prod}`), um bucket por app (outras apps: `<app>-<env>`). A key **espelha o banco**: `{entidade}/{itemId}/{docType}/{fileId}[-{slug}].{ext}` — topo = a tabela **dona** do arquivo (coleção usa a entidade-raiz, nunca a avó), `docType` snake_case sempre presente, `fileId` uuid opaco (nome original vai em metadado, não na key).
+- **Guardar a KEY** no banco (`*_key @db.Text`), **nunca a URL**; o DTO expõe `*Url` **presigned** (TTL 1h) resolvido on-read via `resolveBestEffortPresignedUrl`. Buckets **privados**; **só a API escreve** (multipart → controller com Multer memory → `StorageService`; clientes nunca escrevem direto).
+- Montar a key **sempre** via `buildStorageKey` (`src/modules/storage/keys/`) — `entidade`/`docType` tipados (`StorageDomain`/`STORAGE_DOC_TYPES`; registre tipos novos lá). Config de bucket/region compartilhada em `src/modules/storage/storage.config.ts` (app + seeds). Provisionamento: `aerobi-ansible` (`roles/minio`) + `aerobi-local-infra`.
+- Moldes: `groups` (coleção 1-imagem-ativa via tabela `GroupImage` + `*_key` desnormalizado) e `movements` (1:1 na linha, id pré-gerado no service). Skill de orientação: [`.claude/skills/storage/`](.claude/skills/storage/).
+
 ## Novos recursos (checklist)
 
 1. **Modelo de dados**: se precisar de persistência nova, actualizar `prisma/schema.prisma` e migrações; `prisma generate` em dev/CI.
