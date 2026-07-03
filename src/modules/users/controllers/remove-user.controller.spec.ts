@@ -1,3 +1,5 @@
+import type { Request } from 'express';
+
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { UserRole } from '@/generated/prisma/client';
@@ -29,11 +31,19 @@ describe('RemoveUserController', () => {
       role: UserRole.ADMIN,
     };
     execute.mockResolvedValue(undefined);
+    const request = {
+      headers: { 'user-agent': 'jest-ua' },
+      ip: '9.9.9.9',
+    } as unknown as Request;
 
     await expect(
-      controller.handle({ id: 'target-id' }, actor),
+      controller.handle({ id: 'target-id' }, actor, request),
     ).resolves.toBeUndefined();
-    expect(execute).toHaveBeenCalledWith('target-id', actor);
+    expect(execute).toHaveBeenCalledWith(
+      'target-id',
+      actor,
+      expect.objectContaining({ actorId: actor.id, ipAddress: '9.9.9.9' }),
+    );
   });
 
   describe('autorização (@RequirePermission user:delete)', () => {

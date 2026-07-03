@@ -5,7 +5,9 @@ import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { httpError } from '@/common/exceptions/http-error.util';
 import { maskEmail } from '@/common/utils/mask-email.util';
-import { Uf, UserRole } from '@/generated/prisma/client';
+import { AuditAction, Uf, UserRole } from '@/generated/prisma/client';
+import { AuditRecorderService } from '@/modules/audit/services/audit-recorder.service';
+import type { RecordAuditContext } from '@/modules/audit/services/audit-recorder.service';
 import { InviteTokenService } from '@/modules/tokens/services/invite-token.service';
 
 import type { CreateUserRequestDto } from '../dtos/create-user-request.dto';
@@ -16,6 +18,7 @@ import {
 } from '../events/user-invited.event';
 import { toUserResponse } from '../mappers/user.mapper';
 import { UserRepository } from '../repositories/user.repository';
+import { userAuditSnapshot } from '../utils/user-audit';
 import { assertCanManageTargetRole } from '../utils/user-access.util';
 
 export interface CreateUserInput extends CreateUserRequestDto {
@@ -47,9 +50,13 @@ export class CreateUserService {
     private readonly inviteTokenService: InviteTokenService,
     private readonly eventEmitter: EventEmitter2,
     private readonly errorMessageService: ErrorMessageService,
+    private readonly auditRecorder: AuditRecorderService,
   ) {}
 
-  async execute(input: CreateUserInput): Promise<UserResponseDto> {
+  async execute(
+    input: CreateUserInput,
+    auditContext: RecordAuditContext = {},
+  ): Promise<UserResponseDto> {
     assertCanManageTargetRole(
       input.actorRole,
       input.role,
@@ -100,6 +107,16 @@ export class CreateUserService {
 
     this.logger.log(
       `User invited userId=${user.id} email=${maskEmail(user.email)} role=${user.role} invitedBy=${input.actorId}`,
+    );
+
+    await this.auditRecorder.record(
+      {
+        action: AuditAction.CREATE,
+        entityType: 'user',
+        entityId: user.id,
+        after: userAuditSnapshot(user),
+      },
+      auditContext,
     );
 
     return toUserResponse(user);

@@ -5,7 +5,10 @@ import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { httpError } from '@/common/exceptions/http-error.util';
 import { resolveActorGroupScope } from '@/common/utils/group-scope.util';
+import { AuditAction } from '@/generated/prisma/client';
 import type { User } from '@/generated/prisma/client';
+import { AuditRecorderService } from '@/modules/audit/services/audit-recorder.service';
+import type { RecordAuditContext } from '@/modules/audit/services/audit-recorder.service';
 import { RefreshTokenRepository } from '@/modules/auth/repositories/refresh-token.repository';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
@@ -17,6 +20,7 @@ import {
 } from '../events/user-email-changed.event';
 import { toUserResponse } from '../mappers/user.mapper';
 import { UserRepository } from '../repositories/user.repository';
+import { userAuditSnapshot } from '../utils/user-audit';
 import { isTargetEditableInGroup } from '../utils/group-scope.util';
 import { assertCanAssignRole } from '../utils/user-access.util';
 
@@ -58,12 +62,14 @@ export class UpdateUserService {
     private readonly refreshTokenRepository: RefreshTokenRepository,
     private readonly eventEmitter: EventEmitter2,
     private readonly errorMessageService: ErrorMessageService,
+    private readonly auditRecorder: AuditRecorderService,
   ) {}
 
   async execute(
     id: string,
     dto: AdminUpdateUserRequestDto,
     actor: AuthenticatedUser,
+    auditContext: RecordAuditContext = {},
   ): Promise<UserResponseDto> {
     const target = await this.userRepository.findActiveById(id);
 
@@ -156,6 +162,22 @@ export class UpdateUserService {
     }
 
     this.logger.log(`User updated (admin) id=${id} updatedBy=${actor.id}`);
+
+    await this.auditRecorder.record(
+      {
+        action: AuditAction.UPDATE,
+        entityType: 'user',
+        entityId: id,
+        before: userAuditSnapshot(target),
+        after: userAuditSnapshot(updated),
+        metadata: {
+          emailChanged,
+          roleChanged: dto.role !== undefined && dto.role !== target.role,
+        },
+      },
+      auditContext,
+    );
+
     return toUserResponse(updated);
   }
 }

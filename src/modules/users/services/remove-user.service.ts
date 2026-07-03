@@ -4,10 +4,14 @@ import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { httpError } from '@/common/exceptions/http-error.util';
 import { resolveActorGroupScope } from '@/common/utils/group-scope.util';
+import { AuditAction } from '@/generated/prisma/client';
+import { AuditRecorderService } from '@/modules/audit/services/audit-recorder.service';
+import type { RecordAuditContext } from '@/modules/audit/services/audit-recorder.service';
 import { RefreshTokenRepository } from '@/modules/auth/repositories/refresh-token.repository';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
 import { UserRepository } from '../repositories/user.repository';
+import { userAuditSnapshot } from '../utils/user-audit';
 import { isTargetManageableInGroup } from '../utils/group-scope.util';
 
 /**
@@ -33,9 +37,14 @@ export class RemoveUserService {
 
     private readonly refreshTokenRepository: RefreshTokenRepository,
     private readonly errorMessageService: ErrorMessageService,
+    private readonly auditRecorder: AuditRecorderService,
   ) {}
 
-  async execute(id: string, actor: AuthenticatedUser): Promise<void> {
+  async execute(
+    id: string,
+    actor: AuthenticatedUser,
+    auditContext: RecordAuditContext = {},
+  ): Promise<void> {
     if (id === actor.id) {
       throw httpError(
         this.errorMessageService,
@@ -83,6 +92,16 @@ export class RemoveUserService {
 
     this.logger.log(
       `User soft-deleted id=${id} revokedRefreshTokens=${revoked} deletedBy=${actor.id}`,
+    );
+
+    await this.auditRecorder.record(
+      {
+        action: AuditAction.DELETE,
+        entityType: 'user',
+        entityId: id,
+        before: userAuditSnapshot(user!),
+      },
+      auditContext,
     );
   }
 }

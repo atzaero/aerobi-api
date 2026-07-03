@@ -1,3 +1,5 @@
+import type { Request } from 'express';
+
 import { UserRole } from '@/generated/prisma/client';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
@@ -30,10 +32,19 @@ describe('UpdateUserController', () => {
     };
     const updated = { id: 'target-id', name: 'Novo Nome' } as UserResponseDto;
     execute.mockResolvedValue(updated);
+    const request = {
+      headers: { 'user-agent': 'jest-ua' },
+      ip: '9.9.9.9',
+    } as unknown as Request;
 
     await expect(
-      controller.handle({ id: 'target-id' }, dto, actor),
+      controller.handle({ id: 'target-id' }, dto, actor, request),
     ).resolves.toBe(updated);
-    expect(execute).toHaveBeenCalledWith('target-id', dto, actor);
+    expect(execute).toHaveBeenCalledWith(
+      'target-id',
+      dto,
+      actor,
+      expect.objectContaining({ actorId: actor.id, ipAddress: '9.9.9.9' }),
+    );
   });
 });

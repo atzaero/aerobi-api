@@ -28,7 +28,7 @@ export class UpdateGroupService {
     id: string,
     dto: UpdateGroupDTO,
     actor: AuthenticatedUser,
-    auditContext: RecordAuditContext,
+    auditContext: RecordAuditContext = {},
   ): Promise<GroupResponseDTO> {
     /**
      * `group:update` é ADMIN-only (`PermissionsGuard`), sem escopo por grupo —

@@ -25,7 +25,7 @@ export class RemoveGroupService {
   async execute(
     id: string,
     actor: AuthenticatedUser,
-    auditContext: RecordAuditContext,
+    auditContext: RecordAuditContext = {},
   ): Promise<GroupDeletionResponseDTO> {
     /**
      * `group:delete` é ADMIN-only (`PermissionsGuard`), sem escopo por grupo — a

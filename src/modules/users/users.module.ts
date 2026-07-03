@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { EmailModule } from '@/common/email/email.module';
+import { AuditModule } from '@/modules/audit/audit.module';
 import { AuthModule } from '@/modules/auth/auth.module';
 import { TokensModule } from '@/modules/tokens/tokens.module';
 
@@ -46,7 +47,7 @@ import { VerifyPasswordResetTokenService } from './services/verify-password-rese
  * sem acoplar ao Prisma diretamente.
  */
 @Module({
-  imports: [AuthModule, TokensModule, EmailModule],
+  imports: [AuthModule, TokensModule, EmailModule, AuditModule],
   controllers: [
     CreateUserController,
     ListUsersController,

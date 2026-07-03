@@ -3,7 +3,8 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
-import { Uf, UserRole } from '@/generated/prisma/client';
+import { AuditAction, Uf, UserRole } from '@/generated/prisma/client';
+import type { AuditRecorderService } from '@/modules/audit/services/audit-recorder.service';
 import { InviteTokenService } from '@/modules/tokens/services/invite-token.service';
 
 import type { UserRepository } from '../repositories/user.repository';
@@ -28,6 +29,7 @@ describe('CreateUserService', () => {
 
   let createInviteToken: jest.Mock;
   let emit: jest.Mock;
+  let record: jest.Mock;
 
   beforeEach(() => {
     findByEmail = jest.fn();
@@ -41,6 +43,7 @@ describe('CreateUserService', () => {
 
     createInviteToken = jest.fn();
     emit = jest.fn();
+    record = jest.fn();
 
     const userRepository = {
       findByEmail,
@@ -64,6 +67,7 @@ describe('CreateUserService', () => {
       inviteTokenService,
       eventEmitter,
       new ErrorMessageService(),
+      { record } as unknown as AuditRecorderService,
     );
   });
 
@@ -105,6 +109,48 @@ describe('CreateUserService', () => {
     expect(emitCalls[0][0]).toBe('user.invited');
     expect(result.id).toBe('user-1');
     expect(result.email).toBe('piloto@aerobi.local');
+  });
+
+  it('grava auditoria CREATE com after e contexto', async () => {
+    existsByEmail.mockResolvedValue(false);
+    create.mockResolvedValue(buildPendingUserFixture());
+    createInviteToken.mockResolvedValue({
+      token: 'plain-invite',
+      tokenRecord: { id: 't-1', expiresAt: new Date(Date.now() + 3600_000) },
+    });
+    const auditContext = {
+      actorId: 'admin-1',
+      actorEmail: 'admin@x',
+      actorRole: UserRole.ADMIN,
+      ipAddress: '1.2.3.4',
+      userAgent: 'jest',
+    };
+
+    await service.execute(
+      {
+        email: 'piloto@aerobi.local',
+        name: 'Piloto',
+        role: UserRole.OPERATOR,
+        groupId: 'group-a',
+        state: Uf.SP,
+        actorId: 'admin-1',
+        actorRole: UserRole.ADMIN,
+      },
+      auditContext,
+    );
+
+    expect(record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: AuditAction.CREATE,
+        entityType: 'user',
+        entityId: 'user-1',
+      }),
+      auditContext,
+    );
+    const [firstCall] = record.mock.calls as Array<
+      [{ after: { id: string } }, unknown]
+    >;
+    expect(firstCall[0].after.id).toBe('user-1');
   });
 
   it('email duplicado → EMAIL_ALREADY_REGISTERED', async () => {

@@ -24,7 +24,7 @@ export class CreateGroupService {
   async execute(
     dto: CreateGroupDTO,
     actor: AuthenticatedUser,
-    auditContext: RecordAuditContext,
+    auditContext: RecordAuditContext = {},
   ): Promise<GroupResponseDTO> {
     const created = await this.repo.create(
       buildGroupCreateInput(dto, actor.id),

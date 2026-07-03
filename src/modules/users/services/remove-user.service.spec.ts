@@ -1,7 +1,8 @@
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
-import { Uf, UserRole } from '@/generated/prisma/client';
+import { AuditAction, Uf, UserRole } from '@/generated/prisma/client';
+import type { AuditRecorderService } from '@/modules/audit/services/audit-recorder.service';
 import { buildAuthenticatedUserFixture } from '@/modules/auth/testing/authenticated-user.fixtures';
 import type { RefreshTokenRepository } from '@/modules/auth/repositories/refresh-token.repository';
 
@@ -33,11 +34,13 @@ describe('RemoveUserService', () => {
   let findActiveById: jest.Mock;
   let softDelete: jest.Mock;
   let revokeAllForUser: jest.Mock;
+  let record: jest.Mock;
 
   beforeEach(() => {
     findActiveById = jest.fn();
     softDelete = jest.fn();
     revokeAllForUser = jest.fn();
+    record = jest.fn();
 
     const userRepository = {
       findActiveById,
@@ -52,6 +55,7 @@ describe('RemoveUserService', () => {
       userRepository,
       refreshTokenRepository,
       new ErrorMessageService(),
+      { record } as unknown as AuditRecorderService,
     );
   });
 
@@ -78,6 +82,30 @@ describe('RemoveUserService', () => {
     await expect(service.execute('target', ADMIN)).resolves.toBeUndefined();
     expect(softDelete).toHaveBeenCalledWith('target', 'admin-1');
     expect(revokeAllForUser).toHaveBeenCalledWith('target');
+  });
+
+  it('grava auditoria DELETE com before (snapshot do alvo)', async () => {
+    routeFindActiveById(
+      null,
+      buildUserFixture({ id: 'target', name: 'Alvo', role: UserRole.OPERATOR }),
+    );
+    revokeAllForUser.mockResolvedValue(0);
+
+    await service.execute('target', ADMIN);
+
+    expect(record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: AuditAction.DELETE,
+        entityType: 'user',
+        entityId: 'target',
+      }),
+      expect.any(Object),
+    );
+    const [firstCall] = record.mock.calls as Array<
+      [{ before: { id: string; name: string } }, unknown]
+    >;
+    expect(firstCall[0].before.id).toBe('target');
+    expect(firstCall[0].before.name).toBe('Alvo');
   });
 
   it('ADMIN: user inexistente → USER_NOT_FOUND', async () => {
