@@ -41,7 +41,7 @@ services:
       MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:-http://localhost:9002}
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-aerobi-admin}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minio_dev_only}
-      MINIO_BUCKET_READINGS: ${MINIO_BUCKET_READINGS:-aerobi-dev-readings}
+      MINIO_BUCKET: ${MINIO_BUCKET:-aerobi-dev}
       # Evolution GO (notificações WhatsApp). EVOLUTION_GO_API_KEY = token da
       # instância (definido após linkar o número no manager :4000) — ver
       # aerobi-local-infra/README.md. Vazio = envio falha best-effort (sem linkar).

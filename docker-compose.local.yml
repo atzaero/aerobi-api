@@ -21,7 +21,7 @@ services:
       MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:-http://localhost:9002}
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-aerobi-admin}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minio_dev_only}
-      MINIO_BUCKET_READINGS: ${MINIO_BUCKET_READINGS:-aerobi-dev-readings}
+      MINIO_BUCKET: ${MINIO_BUCKET:-aerobi-dev}
       EVOLUTION_GO_BASE_URL: ${EVOLUTION_GO_BASE_URL:-http://aerobi-evolution-go:4000}
       EVOLUTION_GO_API_KEY: ${EVOLUTION_GO_API_KEY:-}
     restart: unless-stopped
