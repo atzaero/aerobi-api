@@ -1,4 +1,4 @@
-import { Controller, Param, UseGuards } from '@nestjs/common';
+import { Controller, Delete, Param, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator';
@@ -20,8 +20,9 @@ import { RemoveContactService } from '../services/remove-contact.service';
 export class RemoveContactController {
   constructor(private readonly service: RemoveContactService) {}
 
-  @RemoveContactDocs()
+  @Delete(':id')
   @RequirePermission('contact', 'delete')
+  @RemoveContactDocs()
   handle(
     @Param() params: ContactParamDTO,
     @CurrentUser() actor: AuthenticatedUser,

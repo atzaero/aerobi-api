@@ -1,4 +1,4 @@
-import { applyDecorators, Delete } from '@nestjs/common';
+import { applyDecorators } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiForbiddenResponse,
@@ -11,7 +11,6 @@ import { ContactIdResponseDTO } from '../dtos/update-contact-status.dto';
 
 export function RemoveContactDocs() {
   return applyDecorators(
-    Delete(':id'),
     ApiBearerAuth(),
     ApiOperation({
       summary: 'Remove mensagem de contato (soft delete, ADMIN)',

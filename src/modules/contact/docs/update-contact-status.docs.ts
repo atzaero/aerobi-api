@@ -1,4 +1,4 @@
-import { applyDecorators, Patch } from '@nestjs/common';
+import { applyDecorators } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiForbiddenResponse,
@@ -11,7 +11,6 @@ import { ContactIdResponseDTO } from '../dtos/update-contact-status.dto';
 
 export function UpdateContactStatusDocs() {
   return applyDecorators(
-    Patch(':id/status'),
     ApiBearerAuth(),
     ApiOperation({
       summary: 'Atualiza status de moderação (ADMIN)',
