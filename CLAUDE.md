@@ -7,3 +7,4 @@
 - **Pesquisa ampla**: em explorações grandes (vários ficheiros ou domínios), preferir delegação só de leitura (subagent Explore) ou `grep`/pesquisas focadas, para não esgotar contexto.
 - **Plan mode**: usar antes de refactors estruturais grandes, mudanças em `schema.prisma` em massa, ou decisões de arquitectura que vão durar; não para edits triviais.
 - **Revisão antes do PR**: invocar o agente **`code-reviewer`** ([`.claude/agents/code-reviewer.md`](.claude/agents/code-reviewer.md)) contra o checklist [`.claude/commands/review.md`](.claude/commands/review.md) e gotchas do aerobi-api (Prisma 7, `CustomHttpException`, guard, etc.).
+- **Storage (MinIO/S3)**: ao ligar imagem/arquivo a uma entidade, seguir [`src/modules/storage/README.md`](src/modules/storage/README.md) (fonte canônica) — guardar a **key** (não a URL), montar via `buildStorageKey`, presigned on-read, só a API escreve. Skill [`.claude/skills/storage/`](.claude/skills/storage/).
