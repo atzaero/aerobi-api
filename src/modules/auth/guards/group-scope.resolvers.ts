@@ -61,4 +61,13 @@ export const groupScopeResolvers: Record<GroupScopeSubject, GroupResolver> = {
 
     return feedback?.aerodrome.groupId ?? null;
   },
+
+  [GroupScopeSubject.CAMERA]: async (prisma, id) => {
+    const camera = await prisma.camera.findFirst({
+      where: { id, deletedAt: null },
+      select: { aerodrome: { select: { groupId: true } } },
+    });
+
+    return camera?.aerodrome.groupId ?? null;
+  },
 };

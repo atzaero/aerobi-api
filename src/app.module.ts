@@ -23,6 +23,7 @@ import { RabModule } from '@/modules/rab/rab.module';
 import { MovementsModule } from '@/modules/movements/movements.module';
 import { NotificationsModule } from '@/modules/notifications/notifications.module';
 import { StreamsModule } from '@/modules/streams/streams.module';
+import { CamerasModule } from '@/modules/cameras/cameras.module';
 import { SchedulerModule } from '@/modules/scheduler/scheduler.module';
 import { TechnicalVisitsModule } from '@/modules/technical-visits/technical-visits.module';
 import { TokensModule } from '@/modules/tokens/tokens.module';
@@ -59,6 +60,7 @@ import { PrismaModule } from '@/prisma/prisma.module';
     ContactModule,
     NotificationsModule,
     StreamsModule,
+    CamerasModule,
   ],
 })
 export class AppModule {}

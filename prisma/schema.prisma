@@ -313,6 +313,7 @@ model Aerodrome {
   geojson         Geojson?
   feedbacks       Feedback[]
   pilotLandings   PilotLanding[]
+  cameras         Camera[]
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   createdBy String?   @map("created_by")
@@ -362,6 +363,43 @@ model LandingRequest {
   @@index([aerodromeId, status])
   @@index([aerodromeId, requestDate])
   @@map("landing_requests")
+}
+
+/// Câmera (metadados) de um aeródromo. Fonte de verdade no Postgres — o proxy
+/// `streams` v2 (#473) lê daqui; o CRUD interno (JWT) escreve. O cadastro no
+/// Firestore (legado) é migrado por backfill.
+model Camera {
+  id          String    @id @default(uuid()) @db.Uuid
+  aerodromeId String    @map("aerodrome_id") @db.Uuid
+  aerodrome   Aerodrome @relation(fields: [aerodromeId], references: [id], onDelete: Restrict)
+
+  /// Desnormalizado de `Aerodrome.icao` — serve a listagem pública
+  /// (`/aerodromes/:icao/cameras`) e o proxy `streams` sem join. Mantido em
+  /// sincronia na escrita (derivado do aeródromo de destino).
+  icao String
+
+  name         String  @map("name")
+  mediamtxNode String  @map("mediamtx_node")
+  mediamtxPath String  @map("mediamtx_path")
+  /// Toggle operacional (desligar sem remover). Distinto do soft-delete
+  /// (`deletedAt`): uma câmera pode estar ativa mas desligada.
+  enabled      Boolean @default(true) @map("enabled")
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdBy String?   @map("created_by")
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedBy String?   @map("updated_by")
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+  deletedBy String?   @map("deleted_by")
+
+  /// Unicidade de stream `(icao, mediamtx_node, mediamtx_path)` apenas entre
+  /// câmeras ATIVAS, garantida por índice único parcial `WHERE deleted_at IS
+  /// NULL` na migration (o Prisma não modela índice parcial no schema — NÃO
+  /// adicionar `@@unique`, voltaria a reservar o trio de registros
+  /// soft-deletados). Complementado por validação na escrita (assertStreamUnique).
+  @@index([aerodromeId])
+  @@index([icao])
+  @@map("cameras")
 }
 
 /// Tipo de operação de um movimento no aeródromo (no jargão de aviação,
