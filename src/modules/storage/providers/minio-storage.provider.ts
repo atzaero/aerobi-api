@@ -15,6 +15,7 @@ import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { getErrorMessage } from '@/common/utils/error.util';
 
 import { StorageProvider } from '../interfaces';
+import { resolveStorageBucket, resolveStorageRegion } from '../storage.config';
 
 /** Validade padrão de uma presigned URL (1 hora). */
 const PRESIGNED_URL_TTL_SECONDS = 60 * 60;
@@ -54,22 +55,21 @@ export class MinioStorageProvider implements StorageProvider {
       'development',
     );
 
+    const get = (key: string): string | undefined =>
+      this.configService.get<string>(key);
+
+    /**
+     * Bucket/region resolvidos por `storage.config` (fonte única compartilhada
+     * com os seeds): `MINIO_BUCKET` canônico → `MINIO_BUCKET_READINGS` fallback
+     * deprecado (remover no cutover, épico #444 / issue #446) → `aerobi-dev`.
+     */
     this.config = {
-      endpoint: this.configService.get<string>('MINIO_ENDPOINT') ?? '',
-      publicEndpoint:
-        this.configService.get<string>('MINIO_PUBLIC_ENDPOINT') ?? null,
-      accessKey: this.configService.get<string>('MINIO_ACCESS_KEY') ?? '',
-      secretKey: this.configService.get<string>('MINIO_SECRET_KEY') ?? '',
-      /**
-       * Bucket único por app/ambiente (`aerobi-{env}`). `MINIO_BUCKET` é a var
-       * canônica; `MINIO_BUCKET_READINGS` é lida como fallback deprecado durante
-       * a transição (remover após o cutover — épico #444 / issue #446).
-       */
-      bucket:
-        this.configService.get<string>('MINIO_BUCKET') ??
-        this.configService.get<string>('MINIO_BUCKET_READINGS') ??
-        'aerobi-dev',
-      region: this.configService.get<string>('MINIO_REGION') ?? 'sa-east-1',
+      endpoint: get('MINIO_ENDPOINT') ?? '',
+      publicEndpoint: get('MINIO_PUBLIC_ENDPOINT') ?? null,
+      accessKey: get('MINIO_ACCESS_KEY') ?? '',
+      secretKey: get('MINIO_SECRET_KEY') ?? '',
+      bucket: resolveStorageBucket(get),
+      region: resolveStorageRegion(get),
     };
 
     this.logger.log(

@@ -1,10 +1,10 @@
 /**
  * Cliente de object storage leve para os seeds. Fala direto com a API S3 do
- * MinIO (`@aws-sdk/client-s3`, dependency de produção), espelhando exatamente a
- * configuração do `MinioStorageProvider` — mesmo endpoint interno, region,
- * credenciais e bucket — para que a presigned URL resolvida pela aplicação
- * depois aponte para o objeto certo. Não sobe o contexto Nest (evita crons e
- * `onModuleInit`); reusa apenas as envs `MINIO_*`.
+ * MinIO (`@aws-sdk/client-s3`, dependency de produção), reusando a **mesma**
+ * resolução de bucket/region de `storage.config` que o `MinioStorageProvider`
+ * (fonte única, sem defaults duplicados) — para que a presigned URL resolvida
+ * pela aplicação depois aponte para o objeto certo. Não sobe o contexto Nest
+ * (evita crons e `onModuleInit`); reusa apenas as envs `MINIO_*`.
  */
 import {
   DeleteObjectCommand,
@@ -12,11 +12,10 @@ import {
   S3Client,
 } from '@aws-sdk/client-s3';
 
-/** Bucket default — idêntico ao fallback do `MinioStorageProvider`. */
-const DEFAULT_BUCKET = 'aerobi-dev-readings';
-
-/** Region default — idêntica ao fallback do `MinioStorageProvider`. */
-const DEFAULT_REGION = 'sa-east-1';
+import {
+  resolveStorageBucket,
+  resolveStorageRegion,
+} from '@/modules/storage/storage.config';
 
 /**
  * Storage mínimo usado pelo seed: operações de `putObject`/`deleteObject` sobre
@@ -51,11 +50,12 @@ export function buildSeedStorage(env: NodeJS.ProcessEnv): SeedStorage {
     );
   }
 
-  const bucket = env.MINIO_BUCKET_READINGS?.trim() || DEFAULT_BUCKET;
+  const get = (key: string): string | undefined => env[key];
+  const bucket = resolveStorageBucket(get);
 
   const client = new S3Client({
     endpoint,
-    region: env.MINIO_REGION?.trim() || DEFAULT_REGION,
+    region: resolveStorageRegion(get),
     credentials: {
       accessKeyId: accessKey as string,
       secretAccessKey: secretKey as string,
