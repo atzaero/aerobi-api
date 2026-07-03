@@ -48,7 +48,7 @@ describe('CreateMovementService', () => {
     buffer: Buffer.from('img'),
   } as Express.Multer.File;
 
-  const keyPattern = /^readings\/2026\/06\/[0-9a-f-]+\.jpg$/;
+  const keyPattern = /^movements\/[0-9a-f-]{36}\/image\/[0-9a-f-]+\.jpg$/;
 
   beforeEach(() => {
     create = jest.fn();
@@ -125,7 +125,7 @@ describe('CreateMovementService', () => {
     });
   });
 
-  it('cria com imagem: upload na key particionada e presigned URL na resposta', async () => {
+  it('cria com imagem: upload na key movements/{id}/image e presigned URL na resposta', async () => {
     const createInputs: Array<{ imageKey: string | null }> = [];
     create.mockImplementation((input: { imageKey: string | null }) => {
       createInputs.push(input);

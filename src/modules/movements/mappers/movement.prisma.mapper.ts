@@ -20,15 +20,17 @@ export interface MovementCreateData {
 }
 
 /**
- * Projeta o DTO de criação (+ a key da imagem já enviada ao storage) no input
- * de criação do Prisma. A `origin` define `source` e `createdBy` (e, quando
- * fornecido, `operationType`) conforme o caminho de criação (AUTOMATIC vs MANUAL).
+ * Projeta o DTO de criação (+ o `id` pré-gerado e a key da imagem já enviada ao
+ * storage) no input de criação do Prisma. A `origin` define `source` e
+ * `createdBy` (e, quando fornecido, `operationType`) conforme o caminho de
+ * criação (AUTOMATIC vs MANUAL).
  *
  * O `snapshot` (dados RAB congelados da aeronave) é sempre persistido via nested
  * create — atômico na mesma transação do movimento, mantendo a invariante 1:1
  * mesmo quando não há linha RAB correspondente (snapshot vazio).
  */
 export function buildMovementCreateInput(
+  id: string,
   dto: MovementCreateData,
   imageKey: string | null,
   origin: MovementOrigin,
@@ -43,6 +45,12 @@ export function buildMovementCreateInput(
   const operationType = origin.operationType ?? MovementType.LANDING;
 
   return {
+    /**
+     * Id pré-gerado pelo service (uuid), para que a key da imagem
+     * (`movements/{id}/image/...`) possa referenciá-lo ANTES do insert. Persistir
+     * explicitamente mantém key ↔ linha consistentes.
+     */
+    id,
     registration: dto.registration,
     confidence: dto.confidence,
     readingDatetime: dto.reading_datetime,
