@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { AuditModule } from '@/modules/audit/audit.module';
 import { AuthModule } from '@/modules/auth/auth.module';
 import { StorageModule } from '@/modules/storage/storage.module';
 import { UsersModule } from '@/modules/users/users.module';
@@ -28,11 +29,12 @@ import { UploadGroupImageService } from './services/upload-group-image.service';
 
 /**
  * Importa `AuthModule` (guards JWT/permissões/escopo via `@UseGuards`),
- * `UsersModule` (`UserRepository`, para o lookup do escopo do coordinator) e
- * `StorageModule` (`StorageService`, para upload/presigned das imagens).
+ * `UsersModule` (`UserRepository`, para o lookup do escopo do coordinator),
+ * `StorageModule` (`StorageService`, para upload/presigned das imagens) e
+ * `AuditModule` (`AuditRecorderService`, para gravar a trilha nas mutações).
  */
 @Module({
-  imports: [PrismaModule, AuthModule, UsersModule, StorageModule],
+  imports: [PrismaModule, AuthModule, UsersModule, StorageModule, AuditModule],
   controllers: [
     CreateGroupController,
     UpdateGroupController,
