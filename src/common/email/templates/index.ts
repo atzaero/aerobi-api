@@ -82,6 +82,39 @@ export const templates = {
       Nossa equipe analisará sua mensagem e entrará em contato quando necessário.
     </p>
   `,
+  landing_request_receipt: `
+    <h1>Comprovante — solicitação de pouso em [DESTINATION]</h1>
+    <p>Olá [REQUESTER_NAME],</p>
+    <p>
+      Recebemos sua solicitação de pouso. Guarde este e-mail como comprovante.
+      Os horários abaixo estão em UTC (Zulu).
+    </p>
+    [DETAILS]
+    <p>
+      Status atual: <strong>Pendente</strong>. Você será avisado por e-mail
+      quando o coordenador responder.
+    </p>
+  `,
+  landing_request_staff: `
+    <h1>Nova solicitação de pouso — [DESTINATION]</h1>
+    <p>
+      Uma nova solicitação de pouso foi registrada e aguarda análise. Os
+      horários abaixo estão em UTC (Zulu).
+    </p>
+    [DETAILS]
+    <p><a href="[PANEL_URL]">Ver no painel</a></p>
+  `,
+  landing_request_decided: `
+    <h1>[TITLE]</h1>
+    <p>Olá [REQUESTER_NAME],</p>
+    <p>
+      Sua solicitação de pouso em [DESTINATION] foi
+      <strong>[DECISION_LABEL]</strong>. Os horários abaixo estão em UTC (Zulu).
+    </p>
+    [DETAILS]
+    [OBSERVATION_BLOCK]
+    <p>Respondido por [RESPONDED_BY].</p>
+  `,
 } as const;
 
 export type EmailTemplate = keyof typeof templates;

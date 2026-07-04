@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-import type { User } from '@/generated/prisma/client';
+import { UserRole, type User } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 
 import type {
@@ -68,6 +68,28 @@ export class UserRepository implements IUserRepository {
       where: { id },
       data: buildUserSoftDeleteInput(new Date(), deletedBy),
     });
+  }
+
+  async findManyByIds(ids: string[]): Promise<User[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+    return this.prisma.user.findMany({ where: { id: { in: ids } } });
+  }
+
+  async findGroupStaffEmails(groupId: string): Promise<string[]> {
+    const staff = await this.prisma.user.findMany({
+      where: {
+        groupId,
+        deletedAt: null,
+        role: { in: [UserRole.COORDINATOR, UserRole.OPERATOR] },
+      },
+      select: { email: true },
+    });
+    const emails = staff
+      .map((user) => user.email.trim())
+      .filter((email) => email.length > 0);
+    return [...new Set(emails)];
   }
 
   async findManyPaginated(params: ListUsersParams): Promise<ListUsersResult> {

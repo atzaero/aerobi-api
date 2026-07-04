@@ -84,6 +84,19 @@ export interface IUserRepository {
   /** Marca `deletedAt` + `deletedBy`. Não apaga linha. */
   softDelete(id: string, deletedBy?: string): Promise<User>;
 
+  /**
+   * Busca usuários por lista de ids (para resolver atores/revisores no response).
+   * Inclui soft-deletados (a trilha mostra quem agiu mesmo após desativação);
+   * ids não-UUID/inexistentes são simplesmente ignorados.
+   */
+  findManyByIds(ids: string[]): Promise<User[]>;
+
+  /**
+   * E-mails (deduplicados) de coordenadores e operadores **ativos** de um grupo
+   * — destinatários do staff na notificação de nova solicitação de pouso.
+   */
+  findGroupStaffEmails(groupId: string): Promise<string[]>;
+
   findManyPaginated(params: ListUsersParams): Promise<ListUsersResult>;
 
   /** Busca ativos para export (com nome do grupo), ordenados `createdAt DESC`. */

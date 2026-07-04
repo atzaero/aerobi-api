@@ -1,40 +1,57 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
-import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
-import { ErrorCode } from '@/common/enums/error-code.enum';
+import { resourceNotFound } from '@/common/utils/resource-not-found.util';
+import { AuditAction } from '@/generated/prisma/client';
+import { AuditRecorderService } from '@/modules/audit/services/audit-recorder.service';
+import type { RecordAuditContext } from '@/modules/audit/services/audit-recorder.service';
+import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
 import { LandingRequestResponseDTO } from '../dtos/landing-request-response.dto';
 import { LandingRequestMapper } from '../mappers/landing-request.mapper';
 import { LandingRequestRepository } from '../repositories/landing-request.repository';
+import { landingRequestAuditSnapshot } from '../utils/landing-request-audit';
 
-export type RemoveLandingRequestServiceInput = {
-  id: string;
-  deletedBy: string;
-};
-
+/**
+ * Soft-delete administrativo de uma solicitação (`landing_request:delete` é
+ * ADMIN-only; o escopo por grupo é garantido pelo `GroupScopeGuard` no `:id`).
+ * Grava o ator real (`deletedBy = actor.id`, fim do `deletedBy: 'system'`) e a
+ * trilha de auditoria (`DELETE`).
+ */
 @Injectable()
 export class RemoveLandingRequestService {
   constructor(
     private readonly repo: LandingRequestRepository,
     private readonly errorMessageService: ErrorMessageService,
+    private readonly auditRecorder: AuditRecorderService,
   ) {}
 
   async execute(
-    input: RemoveLandingRequestServiceInput,
+    id: string,
+    actor: AuthenticatedUser,
+    auditContext: RecordAuditContext = {},
   ): Promise<LandingRequestResponseDTO> {
-    const existing = await this.repo.findById(input.id);
+    const existing = await this.repo.findById(id);
     if (!existing) {
-      throw new CustomHttpException(
-        this.errorMessageService.getMessage(ErrorCode.RESOURCE_NOT_FOUND, {
-          RESOURCE: 'Pedido de pouso',
-          ID: input.id,
-        }),
-        HttpStatus.NOT_FOUND,
-        ErrorCode.RESOURCE_NOT_FOUND,
+      throw resourceNotFound(
+        this.errorMessageService,
+        'Solicitação de pouso',
+        id,
       );
     }
-    const deleted = await this.repo.softDelete(input.id, input.deletedBy);
+
+    const deleted = await this.repo.softDelete(id, actor.id);
+
+    await this.auditRecorder.record(
+      {
+        action: AuditAction.DELETE,
+        entityType: 'landing_request',
+        entityId: id,
+        before: landingRequestAuditSnapshot(existing),
+      },
+      auditContext,
+    );
+
     return LandingRequestMapper.toApiRow(deleted);
   }
 }

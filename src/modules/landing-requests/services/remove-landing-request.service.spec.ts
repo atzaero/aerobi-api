@@ -1,54 +1,50 @@
-import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
+import { AuditAction, UserRole } from '@/generated/prisma/client';
+import type { AuditRecorderService } from '@/modules/audit/services/audit-recorder.service';
+import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
 import type { LandingRequestRepository } from '../repositories/landing-request.repository';
 import { buildLandingRequestFixture } from '../testing/landing-request.entity.fixture';
-
 import { RemoveLandingRequestService } from './remove-landing-request.service';
+
+const actor: AuthenticatedUser = {
+  id: 'admin-1',
+  email: 'a@a.com',
+  role: UserRole.ADMIN,
+};
 
 describe('RemoveLandingRequestService', () => {
   let service: RemoveLandingRequestService;
   let findById: jest.Mock;
   let softDelete: jest.Mock;
+  let record: jest.Mock;
 
   beforeEach(() => {
-    findById = jest.fn();
-    softDelete = jest.fn();
-    const repo = {
-      findById,
-      softDelete,
-    } as unknown as LandingRequestRepository;
-    service = new RemoveLandingRequestService(repo, new ErrorMessageService());
+    findById = jest.fn().mockResolvedValue(buildLandingRequestFixture());
+    softDelete = jest.fn().mockResolvedValue(buildLandingRequestFixture());
+    record = jest.fn().mockResolvedValue(undefined);
+    service = new RemoveLandingRequestService(
+      { findById, softDelete } as unknown as LandingRequestRepository,
+      new ErrorMessageService(),
+      { record } as unknown as AuditRecorderService,
+    );
   });
 
-  const id = '11111111-1111-4111-8111-111111111111';
+  it('soft-delete com ator real + auditoria DELETE', async () => {
+    await service.execute('lr-1', actor);
+    expect(softDelete).toHaveBeenCalledWith('lr-1', actor.id);
+    expect(record).toHaveBeenCalledWith(
+      expect.objectContaining({ action: AuditAction.DELETE }),
+      expect.anything(),
+    );
+  });
 
-  it('404 quando não existe', async () => {
+  it('inexistente → 404, não remove', async () => {
     findById.mockResolvedValue(null);
-    try {
-      await service.execute({ id, deletedBy: 'a' });
-      throw new Error('expected');
-    } catch (e) {
-      expect(e).toBeInstanceOf(CustomHttpException);
-      expect((e as CustomHttpException).getErrorCode()).toBe(
-        ErrorCode.RESOURCE_NOT_FOUND,
-      );
-    }
-  });
-
-  it('soft delete', async () => {
-    const existing = buildLandingRequestFixture({ id });
-    const del = buildLandingRequestFixture({
-      id,
-      deletedAt: new Date('2024-08-01T00:00:00.000Z'),
-      deletedBy: 'actor',
-    });
-    findById.mockResolvedValue(existing);
-    softDelete.mockResolvedValue(del);
-
-    const out = await service.execute({ id, deletedBy: 'actor' });
-    expect(softDelete).toHaveBeenCalledWith(id, 'actor');
-    expect(out.deletedBy).toBe('actor');
+    await expect(service.execute('lr-1', actor)).rejects.toBeInstanceOf(
+      CustomHttpException,
+    );
+    expect(softDelete).not.toHaveBeenCalled();
   });
 });
