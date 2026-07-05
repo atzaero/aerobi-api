@@ -1,3 +1,10 @@
+# [2.6.0-beta.45](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.44...v2.6.0-beta.45) (2026-07-05)
+
+
+### Features
+
+* **landing-requests:** paridade Firebase→API ([#377](https://github.com/atzaero/aerobi-api/issues/377)) ([8a7056f](https://github.com/atzaero/aerobi-api/commit/8a7056f14b21a0a71e7d74671bd766e60d673c94))
+
 # [2.6.0-beta.44](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.43...v2.6.0-beta.44) (2026-07-03)
 
 
