@@ -82,6 +82,8 @@ const EXPECTED: Record<
     list: [UserRole.ADMIN, UserRole.COORDINATOR, UserRole.OPERATOR],
     read: [UserRole.ADMIN, UserRole.COORDINATOR, UserRole.OPERATOR],
     decide: [UserRole.ADMIN, UserRole.COORDINATOR, UserRole.OPERATOR],
+    export: [UserRole.ADMIN, UserRole.COORDINATOR, UserRole.OPERATOR],
+    delete: [UserRole.ADMIN],
   },
   technical_visit: {
     list: ALL_ROLES,

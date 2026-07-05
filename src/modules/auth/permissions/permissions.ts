@@ -129,12 +129,15 @@ export const PERMISSIONS: Record<
     update: [UserRole.ADMIN, UserRole.COORDINATOR],
     delete: [UserRole.ADMIN],
   },
-  // Solicitações de pouso: operator aceita/recusa (`decide`); coordinator/admin
-  // herdam por hierarquia.
+  // Solicitações de pouso: operator aceita/recusa (`decide`) e exporta;
+  // coordinator/admin herdam por hierarquia. `delete` é administrativo
+  // (ADMIN-only). O create é público (X-API-Key), fora desta matriz.
   landing_request: {
     list: [UserRole.ADMIN, UserRole.COORDINATOR, UserRole.OPERATOR],
     read: [UserRole.ADMIN, UserRole.COORDINATOR, UserRole.OPERATOR],
     decide: [UserRole.ADMIN, UserRole.COORDINATOR, UserRole.OPERATOR],
+    export: [UserRole.ADMIN, UserRole.COORDINATOR, UserRole.OPERATOR],
+    delete: [UserRole.ADMIN],
   },
   // Visitas técnicas: função-base do vistoriador (técnico) — adicionar, editar,
   // remover e baixar PDF (`export`); operator herda; coordinator/admin acima.

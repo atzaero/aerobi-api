@@ -16,5 +16,6 @@ import { AnacCacheService } from './services/anac-cache.service';
     RateLimiterService,
     AnacCacheService,
   ],
+  exports: [AnacHttpService, AnacScraperService],
 })
 export class AnacModule {}

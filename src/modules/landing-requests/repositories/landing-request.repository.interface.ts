@@ -1,23 +1,60 @@
-import type { Prisma, LandingRequest } from '@/generated/prisma/client';
+import type { Prisma, LandingRequest, Uf } from '@/generated/prisma/client';
+
+/** Solicitação com o snapshot RAB (1:1) incluído — usado no `GET /:id`. */
+export type LandingRequestWithAircraft = Prisma.LandingRequestGetPayload<{
+  include: { aircraft: true };
+}>;
+
+/** Dados do snapshot RAB a gravar junto da solicitação (sem a relação). */
+export type LandingRequestAircraftCreateData = Omit<
+  Prisma.LandingRequestAircraftCreateInput,
+  'landingRequest'
+>;
+
+/**
+ * Aeródromo-alvo resolvido no create (existência + `isOpen` + derivação de
+ * `icao`/`uf`). `uf` vem do grupo dono (o aeródromo não tem UF própria).
+ */
+export interface TargetAerodrome {
+  id: string;
+  icao: string;
+  name: string;
+  isOpen: boolean;
+  groupId: string;
+  uf: Uf;
+}
 
 export interface ILandingRequestRepository {
-  create(data: Prisma.LandingRequestCreateInput): Promise<LandingRequest>;
+  createWithAircraft(
+    data: Prisma.LandingRequestCreateInput,
+    aircraft: LandingRequestAircraftCreateData | null,
+  ): Promise<LandingRequest>;
 
   update(
     id: string,
     data: Prisma.LandingRequestUpdateInput,
   ): Promise<LandingRequest>;
 
-  findById(id: string): Promise<LandingRequest | null>;
+  /** Atualização condicional (só se `PENDING` + ativa); retorna linhas afetadas. */
+  updateIfPending(
+    id: string,
+    data: Prisma.LandingRequestUpdateInput,
+  ): Promise<number>;
+
+  findById(id: string): Promise<LandingRequestWithAircraft | null>;
 
   findMany(
     where: Prisma.LandingRequestWhereInput,
     skip: number,
     take: number,
+    orderBy?: Prisma.LandingRequestOrderByWithRelationInput[],
   ): Promise<LandingRequest[]>;
 
   count(where: Prisma.LandingRequestWhereInput): Promise<number>;
 
   /** Soft delete usando campos de auditoria deletedAt/deletedBy. */
   softDelete(id: string, deletedBy: string): Promise<LandingRequest>;
+
+  /** Resolve o aeródromo-alvo ativo para o create público (ou `null`). */
+  findTargetAerodrome(id: string): Promise<TargetAerodrome | null>;
 }

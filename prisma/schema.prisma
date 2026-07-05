@@ -348,9 +348,37 @@ model LandingRequest {
   departureAerodrome   String? @map("departure_aerodrome")
   observation          String? @map("observation") @db.Text
 
+  /// Dados do piloto/solicitante e da operação, espelhando o formulário público
+  /// (Firestore legado). Nullable para compatibilidade com registros migrados que
+  /// gravavam só o subconjunto mínimo. `pilotCpf` guarda os 11 dígitos crus
+  /// (mascarado no response de leitura; omitido no export).
+  pilotName                String?  @map("pilot_name")
+  pilotCpf                 String?  @map("pilot_cpf")
+  phoneContact             String?  @map("phone_contact")
+  requesterName            String?  @map("requester_name")
+  peopleOnBoard            Int?     @map("people_on_board")
+  acceptedTerms            Boolean? @map("accepted_terms")
+  confirmedTrue            Boolean? @map("confirmed_true")
+  foreignRegistration      Boolean? @map("foreign_registration")
+  nextDestinationAerodrome String?  @map("next_destination_aerodrome")
+
+  /// ICAO do aeródromo de chegada (uppercase) e UF, desnormalizados do aeródromo
+  /// no create — usados por filtros e pela conformidade (paridade com o web).
+  icao String? @map("icao")
+  uf   Uf?     @map("uf")
+
+  /// Janela operacional prevista (subsume a #150). Gravada em UTC.
+  departureAt        DateTime? @map("departure_at") @db.Timestamptz(3)
+  landingAt          DateTime? @map("landing_at") @db.Timestamptz(3)
+  exitAfterLandingAt DateTime? @map("exit_after_landing_at") @db.Timestamptz(3)
+
+  /// Snapshot RAB da aeronave no momento da solicitação (só matrícula nacional
+  /// encontrada no RAB). 1:1, morre junto com a solicitação num hard delete.
+  aircraft LandingRequestAircraft?
+
   /// Momento em que o coordenador revisou e aprovou ou rejeitou (Firestore legado: `responseDate`).
   reviewedAt DateTime? @map("reviewed_at") @db.Timestamptz(3)
-  /// Firebase Auth uid de quem revisou (legado: `responseby.uid`). Migração desse campo para FK ao `users.id` fica em PR separado.
+  /// Ator (users.id ou `public`/uid legado) de quem revisou (legado: `responseby.uid`).
   reviewedBy String?   @map("reviewed_by")
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
@@ -362,7 +390,57 @@ model LandingRequest {
 
   @@index([aerodromeId, status])
   @@index([aerodromeId, requestDate])
+  @@index([icao, status])
+  @@index([aircraftRegistration])
   @@map("landing_requests")
+}
+
+/// Snapshot do registro RAB da aeronave no instante da solicitação de pouso —
+/// espelha a coleção satélite `landing_request_aircraft` do web (mesmos campos do
+/// `RabRow`). Vínculo 1:1 com `LandingRequest` (`onDelete: Cascade`); gravado só
+/// quando a matrícula nacional é encontrada de forma exata no RAB.
+model LandingRequestAircraft {
+  id String @id @default(uuid()) @db.Uuid
+
+  landingRequestId String         @unique @map("landing_request_id") @db.Uuid
+  landingRequest   LandingRequest @relation(fields: [landingRequestId], references: [id], onDelete: Cascade)
+
+  period String
+  marcas String
+
+  proprietarios          String?
+  operadores             String?
+  nrCertMatricula        String? @map("nr_cert_matricula")
+  nrSerie                String? @map("nr_serie")
+  cdTipo                 String? @map("cd_tipo")
+  dsModelo               String? @map("ds_modelo")
+  nmFabricante           String? @map("nm_fabricante")
+  cdCls                  String? @map("cd_cls")
+  nrPmd                  String? @map("nr_pmd")
+  cdTipoIcao             String? @map("cd_tipo_icao")
+  nrTripulacaoMin        String? @map("nr_tripulacao_min")
+  nrPassageirosMax       String? @map("nr_passageiros_max")
+  nrAssentos             String? @map("nr_assentos")
+  nrAnoFabricacao        String? @map("nr_ano_fabricacao")
+  dtValidadeCva          String? @map("dt_validade_cva")
+  dtValidadeCa           String? @map("dt_validade_ca")
+  dtCanc                 String? @map("dt_canc")
+  dsMotivoCanc           String? @map("ds_motivo_canc")
+  cdInterdicao           String? @map("cd_interdicao")
+  dsGravame              String? @map("ds_gravame")
+  dtMatricula            String? @map("dt_matricula")
+  tpMotor                String? @map("tp_motor")
+  qtMotor                String? @map("qt_motor")
+  tpPouso                String? @map("tp_pouso")
+  tpCa                   String? @map("tp_ca")
+  cdPropositoCave        String? @map("cd_proposito_cave")
+  cfOperacional          String? @map("cf_operacional")
+  dsCategoriaHomologacao String? @map("ds_categoria_homologacao")
+  tpOperacao             String? @map("tp_operacao")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@map("landing_request_aircraft")
 }
 
 /// Câmera (metadados) de um aeródromo. Fonte de verdade no Postgres — o proxy
