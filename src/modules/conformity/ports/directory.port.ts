@@ -1,11 +1,11 @@
 /**
- * Port (interface) do diretório de leitura do Firestore para o fluxo de
- * conformidade (#248).
+ * Port (interface) do diretório de leitura para o fluxo de conformidade (#248).
  *
  * Os consumidores dependem **apenas** deste contrato e do token de injeção
- * {@link FIRESTORE_DIRECTORY_PORT}; nenhum detalhe do Firestore (nomes de
- * coleções, campos snake_case, `Timestamp`) vaza para fora do adapter. Isto
- * permite que a futura migração Firestore → Postgres troque só o adapter.
+ * {@link DIRECTORY_PORT}; nenhum detalhe da fonte de dados (nomes de tabelas/
+ * coleções, campos snake_case, tipos de timestamp) vaza para fora do adapter.
+ * Isto permitiu a migração Firestore → Postgres trocando **só o adapter**
+ * (`PostgresDirectoryAdapter`), sem tocar no port nem nos listeners (#475).
  */
 
 /** Resultado do match de um pedido de aterragem aprovado. */
@@ -43,7 +43,7 @@ export interface FindApprovedLandingRequestMatchInput {
   windowHours: number;
 }
 
-export interface FirestoreDirectoryPort {
+export interface DirectoryPort {
   /**
    * Procura um pedido de aterragem **aprovado** que case com a matrícula e o
    * ICAO do aeródromo, com `request_date` dentro de ±`windowHours` em relação a
@@ -67,4 +67,4 @@ export interface FirestoreDirectoryPort {
 }
 
 /** Token de injeção do port. */
-export const FIRESTORE_DIRECTORY_PORT = Symbol('FirestoreDirectoryPort');
+export const DIRECTORY_PORT = Symbol('DirectoryPort');

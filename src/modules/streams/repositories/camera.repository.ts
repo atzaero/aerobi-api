@@ -27,8 +27,8 @@ const MEDIAMTX_PATH_PATTERN = /^[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)*$/;
  * Acesso de leitura ao cadastro de câmeras no **Firestore** (collection
  * `cameras`). É o **único** ponto onde nomes de coleção/campos do Firestore são
  * conhecidos — toda a leitura e o mapeamento para o domínio {@link Camera}
- * ficam isolados aqui, espelhando o padrão do `FirestoreDirectoryAdapter` do
- * módulo `conformity`.
+ * ficam isolados aqui, espelhando o padrão de adapter/port do módulo
+ * `conformity`.
  *
  * O cadastro (CRUD + soft delete) vive no frontend (atzaero/aerobi#1008); o
  * backend só lê. Para tolerar variações de casing enquanto o frontend não

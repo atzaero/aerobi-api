@@ -21,13 +21,14 @@ conformidade cabíveis.
 ## Fluxo
 
 Tudo é **assíncrono e desacoplado** via `@nestjs/event-emitter`, e **resiliente**:
-uma falha de Firestore ou de e-mail é logada mas **não** derruba a ingestão do
-movimento (os handlers capturam e não relançam — no MVP não há retry).
+uma falha de leitura do diretório (Postgres) ou de e-mail é logada mas **não**
+derruba a ingestão do movimento (os handlers capturam e não relançam — no MVP
+não há retry).
 
 ```mermaid
 flowchart TD
   create[CreateMovementService / edição] -->|movement.created / movement.conformity_requested| cl[ConformityListener]
-  cl -->|filtra LANDING + ICAO| q{Solicitação aprovada<br/>no Firestore?}
+  cl -->|filtra LANDING + ICAO| q{Solicitação aprovada<br/>no Postgres?}
   q -->|sim, dentro da janela| ok[CONFORMANT + resolve não-conformidade aberta]
   q -->|não| oe[(operational_event<br/>NON_CONFORMITY)]
   ok -->|movement.conformity_resolved| ml[MovementConformityListener]
@@ -50,8 +51,8 @@ Ficheiros:
 |----------|--------|
 | `listeners/conformity.listener.ts` | Reage a `movement.created`/`movement.conformity_requested`; aplica a regra de matching; resolve a conformidade (`movement.conformity_resolved`), regista a não-conformidade (deduplicada) e emite `movement.non_conformity`. |
 | `listeners/notification.listener.ts` | Reage a `movement.non_conformity`; faz dedupe, resolve destinatários e envia o e-mail. |
-| `ports/firestore-directory.port.ts` | Contrato de leitura do diretório (matching + grupo + contactos). |
-| `adapters/firestore-directory.adapter.ts` | Implementação Firestore do port (**único** ponto que conhece coleções/campos). |
+| `ports/directory.port.ts` | Contrato de leitura do diretório (matching + grupo + contactos). |
+| `adapters/postgres-directory.adapter.ts` | Implementação Postgres do port (**único** ponto que conhece models/colunas Prisma). |
 | `repositories/operational-event.repository.ts` | Acesso Prisma ao `operational_event` (criar, dedupe, marcar notificado). |
 | `events/movement-non-conformity.event.ts` | Nome + payload do evento de não-conformidade. |
 | `conformity.module.ts` | Liga o port ao adapter (token) e regista os listeners. |
@@ -62,11 +63,12 @@ O `ConformityListener` só processa o evento quando o movimento é **`LANDING` c
 ICAO de aeródromo** (de qualquer origem — `AUTOMATIC` ou `MANUAL`). Caso
 contrário, retorna sem efeito (o movimento já nasce `NOT_APPLICABLE`).
 
-Procura no Firestore uma solicitação de pouso que satisfaça **todas** as condições:
+Procura no Postgres (`landing_requests`) uma solicitação de pouso que satisfaça
+**todas** as condições:
 
 - `aircraft_registration` == matrícula do movimento (comparação em maiúsculas);
 - `icao` == ICAO do aeródromo do movimento (maiúsculas);
-- `status` == `'approved'`;
+- `status` == `APPROVED`;
 - `request_date` dentro de **±`CONFORMITY_MATCH_WINDOW_HOURS`** (default **24h**)
   em relação ao instante do pouso (`readingDatetime`);
 - não eliminada (`deleted_at` nulo).
@@ -77,28 +79,27 @@ solicitação aprovada — **não a "consome"** nem altera o seu estado. Sem mat
 cria um `OperationalEvent` do tipo `NON_CONFORMITY_NO_LANDING_REQUEST` e emite
 `movement.non_conformity`.
 
-## Firestore atrás de um port
+## Diretório atrás de um port
 
-O diretório de leitura é exposto pelo **`FirestoreDirectoryPort`** (token de
-injeção `FIRESTORE_DIRECTORY_PORT`), implementado pelo
-**`FirestoreDirectoryAdapter`**. Os consumidores (listeners) dependem **apenas**
-do contrato; nenhum detalhe do Firestore — nomes de coleções, campos
-`snake_case`, `Timestamp` — vaza para fora do adapter.
+O diretório de leitura é exposto pelo **`DirectoryPort`** (token de injeção
+`DIRECTORY_PORT`), implementado pelo **`PostgresDirectoryAdapter`**. Os
+consumidores (listeners) dependem **apenas** do contrato; nenhum detalhe da
+fonte de dados — models/colunas Prisma — vaza para fora do adapter.
 
-As coleções são **planas** (não aninhadas) e usam campos `snake_case`:
+O adapter lê 3 fontes já migradas para o Postgres:
 
-| Coleção | Usada para | Campos relevantes |
-|---------|-----------|-------------------|
-| `landing_requests` | Matching da solicitação | `aircraft_registration`, `icao`, `status`, `request_date`, `deleted_at` |
-| `aerodromes` | ICAO → grupo | `icao`, `group_id`, `deleted_at` |
-| `users` | Grupo → contactos | `aerodrome_group_id`, `role`, `email`, `display_name`, `deleted_at` |
+| Model Prisma | Usado para | Campos relevantes |
+|--------------|-----------|-------------------|
+| `LandingRequest` | Matching da solicitação | `aircraftRegistration`, `icao`, `status` (`APPROVED`), `requestDate`, `deletedAt` |
+| `Aerodrome` | ICAO → grupo | `icao`, `groupId`, `deletedAt` |
+| `User` | Grupo → contactos | `groupId`, `role`, `email`, `name`, `phone`, `deletedAt` |
 
-A inicialização do Firebase Admin (`src/common/firestore/firestore.service.ts`)
-é **resiliente**: sem credenciais o boot segue, e o Firestore só falha quando
-efetivamente utilizado — a feature fica desligada em dev sem credenciais.
+As `roles` chegam em minúsculas (`'coordinator'`/`'operator'`) e são mapeadas
+para o enum `UserRole` (maiúsculo) no `where`.
 
-A futura migração **Firestore → Postgres** troca **apenas o adapter**, mantendo o
-port e os listeners intactos (ver proposta **#255**).
+A migração **Firestore → Postgres** do diretório foi concluída na **#475**
+(trocando **apenas o adapter**, mantendo o port e os listeners intactos — plano
+original em **#255**).
 
 ## Persistência
 
@@ -127,9 +128,9 @@ O `NotificationListener` reage a `movement.non_conformity` e:
    a mesma **(matrícula, aeródromo)** dentro de
    **`CONFORMITY_NOTIFY_DEDUPE_MINUTES`** (default **30 min**). Se houver, ignora
    e não reenvia.
-2. **Destinatários**: resolve, no Firestore, o `group_id` do aeródromo (por ICAO)
-   e depois os utilizadores desse grupo (`aerodrome_group_id`) com role
-   **`coordinator`** ou **`operator`** e com e-mail.
+2. **Destinatários**: resolve, no Postgres, o `group_id` do aeródromo (por ICAO)
+   e depois os utilizadores desse grupo (`group_id`) com role **`coordinator`**
+   ou **`operator`** e com e-mail.
 3. **E-mail**: envia o template `landing_non_conformity` para os contactos e marca
    a não-conformidade como notificada (`notifiedAt`).
 
@@ -149,13 +150,11 @@ listener:
 
 ## Configuração (env)
 
-Ver `.env.example` (secções "Firebase Admin" e "Conformidade").
+Ver `.env.example` (secção "Conformidade"). O diretório de leitura usa o Postgres
+— **sem** credenciais Firebase (migrado na #475).
 
 | Variável | Default | Papel |
 |----------|---------|-------|
-| `FIREBASE_PROJECT_ID` | — | Service account do Firestore (init resiliente). |
-| `FIREBASE_CLIENT_EMAIL` | — | Idem. |
-| `FIREBASE_PRIVATE_KEY` | — | Idem (manter os `\n` literais entre aspas). |
 | `CONFORMITY_MATCH_WINDOW_HOURS` | `24` | Janela (horas) ±N para casar pouso × solicitação. |
 | `CONFORMITY_NOTIFY_DEDUPE_MINUTES` | `30` | Janela (minutos) de dedupe das notificações. |
 
@@ -179,5 +178,3 @@ não-positiva.
   reconhecimento/resolução): epic futura.
 - **Aprimoramento do matching** e estudo de **"consumir"** a solicitação (marcá-la
   como usada em vez de só checar existência).
-- **Migração Firestore → Postgres** do diretório de leitura (proposta **#255**),
-  trocando apenas o adapter.

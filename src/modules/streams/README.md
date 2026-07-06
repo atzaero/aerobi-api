@@ -153,7 +153,7 @@ falhas de upstream (com a URL alvo).
 Segue o padrão do projeto (referência: `movements`): `controllers/`, `services/`,
 `repositories/`, `dtos/`, `mappers/`, `docs/` (Swagger), `types/`, `utils/`.
 O `CameraRepository` é o **único** ponto que conhece a collection/campos do
-Firestore (isolamento espelhado no `FirestoreDirectoryAdapter` do `conformity`).
+Firestore (isolamento no padrão de adapter/port, como no `conformity`).
 
 ## Fora de escopo (follow-ups)
 

@@ -13,10 +13,10 @@ import {
 } from '@/modules/movements/events/movements-batch-created.event';
 
 import {
-  FIRESTORE_DIRECTORY_PORT,
-  type FirestoreDirectoryPort,
+  DIRECTORY_PORT,
+  type DirectoryPort,
   type GroupContact,
-} from '@/modules/conformity/ports/firestore-directory.port';
+} from '@/modules/conformity/ports/directory.port';
 
 import { NotificationType } from '../enums/notification-type.enum';
 import { NotificationDispatchService } from '../services/notification-dispatch.service';
@@ -32,10 +32,10 @@ const NOTIFY_ROLES = ['coordinator'];
  * Listener de notificações WhatsApp de movimentos.
  *
  * Resolve, a partir do aeródromo do movimento, o grupo e os coordenadores (com
- * telefone) via {@link FirestoreDirectoryPort} — a resolução é a "camada de
- * cima" hoje servida pelo Firebase; a migração para Postgres troca só o adapter.
- * Em seguida delega ao {@link NotificationDispatchService} (agnóstico de canal e
- * de origem dos contactos).
+ * telefone) via {@link DirectoryPort} — a resolução é a "camada de cima", hoje
+ * servida pelo Postgres (`PostgresDirectoryAdapter`, #475). Em seguida delega ao
+ * {@link NotificationDispatchService} (agnóstico de canal e de origem dos
+ * contactos).
  *
  * - `movement.created` avulso → uma notificação por movimento. Itens de lote
  *   (`batched`) são ignorados aqui: o lote é tratado pelo evento agregado.
@@ -50,8 +50,8 @@ export class MovementNotificationsListener {
   private readonly logger = new Logger(MovementNotificationsListener.name);
 
   constructor(
-    @Inject(FIRESTORE_DIRECTORY_PORT)
-    private readonly directory: FirestoreDirectoryPort,
+    @Inject(DIRECTORY_PORT)
+    private readonly directory: DirectoryPort,
     private readonly dispatch: NotificationDispatchService,
   ) {}
 
