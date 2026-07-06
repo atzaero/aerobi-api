@@ -12,6 +12,8 @@ import {
   Min,
 } from 'class-validator';
 
+import { TrimOptionalString, TrimString } from '@/common/transform';
+
 const TASK_STATUSES = ['pending', 'completed'] as const;
 const TASK_URGENCIES = ['low', 'medium', 'high', 'critical'] as const;
 const TASK_FOLLOW_UPS = [
@@ -27,12 +29,14 @@ const INVESTMENT_TYPES = ['CAPEX', 'OPEX'] as const;
  */
 export class TaskFormFieldsDTO {
   @ApiProperty()
+  @TrimString()
   @IsString()
   @IsNotEmpty()
   @MaxLength(500)
   title!: string;
 
   @ApiProperty()
+  @TrimString()
   @IsString()
   @IsNotEmpty()
   description!: string;
@@ -72,12 +76,14 @@ export class TaskFormFieldsDTO {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @TrimOptionalString()
   @IsString()
   @MaxLength(500)
   responsibility?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
+  @TrimOptionalString()
   @IsString()
   impact?: string;
 
@@ -94,11 +100,13 @@ export class TaskFormFieldsDTO {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @TrimOptionalString()
   @IsString()
   completionDescription?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
+  @TrimOptionalString()
   @IsString()
   @MaxLength(200)
   timeElapsed?: string;
