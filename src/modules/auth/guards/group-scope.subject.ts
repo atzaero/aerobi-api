@@ -16,6 +16,12 @@ export const GroupScopeSubject = {
   FEEDBACK: 'feedback',
   /** `Camera` — resolve o `groupId` via FK para o aeródromo. */
   CAMERA: 'camera',
+  /** `Maintenance` — resolve o `groupId` via FK para o aeródromo. */
+  MAINTENANCE: 'maintenance',
+  /** `MaintenanceTask` — resolve o `groupId` via manutenção → aeródromo. */
+  TASK: 'task',
+  /** `MaintenanceGuess` — resolve o `groupId` via tarefa → manutenção → aeródromo. */
+  GUESS: 'guess',
 } as const;
 
 export type GroupScopeSubject =

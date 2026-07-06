@@ -115,6 +115,24 @@ export const templates = {
     [OBSERVATION_BLOCK]
     <p>Respondido por [RESPONDED_BY].</p>
   `,
+  maintenance_invitation: `
+    <h1>Convite para enviar sugestões</h1>
+    <p>
+      Você foi convidado(a) a contribuir com sugestões para a manutenção de
+      <strong>[AERODROME_LABEL]</strong>. Acesse a página abaixo e informe o
+      código de segurança para enviar sua sugestão.
+    </p>
+    <p><a href="[LINK]">Enviar minha sugestão</a></p>
+    <p>
+      <strong>Aeródromo:</strong> [AERODROME_LABEL]<br />
+      <strong>Código de segurança:</strong>
+      <span style="font-family:'Courier New',monospace;letter-spacing:1px">[SECURITY_CODE]</span>
+    </p>
+    <p>
+      O código de segurança é pessoal e necessário para registrar sua sugestão.
+      Não compartilhe este e-mail.
+    </p>
+  `,
 } as const;
 
 export type EmailTemplate = keyof typeof templates;

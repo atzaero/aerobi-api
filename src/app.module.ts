@@ -22,6 +22,9 @@ import { PrivateAerodromesModule } from '@/modules/private-aerodromes/private-ae
 import { PublicAerodromesModule } from '@/modules/public-aerodromes/public-aerodromes.module';
 import { RabModule } from '@/modules/rab/rab.module';
 import { MovementsModule } from '@/modules/movements/movements.module';
+import { MaintenancesModule } from '@/modules/maintenances/maintenances.module';
+import { TasksModule } from '@/modules/tasks/tasks.module';
+import { GuessesModule } from '@/modules/guesses/guesses.module';
 import { NotificationsModule } from '@/modules/notifications/notifications.module';
 import { StreamsModule } from '@/modules/streams/streams.module';
 import { CamerasModule } from '@/modules/cameras/cameras.module';
@@ -44,6 +47,7 @@ import { PrismaModule } from '@/prisma/prisma.module';
     PlugfieldModule,
     AiswebModule,
     MovementsModule,
+    MaintenancesModule,
     PrivateAerodromesModule,
     PublicAerodromesModule,
     SchedulerModule,
@@ -61,6 +65,8 @@ import { PrismaModule } from '@/prisma/prisma.module';
     ContactModule,
     NotificationsModule,
     StreamsModule,
+    TasksModule,
+    GuessesModule,
     CamerasModule,
     AuditModule,
   ],

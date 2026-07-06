@@ -14,7 +14,10 @@ import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { UserRole } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 
-import { GROUP_SCOPE_KEY } from '../constants/auth.constants';
+import {
+  GROUP_SCOPE_KEY,
+  GROUP_SCOPE_PARAM_KEY,
+} from '../constants/auth.constants';
 import type { AuthenticatedUser } from '../interfaces/authenticated-user.interface';
 import {
   groupScopeResolvers,
@@ -24,7 +27,9 @@ import { GroupScopeSubject } from './group-scope.subject';
 
 /**
  * Segunda camada de autorização: **escopo por grupo**. Garante que o recurso
- * alvo (`request.params.id`) pertence ao mesmo `groupId` do usuário.
+ * alvo pertence ao mesmo `groupId` do usuário. O ID do recurso é resolvido em
+ * `params` → `query` → `body` (nesta ordem), conforme o nome em
+ * `@RequiresGroupScope(subject, paramName)`.
  *
  * Ordem na cadeia: `JwtAuthGuard → RolesGuard → GroupScopeGuard`.
  *
@@ -64,6 +69,8 @@ export class GroupScopeGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<{
       user?: AuthenticatedUser;
       params?: Record<string, string | undefined>;
+      query?: Record<string, string | undefined>;
+      body?: Record<string, string | undefined>;
     }>();
     const user = request.user;
 
@@ -79,12 +86,21 @@ export class GroupScopeGuard implements CanActivate {
       return true;
     }
 
-    const resourceId = request.params?.id;
+    const paramName =
+      this.reflector.getAllAndOverride<string>(GROUP_SCOPE_PARAM_KEY, [
+        context.getHandler(),
+        context.getClass(),
+      ]) ?? 'id';
+
+    const resourceId =
+      request.params?.[paramName] ??
+      request.query?.[paramName] ??
+      request.body?.[paramName];
 
     if (!resourceId || !isUUID(resourceId)) {
       throw new CustomHttpException(
         this.errorMessageService.getMessage(ErrorCode.VALIDATION_FAILED, {
-          DETAILS: 'id deve ser um UUID válido',
+          DETAILS: `${paramName} deve ser um UUID válido`,
         }),
         HttpStatus.UNPROCESSABLE_ENTITY,
         ErrorCode.VALIDATION_FAILED,

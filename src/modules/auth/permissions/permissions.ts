@@ -187,6 +187,7 @@ export const PERMISSIONS: Record<
     create: [UserRole.ADMIN, UserRole.COORDINATOR],
     update: [UserRole.ADMIN, UserRole.COORDINATOR],
     delete: [UserRole.ADMIN],
+    export: [UserRole.ADMIN, UserRole.COORDINATOR],
   },
   // Tarefas da manutenção: mesma política da manutenção. Palpites públicos
   // (`guesses`) seguem o fluxo público (security_code), não esta matriz.

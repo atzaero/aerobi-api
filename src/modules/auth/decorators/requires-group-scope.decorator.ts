@@ -1,24 +1,20 @@
-import { SetMetadata } from '@nestjs/common';
+import { applyDecorators, SetMetadata } from '@nestjs/common';
 
-import { GROUP_SCOPE_KEY } from '../constants/auth.constants';
+import {
+  GROUP_SCOPE_KEY,
+  GROUP_SCOPE_PARAM_KEY,
+} from '../constants/auth.constants';
 import { GroupScopeSubject } from '../guards/group-scope.subject';
 
 /**
- * Exige que o recurso identificado por `request.params.id` pertença ao mesmo
- * grupo (`groupId`) do usuário autenticado. Avaliado pelo
- * `GroupScopeGuard`, que deve rodar **após** o `JwtAuthGuard` (popula
- * `request.user`) e o `RolesGuard`.
+ * Exige que o recurso identificado por `request.params[param]`, `query[param]` ou
+ * `body[param]` pertença ao mesmo grupo (`groupId`) do usuário autenticado.
+ * Avaliado pelo `GroupScopeGuard` (ordem: params → query → body).
  *
- * `subject` indica de que recurso o `groupId` será resolvido. ADMIN ignora a
- * checagem.
- *
- * @example
- * ```ts
- * @UseGuards(JwtAuthGuard, RolesGuard, GroupScopeGuard)
- * @RequiresGroupScope(GroupScopeSubject.AERODROME)
- * @Patch(':id')
- * update(@Param('id') id: string) { ... }
- * ```
+ * @param param Nome do parâmetro com o UUID do recurso (default `id`).
  */
-export const RequiresGroupScope = (subject: GroupScopeSubject) =>
-  SetMetadata(GROUP_SCOPE_KEY, subject);
+export const RequiresGroupScope = (subject: GroupScopeSubject, param = 'id') =>
+  applyDecorators(
+    SetMetadata(GROUP_SCOPE_KEY, subject),
+    SetMetadata(GROUP_SCOPE_PARAM_KEY, param),
+  );
