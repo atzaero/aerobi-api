@@ -1,3 +1,10 @@
+# [2.6.0-beta.47](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.46...v2.6.0-beta.47) (2026-07-06)
+
+
+### Features
+
+* **geojsons:** paridade com aerobi-web — leitura por aeródromo, geração KML/KMZ→GeoJSON e cutover JWT/escopo ([#376](https://github.com/atzaero/aerobi-api/issues/376)) ([bdc0c38](https://github.com/atzaero/aerobi-api/commit/bdc0c38e97bb11478ec93b6f5e85755e806ef64b)), closes [#353](https://github.com/atzaero/aerobi-api/issues/353) [#366](https://github.com/atzaero/aerobi-api/issues/366)
+
 # [2.6.0-beta.46](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.45...v2.6.0-beta.46) (2026-07-06)
 
 
