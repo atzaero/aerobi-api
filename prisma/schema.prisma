@@ -234,6 +234,22 @@ enum GeojsonMapFileType {
   KMZ
 }
 
+/// Tipos de documento de aeródromo (coleção `documents` no Firestore). Os 6
+/// primeiros são "singleton" (o aeródromo desnormaliza 1 `*_url` por tipo,
+/// refletindo o mais recente); `other_ordinance`/`extra` são sempre múltiplos.
+/// Persistido em MAIÚSCULAS; exposto/aceito em lowercase no contrato (paridade
+/// web) e usado como `docType` do storage via lowercase.
+enum DocumentType {
+  IMAGE
+  KML
+  PLAN_ORDINANCE
+  REGISTRATION_ORDINANCE
+  GRANT_TERM
+  AERONAUTICAL_STUDY
+  OTHER_ORDINANCE
+  EXTRA
+}
+
 enum FeedbackRating {
   POSITIVE
   NEGATIVE
@@ -315,6 +331,7 @@ model Aerodrome {
   pilotLandings   PilotLanding[]
   maintenances    Maintenance[]
   cameras         Camera[]
+  documents       Document[]
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   createdBy String?   @map("created_by")
@@ -739,6 +756,38 @@ model Geojson {
 
   @@index([status])
   @@map("geojsons")
+}
+
+/// Documento de aeródromo (coleção plana `documents` no Firestore). Arquivo no
+/// object storage (MinIO, domínio `aerodromes`); persiste só a **key**
+/// (`storageKey`), presigned resolvida on-read. Múltiplos por tipo coexistem; a
+/// regra "1 ativo" vale só para o `upload-aerodrome-file` (kml/image).
+model Document {
+  id          String    @id @default(uuid()) @db.Uuid
+  aerodromeId String    @map("aerodrome_id") @db.Uuid
+  aerodrome   Aerodrome @relation(fields: [aerodromeId], references: [id], onDelete: Restrict)
+
+  /// Redundância de índice (espelha o `uf` do Firestore), derivada do aeródromo.
+  uf   String?      @map("uf")
+  type DocumentType
+
+  /// Key MinIO `aerodromes/{aerodromeId}/{docType}/{uuid}-{slug}` (nunca a URL).
+  storageKey       String  @map("storage_key") @db.Text
+  originalFilename String  @map("original_filename")
+  mimeType         String  @map("mime_type")
+  sizeBytes        Int     @map("size_bytes")
+  uploadedBy       String? @map("uploaded_by")
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdBy String?   @map("created_by")
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedBy String?   @map("updated_by")
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+  deletedBy String?   @map("deleted_by")
+
+  @@index([aerodromeId])
+  @@index([aerodromeId, type, deletedAt])
+  @@map("documents")
 }
 
 /// Avaliação pública (subcoleção `feedbacks` no Firestore).

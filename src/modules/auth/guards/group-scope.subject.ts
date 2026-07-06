@@ -18,6 +18,8 @@ export const GroupScopeSubject = {
   CAMERA: 'camera',
   /** `Geojson` — resolve o `groupId` via FK para o aeródromo. */
   GEOJSON: 'geojson',
+  /** `Document` — resolve o `groupId` via FK para o aeródromo. */
+  DOCUMENT: 'document',
   /** `Maintenance` — resolve o `groupId` via FK para o aeródromo. */
   MAINTENANCE: 'maintenance',
   /** `MaintenanceTask` — resolve o `groupId` via manutenção → aeródromo. */
