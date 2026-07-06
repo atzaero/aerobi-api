@@ -100,14 +100,23 @@ Trilha **append-only** das mutações do domínio — módulo `audit` (execuçã
 - **`action`** ∈ `{CREATE, UPDATE, DELETE}` apenas; sub-operações (SET_STATUS, DECIDE, RESET_PASSWORD, INVITE, …) vão em `metadata` (ex.: `{ scope: 'reset-password' }`), não viram novas actions. `entityType` é tipado no call-site (`AuditEntityType`, snake_case singular) e persistido como String — registre o tipo novo em `constants/audit-entity-type.ts` **e** o rótulo pt-BR em `mappers/audit-labels.ts` ao migrar um módulo.
 - **Leitura sem escopo de grupo**: `audit:list/read/export` (ADMIN/COORDINATOR) veem **todos** os logs (paridade com o web). `actor*` são snapshot nullable (ação pública/sistêmica); `actorId` sem FK rígida a `users.id` por ora (uid legado). Export CSV segue o padrão de `csv.util` (BOM/CRLF/RFC 4180, teto 50k).
 
+## Documentação HTTP (Swagger/OpenAPI)
+
+Swagger em `/api/docs`, organizado por um **padrão único** — fonte canônica em [`src/bootstrap/swagger/README.md`](src/bootstrap/swagger/README.md). O que não se deduz do código:
+
+- **Ordem das seções é intencional, não alfabética**: o array `TAGS` em [`src/bootstrap/swagger/setup-swagger.ts`](src/bootstrap/swagger/setup-swagger.ts) declara todas as tags na ordem em que o Swagger UI as renderiza, em blocos por **fluxo de uso / dependência**: Identidade & acesso → Estrutura (`Groups → Aerodromes → Cameras → Streams → Geojsons`) → Operações & solicitações → Integrações externas (ANAC/DECEA) → Sistema. Módulo novo **sem entrada em `TAGS`** cai no fim em ordem arbitrária — registre a tag no **bloco certo**, com descrição de uma linha.
+- **Nome da tag idêntico em 3 lugares**: `@ApiTags(...)` (todos os controllers do módulo) = entrada em `TAGS` = 4º arg do scaffold (Title Case, plural, inglês). 1 módulo = 1 tag, salvo superfícies distintas (ex.: `users` → `Users`/`Invites`/`Password Reset`; `movements` → `Movements`/`Readings`).
+- **Decoradores por rota em `docs/*.docs.ts`** (`applyDecorators`), controller fica limpo (só `@ApiTags` + `@{Operacao}Docs()`). O **decorator de segurança tem de casar com o guard real**: `ApiSecurity('api_key')` para `AerobiApiKeyGuard`, `ApiBearerAuth()` para `JwtAuthGuard`, nenhum para rota pública (o scaffold assume `api_key` — ajustar).
+
 ## Novos recursos (checklist)
 
 1. **Modelo de dados**: se precisar de persistência nova, actualizar `prisma/schema.prisma` e migrações; `prisma generate` em dev/CI.
 2. **CRUD repetível**: seguir [`.claude/commands/scaffold-module.md`](.claude/commands/scaffold-module.md) e `node scripts/scaffold-module.mjs ...` (não duplicar a árvore neste ficheiro).
 3. **Não‑CRUD** (proxy, sync, batch, cron): copiar padrão de módulos existentes (`plugfield/`, `rab/`, `private-aerodromes/`, `scheduler/`).
 4. Registar o módulo em [`src/app.module.ts`](src/app.module.ts) (`imports`; manter ordenação já usada pelo repo).
-5. Verificar antes de merge: **`npm run build`**, **`npm run lint:check`**, **`npm run format:check`**, **`npm run test`**.
-6. Git/PR: workflow em [`.claude/commands/`](.claude/commands/) — `/branch`, `/commit`, `/review`, `/pr`, `/merge`, `/babysit-pr` (acompanha o PR/CI até verde; skill em [`.claude/skills/babysit-pr/`](.claude/skills/babysit-pr/)), `/complete-flow` e `/scaffold-module` (no Cursor, [`.cursor/commands/`](.cursor/commands/) apenas referencia esses ficheiros); ver [`.github/BRANCH_PROTECTION.md`](.github/BRANCH_PROTECTION.md) se aplicável.
+5. **Swagger**: registar a tag em `TAGS` ([`src/bootstrap/swagger/setup-swagger.ts`](src/bootstrap/swagger/setup-swagger.ts)) no bloco certo e ajustar segurança/`summary` das `docs/*.docs.ts` — padrão em [`src/bootstrap/swagger/README.md`](src/bootstrap/swagger/README.md).
+6. Verificar antes de merge: **`npm run build`**, **`npm run lint:check`**, **`npm run format:check`**, **`npm run test`**.
+7. Git/PR: workflow em [`.claude/commands/`](.claude/commands/) — `/branch`, `/commit`, `/review`, `/pr`, `/merge`, `/babysit-pr` (acompanha o PR/CI até verde; skill em [`.claude/skills/babysit-pr/`](.claude/skills/babysit-pr/)), `/complete-flow` e `/scaffold-module` (no Cursor, [`.cursor/commands/`](.cursor/commands/) apenas referencia esses ficheiros); ver [`.github/BRANCH_PROTECTION.md`](.github/BRANCH_PROTECTION.md) se aplicável.
 
 ## CI/CD (padrão NestJS)
 
