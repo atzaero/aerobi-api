@@ -313,6 +313,7 @@ model Aerodrome {
   geojson         Geojson?
   feedbacks       Feedback[]
   pilotLandings   PilotLanding[]
+  maintenances    Maintenance[]
   cameras         Camera[]
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
@@ -951,6 +952,134 @@ model GroupImage {
 
   @@index([groupId])
   @@map("group_images")
+}
+
+// =============================================================================
+// Manutenções (`maintenances` + `maintenance_tasks` + `maintenance_guesses`).
+// Espelha as coleções planas do `aerobi-web` (intervenção → tarefas → palpites).
+// Escopo por grupo resolve-se via aeródromo dono; acesso público de stakeholders
+// usa `security_code` + `authorized_emails` (fora do RBAC JWT).
+// =============================================================================
+
+enum TaskStatus {
+  PENDING
+  COMPLETED
+
+  @@map("task_status")
+}
+
+enum TaskUrgency {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+
+  @@map("task_urgency")
+}
+
+enum TaskFollowUp {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  PAUSED
+
+  @@map("task_follow_up")
+}
+
+enum InvestmentType {
+  CAPEX
+  OPEX
+
+  @@map("investment_type")
+}
+
+enum GuessStatus {
+  PENDING
+  CONSIDERED
+  DISMISSED
+
+  @@map("guess_status")
+}
+
+/// Intervenção de manutenção ligada a um aeródromo operacional.
+model Maintenance {
+  id          String    @id @default(uuid()) @db.Uuid
+  aerodromeId String    @map("aerodrome_id") @db.Uuid
+  aerodrome   Aerodrome @relation(fields: [aerodromeId], references: [id], onDelete: Restrict)
+
+  name             String
+  /// Null ou vazio desabilita o acesso público por link.
+  securityCode     String?  @map("security_code")
+  authorizedEmails String[] @map("authorized_emails")
+
+  tasks MaintenanceTask[]
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdBy String?   @map("created_by")
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedBy String?   @map("updated_by")
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+  deletedBy String?   @map("deleted_by")
+
+  @@index([aerodromeId])
+  @@map("maintenances")
+}
+
+/// Tarefa de uma intervenção de manutenção.
+model MaintenanceTask {
+  id            String      @id @default(uuid()) @db.Uuid
+  maintenanceId String      @map("maintenance_id") @db.Uuid
+  maintenance   Maintenance @relation(fields: [maintenanceId], references: [id], onDelete: Restrict)
+
+  title                 String
+  description           String          @db.Text
+  predictedValue        Decimal         @map("predicted_value") @db.Decimal(14, 2)
+  insertionDate         DateTime        @map("insertion_date") @db.Timestamptz(3)
+  predictedDate         DateTime        @map("predicted_date") @db.Timestamptz(3)
+  completionDate        DateTime?       @map("completion_date") @db.Timestamptz(3)
+  actualCost            Decimal?        @map("actual_cost") @db.Decimal(14, 2)
+  completionDescription String?         @map("completion_description") @db.Text
+  impact                String?         @db.Text
+  timeElapsed           String?         @map("time_elapsed")
+  status                TaskStatus      @default(PENDING)
+  urgency               TaskUrgency?
+  followUp              TaskFollowUp?   @map("follow_up")
+  investmentType        InvestmentType? @map("investment_type")
+  responsibility        String?
+  delayWarning          Boolean?        @map("delay_warning")
+
+  guesses MaintenanceGuess[]
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdBy String?   @map("created_by")
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedBy String?   @map("updated_by")
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+  deletedBy String?   @map("deleted_by")
+
+  @@index([maintenanceId])
+  @@map("maintenance_tasks")
+}
+
+/// Palpite/sugestão pública associado a uma tarefa (coleção `guesses` no web).
+model MaintenanceGuess {
+  id     String          @id @default(uuid()) @db.Uuid
+  taskId String          @map("task_id") @db.Uuid
+  task   MaintenanceTask @relation(fields: [taskId], references: [id], onDelete: Restrict)
+
+  text   String      @db.Text
+  email  String
+  status GuessStatus @default(PENDING)
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedBy String?   @map("updated_by")
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+  deletedBy String?   @map("deleted_by")
+
+  @@index([taskId])
+  @@index([status])
+  @@map("maintenance_guesses")
 }
 
 // =============================================================================

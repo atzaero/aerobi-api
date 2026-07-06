@@ -14,6 +14,7 @@ export const AUDIT_ENTITY_TYPES = [
   'technical_visit',
   'maintenance',
   'task',
+  'guess',
   'feedback',
   'camera',
   'contact',
