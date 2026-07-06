@@ -18,6 +18,7 @@ export const AUDIT_ENTITY_TYPES = [
   'feedback',
   'camera',
   'contact',
+  'geojson',
 ] as const;
 
 /** União dos `entityType` canônicos auditados. */

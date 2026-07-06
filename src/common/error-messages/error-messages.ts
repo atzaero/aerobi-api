@@ -133,4 +133,14 @@ export const messages: Record<ErrorCode, { message: string }> = {
   [ErrorCode.FEEDBACK_DAILY_LIMIT_REACHED]: {
     message: 'Já existe avaliação para esta sessão hoje.',
   },
+
+  // ---------------------------------------------------------------------------
+  // GeoJSON operacional
+  // ---------------------------------------------------------------------------
+  [ErrorCode.GEOJSON_NOT_READY]: {
+    message: 'O GeoJSON do aeródromo [ID] não está pronto (status: [STATUS]).',
+  },
+  [ErrorCode.GEOJSON_READ_FAILED]: {
+    message: 'O GeoJSON do aeródromo [ID] está indisponível ou é inválido.',
+  },
 } as const;

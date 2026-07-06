@@ -1,39 +1,55 @@
 import { Module } from '@nestjs/common';
 
-import { AerobiApiKeyGuard } from '@/common/guards/aerobi-api-key.guard';
+import { AuditModule } from '@/modules/audit/audit.module';
+import { AuthModule } from '@/modules/auth/auth.module';
+import { UsersModule } from '@/modules/users/users.module';
 import { PrismaModule } from '@/prisma/prisma.module';
 
-import { CreateGeojsonController } from './controllers/create-geojson.controller';
 import { FindGeojsonByIdController } from './controllers/find-geojson-by-id.controller';
+import { FindGeojsonForAerodromeController } from './controllers/find-geojson-for-aerodrome.controller';
+import { GenerateGeojsonController } from './controllers/generate-geojson.controller';
 import { ListGeojsonsController } from './controllers/list-geojsons.controller';
 import { RemoveGeojsonController } from './controllers/remove-geojson.controller';
-import { UpdateGeojsonController } from './controllers/update-geojson.controller';
 
 import { GeojsonRepository } from './repositories/geojson.repository';
 
-import { CreateGeojsonService } from './services/create-geojson.service';
 import { FindGeojsonByIdService } from './services/find-geojson-by-id.service';
+import { FindGeojsonForAerodromeService } from './services/find-geojson-for-aerodrome.service';
+import { GenerateGeojsonService } from './services/generate-geojson.service';
 import { ListGeojsonsService } from './services/list-geojsons.service';
 import { RemoveGeojsonService } from './services/remove-geojson.service';
-import { UpdateGeojsonService } from './services/update-geojson.service';
 
+/**
+ * GeoJSON operacional dos aeródromos (Firebase → API, #376). Recurso
+ * **read-mostly derivado**: leitura por aeródromo (paridade com o web) + geração
+ * KML/KMZ→GeoJSON best-effort (upsert 1:1). Cutover para JWT + `PermissionsGuard`
+ * (reusa o subject RBAC `aerodrome`) + escopo por grupo (`GroupScopeGuard`).
+ * Importa `AuthModule`/`UsersModule` (guards + escopo) e `AuditModule` (trilha);
+ * exporta `GenerateGeojsonService` para o `documents` (#366) disparar no upload.
+ */
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, AuthModule, UsersModule, AuditModule],
   controllers: [
-    CreateGeojsonController,
-    UpdateGeojsonController,
+    /**
+     * As rotas fixas `/aerodrome/:id` e `/aerodrome/:id/generate` precedem
+     * `/:id` no registro. Em Express 5 (path-to-regexp 8) a precedência depende
+     * da ordem dos controllers — a invariante é travada por
+     * `geojsons.module.spec.ts`.
+     */
     ListGeojsonsController,
+    FindGeojsonForAerodromeController,
+    GenerateGeojsonController,
     FindGeojsonByIdController,
     RemoveGeojsonController,
   ],
   providers: [
-    AerobiApiKeyGuard,
     GeojsonRepository,
-    CreateGeojsonService,
-    UpdateGeojsonService,
     ListGeojsonsService,
+    FindGeojsonForAerodromeService,
+    GenerateGeojsonService,
     FindGeojsonByIdService,
     RemoveGeojsonService,
   ],
+  exports: [GenerateGeojsonService],
 })
 export class GeojsonsModule {}

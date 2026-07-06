@@ -15,13 +15,13 @@ describe('FindGeojsonByIdController', () => {
     } as unknown as FindGeojsonByIdService);
   });
 
-  it('id do param', async () => {
+  it('delega o id do param', async () => {
     const params: GeojsonParamDTO = {
-      geojsonId: '88888888-8888-4888-8888-888888888888',
+      id: '88888888-8888-4888-8888-888888888888',
     };
     const row = new GeojsonResponseDTO();
     execute.mockResolvedValue(row);
     await expect(controller.handle(params)).resolves.toBe(row);
-    expect(execute).toHaveBeenCalledWith({ id: params.geojsonId });
+    expect(execute).toHaveBeenCalledWith({ id: params.id });
   });
 });

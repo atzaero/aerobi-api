@@ -130,4 +130,22 @@ export enum ErrorCode {
    * aerodromeId, feedbackDate])`). Mapeado para 409.
    */
   FEEDBACK_DAILY_LIMIT_REACHED = 'FEEDBACK_DAILY_LIMIT_REACHED',
+
+  // ---------------------------------------------------------------------------
+  // GeoJSON operacional (módulo `geojsons`)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * GeoJSON do aeródromo existe mas não está pronto para consumo (`status ≠
+   * READY` — geração falhou/pendente). Espelha `INVALID_STATE` do web; mapeado
+   * para 422.
+   */
+  GEOJSON_NOT_READY = 'GEOJSON_NOT_READY',
+
+  /**
+   * GeoJSON marcado como READY mas o conteúdo persistido está ausente/inválido
+   * (não é um objeto GeoJSON legível). Espelha `READ_FAILED` do web; mapeado
+   * para 502.
+   */
+  GEOJSON_READ_FAILED = 'GEOJSON_READ_FAILED',
 }
