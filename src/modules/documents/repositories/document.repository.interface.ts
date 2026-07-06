@@ -31,16 +31,17 @@ export interface IDocumentRepository {
   softDelete(id: string, deletedBy: string): Promise<Document>;
 
   /**
-   * Soft-delete dos documentos **ativos** do mesmo aeródromo+tipo, exceto
-   * `keepId` — a regra "1 ativo" do `upload-aerodrome-file`. Retorna a contagem
-   * afetada.
+   * Cria o documento e soft-deleta os anteriores **ativos** do mesmo
+   * aeródromo+tipo numa **única transação `Serializable`** (a regra "1 ativo" do
+   * `upload-aerodrome-file`, kml/image). Retenta em conflito de serialização
+   * (P2034) sob uploads concorrentes. Retorna o documento criado.
    */
-  softDeletePreviousActive(
+  createSupersedingActive(
+    data: Prisma.DocumentCreateInput,
     aerodromeId: string,
     type: Document['type'],
-    keepId: string,
-    deletedBy: string,
-  ): Promise<number>;
+    actorId: string,
+  ): Promise<Document>;
 
   /** Aeródromo ativo (groupId + uf do grupo) para escopo/derivação. */
   findAerodromeForScope(aerodromeId: string): Promise<AerodromeScopeRef | null>;

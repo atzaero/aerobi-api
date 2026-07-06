@@ -104,9 +104,15 @@ export class UploadAerodromeFileService {
     );
     await this.storage.upload(file, storageKey);
 
+    /**
+     * Regra "1 ativo": cria o novo documento e soft-deleta os anteriores do
+     * mesmo tipo numa **única transação `Serializable`** (atômico e à prova de
+     * uploads concorrentes — nunca deixa o tipo com 0 ou 2 ativos). O objeto no
+     * storage dos anteriores é preservado.
+     */
     let created;
     try {
-      created = await this.repo.create(
+      created = await this.repo.createSupersedingActive(
         buildDocumentCreateInput({
           aerodromeId: dto.aerodromeId,
           uf: aerodrome.uf,
@@ -117,6 +123,9 @@ export class UploadAerodromeFileService {
           sizeBytes: file.size,
           actorId: actor.id,
         }),
+        dto.aerodromeId,
+        type,
+        actor.id,
       );
     } catch (err) {
       await this.storage.delete(storageKey).catch((delErr: unknown) => {
@@ -126,17 +135,6 @@ export class UploadAerodromeFileService {
       });
       throw err;
     }
-
-    /**
-     * Regra "1 ativo": soft-deleta os anteriores do mesmo tipo APÓS criar o
-     * novo (nunca deixa o tipo sem ativo). O objeto no storage é preservado.
-     */
-    await this.repo.softDeletePreviousActive(
-      dto.aerodromeId,
-      type,
-      created.id,
-      actor.id,
-    );
 
     /**
      * Geração de GeoJSON best-effort para KML: consome o `GenerateGeojsonService`

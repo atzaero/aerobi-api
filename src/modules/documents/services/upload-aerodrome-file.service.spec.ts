@@ -45,8 +45,7 @@ function multerFile(
 describe('UploadAerodromeFileService', () => {
   let service: UploadAerodromeFileService;
   let findAerodromeForScope: jest.Mock;
-  let create: jest.Mock;
-  let softDeletePreviousActive: jest.Mock;
+  let createSupersedingActive: jest.Mock;
   let upload: jest.Mock;
   let record: jest.Mock;
   let generate: jest.Mock;
@@ -55,20 +54,18 @@ describe('UploadAerodromeFileService', () => {
     findAerodromeForScope = jest
       .fn()
       .mockResolvedValue({ groupId: 'grp-1', uf: Uf.MG });
-    create = jest
+    createSupersedingActive = jest
       .fn()
       .mockResolvedValue(
         buildDocumentFixture({ aerodromeId: aid, type: DocumentType.KML }),
       );
-    softDeletePreviousActive = jest.fn().mockResolvedValue(1);
     upload = jest.fn().mockResolvedValue(undefined);
     record = jest.fn().mockResolvedValue(undefined);
     generate = jest.fn().mockResolvedValue({ status: 'READY', geojson: {} });
     service = new UploadAerodromeFileService(
       {
         findAerodromeForScope,
-        create,
-        softDeletePreviousActive,
+        createSupersedingActive,
       } as unknown as DocumentRepository,
       {
         upload,
@@ -88,11 +85,10 @@ describe('UploadAerodromeFileService', () => {
       multerFile(),
       admin,
     );
-    expect(create).toHaveBeenCalled();
-    expect(softDeletePreviousActive).toHaveBeenCalledWith(
+    expect(createSupersedingActive).toHaveBeenCalledWith(
+      expect.objectContaining({ uploadedBy: admin.id }),
       aid,
       DocumentType.KML,
-      expect.any(String),
       admin.id,
     );
     expect(generate).toHaveBeenCalledWith(
@@ -109,7 +105,7 @@ describe('UploadAerodromeFileService', () => {
   });
 
   it('IMAGE válida (mode create): não dispara geojson, audita CREATE', async () => {
-    create.mockResolvedValue(
+    createSupersedingActive.mockResolvedValue(
       buildDocumentFixture({ aerodromeId: aid, type: DocumentType.IMAGE }),
     );
     await service.execute(
@@ -160,6 +156,6 @@ describe('UploadAerodromeFileService', () => {
         admin,
       ),
     ).resolves.toBeDefined();
-    expect(create).toHaveBeenCalled();
+    expect(createSupersedingActive).toHaveBeenCalled();
   });
 });
