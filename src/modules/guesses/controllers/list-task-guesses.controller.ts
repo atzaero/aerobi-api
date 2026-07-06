@@ -14,7 +14,7 @@ import { ListTaskGuessesQueryDTO } from '../dtos/list-task-guesses-query.dto';
 import { TaskGuessesParamDTO } from '../dtos/task-guesses-param.dto';
 import { ListTaskGuessesService } from '../services/list-task-guesses.service';
 
-@ApiTags('Tasks')
+@ApiTags('Guesses')
 @Controller('tasks')
 @UseGuards(JwtAuthGuard, PermissionsGuard, GroupScopeGuard)
 export class ListTaskGuessesController {
