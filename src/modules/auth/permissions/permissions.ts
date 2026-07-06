@@ -121,13 +121,15 @@ export const PERMISSIONS: Record<
     delete: [UserRole.ADMIN],
   },
   // Documentos do aeródromo: coordinator/admin gerenciam; operator apenas
-  // visualiza; exclusão só admin.
+  // visualiza; exclusão só admin. `export` espelha `list` (paridade com o web,
+  // que reusa `document:list` no export).
   document: {
     list: [UserRole.ADMIN, UserRole.COORDINATOR, UserRole.OPERATOR],
     read: [UserRole.ADMIN, UserRole.COORDINATOR, UserRole.OPERATOR],
     create: [UserRole.ADMIN, UserRole.COORDINATOR],
     update: [UserRole.ADMIN, UserRole.COORDINATOR],
     delete: [UserRole.ADMIN],
+    export: [UserRole.ADMIN, UserRole.COORDINATOR, UserRole.OPERATOR],
   },
   // Solicitações de pouso: operator aceita/recusa (`decide`) e exporta;
   // coordinator/admin herdam por hierarquia. `delete` é administrativo

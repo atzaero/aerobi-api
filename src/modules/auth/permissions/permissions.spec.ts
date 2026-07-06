@@ -77,6 +77,7 @@ const EXPECTED: Record<
     create: [UserRole.ADMIN, UserRole.COORDINATOR],
     update: [UserRole.ADMIN, UserRole.COORDINATOR],
     delete: [UserRole.ADMIN],
+    export: [UserRole.ADMIN, UserRole.COORDINATOR, UserRole.OPERATOR],
   },
   landing_request: {
     list: [UserRole.ADMIN, UserRole.COORDINATOR, UserRole.OPERATOR],

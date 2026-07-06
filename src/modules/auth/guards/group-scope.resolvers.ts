@@ -80,6 +80,15 @@ export const groupScopeResolvers: Record<GroupScopeSubject, GroupResolver> = {
     return geojson?.aerodrome.groupId ?? null;
   },
 
+  [GroupScopeSubject.DOCUMENT]: async (prisma, id) => {
+    const document = await prisma.document.findFirst({
+      where: { id, deletedAt: null },
+      select: { aerodrome: { select: { groupId: true } } },
+    });
+
+    return document?.aerodrome.groupId ?? null;
+  },
+
   [GroupScopeSubject.MAINTENANCE]: async (prisma, id) => {
     const maintenance = await prisma.maintenance.findFirst({
       where: { id, deletedAt: null },

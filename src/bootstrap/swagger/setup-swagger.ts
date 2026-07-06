@@ -92,6 +92,7 @@ const TAGS: ReadonlyArray<readonly [name: string, description: string]> = [
   ['Cameras', 'Câmeras associadas a um aeródromo.'],
   ['Streams', 'Proxy HLS de transmissão ao vivo das câmeras.'],
   ['Geojsons', 'Camadas GeoJSON (mapas) dos aeródromos.'],
+  ['Documents', 'Documentos de aeródromo (KML, imagens, portarias, etc.).'],
 
   /** Operações & solicitações */
   [
