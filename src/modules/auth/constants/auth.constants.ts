@@ -15,6 +15,8 @@ export const IS_PUBLIC_KEY = 'auth:isPublic';
 export const ROLES_KEY = 'auth:roles';
 export const PERMISSION_KEY = 'auth:permission';
 export const GROUP_SCOPE_KEY = 'auth:groupScope';
+/** Nome do parâmetro de rota com o id do recurso (default `id`). */
+export const GROUP_SCOPE_PARAM_KEY = 'auth:groupScopeParam';
 
 /** Tipos válidos do claim `typ` no JWT (access vs refresh). */
 export const JWT_TOKEN_TYPE = {

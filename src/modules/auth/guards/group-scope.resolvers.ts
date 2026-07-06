@@ -70,4 +70,45 @@ export const groupScopeResolvers: Record<GroupScopeSubject, GroupResolver> = {
 
     return camera?.aerodrome.groupId ?? null;
   },
+
+  [GroupScopeSubject.MAINTENANCE]: async (prisma, id) => {
+    const maintenance = await prisma.maintenance.findFirst({
+      where: { id, deletedAt: null },
+      select: { aerodrome: { select: { groupId: true } } },
+    });
+
+    return maintenance?.aerodrome.groupId ?? null;
+  },
+
+  [GroupScopeSubject.TASK]: async (prisma, id) => {
+    const task = await prisma.maintenanceTask.findFirst({
+      where: { id, deletedAt: null },
+      select: {
+        maintenance: { select: { aerodrome: { select: { groupId: true } } } },
+      },
+    });
+
+    return task?.maintenance.aerodrome.groupId ?? null;
+  },
+
+  [GroupScopeSubject.GUESS]: async (prisma, id) => {
+    const guess = await prisma.maintenanceGuess.findFirst({
+      where: {
+        id,
+        deletedAt: null,
+        task: { deletedAt: null, maintenance: { deletedAt: null } },
+      },
+      select: {
+        task: {
+          select: {
+            maintenance: {
+              select: { aerodrome: { select: { groupId: true } } },
+            },
+          },
+        },
+      },
+    });
+
+    return guess?.task.maintenance.aerodrome.groupId ?? null;
+  },
 };

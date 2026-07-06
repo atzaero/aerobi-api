@@ -9,6 +9,10 @@ import { PrismaService } from '@/prisma/prisma.service';
 
 import { GroupScopeGuard } from './group-scope.guard';
 import { GroupScopeSubject } from './group-scope.subject';
+import {
+  GROUP_SCOPE_KEY,
+  GROUP_SCOPE_PARAM_KEY,
+} from '../constants/auth.constants';
 
 const RESOURCE_ID = '11111111-1111-4111-8111-111111111111';
 const GROUP_A = '22222222-2222-4222-8222-222222222222';
@@ -19,11 +23,15 @@ type GuardUser = { id: string; email: string; role: UserRole };
 function buildContext(
   user: GuardUser | undefined,
   params: Record<string, string | undefined> = { id: RESOURCE_ID },
+  query: Record<string, string | undefined> = {},
+  body: Record<string, string | undefined> = {},
 ): ExecutionContext {
   return {
     getHandler: () => undefined,
     getClass: () => undefined,
-    switchToHttp: () => ({ getRequest: () => ({ user, params }) }),
+    switchToHttp: () => ({
+      getRequest: () => ({ user, params, query, body }),
+    }),
   } as unknown as ExecutionContext;
 }
 
@@ -32,11 +40,13 @@ function buildPrisma(): {
   group: { findFirst: jest.Mock };
   aerodrome: { findFirst: jest.Mock };
   landingRequest: { findFirst: jest.Mock };
+  maintenance: { findFirst: jest.Mock };
   user: { findFirst: jest.Mock };
 } {
   const group = { findFirst: jest.fn() };
   const aerodrome = { findFirst: jest.fn() };
   const landingRequest = { findFirst: jest.fn() };
+  const maintenance = { findFirst: jest.fn() };
   const user = { findFirst: jest.fn() };
 
   return {
@@ -44,11 +54,13 @@ function buildPrisma(): {
       group,
       aerodrome,
       landingRequest,
+      maintenance,
       user,
     } as unknown as PrismaService,
     group,
     aerodrome,
     landingRequest,
+    maintenance,
     user,
   };
 }
@@ -79,8 +91,17 @@ describe('GroupScopeGuard', () => {
     );
   });
 
-  function mockSubject(subject: GroupScopeSubject | undefined): void {
-    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(subject);
+  function mockSubject(
+    subject: GroupScopeSubject | undefined,
+    paramName = 'id',
+  ): void {
+    jest
+      .spyOn(reflector, 'getAllAndOverride')
+      .mockImplementation((key: string) => {
+        if (key === GROUP_SCOPE_KEY) return subject;
+        if (key === GROUP_SCOPE_PARAM_KEY) return paramName;
+        return undefined;
+      });
   }
 
   async function expectErrorCode(
@@ -242,5 +263,38 @@ describe('GroupScopeGuard', () => {
       guard.canActivate(buildContext(operator, {})),
       ErrorCode.VALIDATION_FAILED,
     );
+  });
+
+  it('resolve maintenanceId da query quando ausente em params', async () => {
+    mockSubject(GroupScopeSubject.MAINTENANCE, 'maintenanceId');
+    deps.maintenance.findFirst.mockResolvedValue({
+      aerodrome: { groupId: GROUP_A },
+    });
+    deps.user.findFirst.mockResolvedValue({ groupId: GROUP_A });
+
+    await expect(
+      guard.canActivate(
+        buildContext(operator, {}, { maintenanceId: RESOURCE_ID }),
+      ),
+    ).resolves.toBe(true);
+
+    expect(deps.maintenance.findFirst).toHaveBeenCalledWith({
+      where: { id: RESOURCE_ID, deletedAt: null },
+      select: { aerodrome: { select: { groupId: true } } },
+    });
+  });
+
+  it('resolve maintenanceId do body quando ausente em params e query', async () => {
+    mockSubject(GroupScopeSubject.MAINTENANCE, 'maintenanceId');
+    deps.maintenance.findFirst.mockResolvedValue({
+      aerodrome: { groupId: GROUP_A },
+    });
+    deps.user.findFirst.mockResolvedValue({ groupId: GROUP_A });
+
+    await expect(
+      guard.canActivate(
+        buildContext(operator, {}, {}, { maintenanceId: RESOURCE_ID }),
+      ),
+    ).resolves.toBe(true);
   });
 });
