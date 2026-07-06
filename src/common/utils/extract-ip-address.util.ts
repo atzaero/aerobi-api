@@ -1,22 +1,17 @@
 import type { Request } from 'express';
 
 /**
- * Extrai o IP de origem de um `Request` Express, priorizando o cabeçalho
- * `X-Forwarded-For` (primeiro valor da cadeia) e caindo para `request.ip`
- * — que reflete o socket diretamente conectado ao Node.
+ * IP de origem do request para decisões de segurança (rate-limit, auditoria).
  *
- * **Atenção**: `X-Forwarded-For` é spoofável quando a aplicação não está
- * atrás de um proxy confiável (nginx/cloudfront). Em produção, garantir
- * `app.set('trust proxy', ...)` com a topologia correta antes de usar
- * o IP retornado para decisões de segurança (rate-limit, audit).
+ * Usa `request.ip`, que depende de `trust proxy` estar configurado no bootstrap
+ * (ver `applyTrustProxy`): com um proxy confiável à frente, o Express resolve o
+ * IP real do cliente a partir do `X-Forwarded-For` adicionado pelo proxy e
+ * ignora o header quando forjado por um cliente conectado diretamente. **Não**
+ * ler o `X-Forwarded-For` cru — é falsificável.
  *
- * Retorna `undefined` quando nenhum dos dois está presente — caller
+ * Retorna `undefined` quando o Express não conseguiu resolver o IP — o caller
  * decide o fallback (`'unknown'`, `null`, etc.).
  */
 export function extractIpAddress(request: Request): string | undefined {
-  const forwarded = request.headers['x-forwarded-for'];
-  if (typeof forwarded === 'string' && forwarded.length > 0) {
-    return forwarded.split(',')[0]?.trim();
-  }
   return request.ip;
 }
