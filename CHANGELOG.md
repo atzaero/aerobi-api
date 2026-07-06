@@ -1,3 +1,15 @@
+# [2.6.0-beta.48](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.47...v2.6.0-beta.48) (2026-07-06)
+
+
+### Bug Fixes
+
+* **documents:** torna a regra '1 ativo' atômica (transação Serializable + retry) ([fb82993](https://github.com/atzaero/aerobi-api/commit/fb82993889561ed226a2892c2a4e60854cd72919)), closes [#366](https://github.com/atzaero/aerobi-api/issues/366)
+
+
+### Features
+
+* **documents:** módulo de documentos de aeródromo com paridade total ao aerobi-web ([#366](https://github.com/atzaero/aerobi-api/issues/366)) ([3a427b9](https://github.com/atzaero/aerobi-api/commit/3a427b95be61cfe822f6a75219b077e55ee24757)), closes [#353](https://github.com/atzaero/aerobi-api/issues/353) [#350](https://github.com/atzaero/aerobi-api/issues/350) [#376](https://github.com/atzaero/aerobi-api/issues/376)
+
 # [2.6.0-beta.47](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.46...v2.6.0-beta.47) (2026-07-06)
 
 
