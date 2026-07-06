@@ -63,6 +63,17 @@ export function investmentTypeFromApi(
   return value;
 }
 
+/**
+ * Normaliza uma string opcional para persistência: trima e converte string
+ * vazia/whitespace (ou ausente) em `null`. Espelha o `optionalTrimmed → orNull`
+ * do `aerobi-web`, evitando gravar `''` onde o contrato espera `null`.
+ */
+function trimToNull(value?: string | null): string | null {
+  if (value == null) return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
 function parseIsoDate(value: string): Date {
   return new Date(value);
 }
@@ -100,14 +111,14 @@ function buildTaskScalarFields(
     predictedDate,
     completionDate: completionDate ?? null,
     actualCost: dto.actualCost ?? null,
-    completionDescription: dto.completionDescription?.trim() ?? null,
-    impact: dto.impact?.trim() ?? null,
-    timeElapsed: dto.timeElapsed?.trim() ?? null,
+    completionDescription: trimToNull(dto.completionDescription),
+    impact: trimToNull(dto.impact),
+    timeElapsed: trimToNull(dto.timeElapsed),
     status,
     urgency: taskUrgencyFromApi(dto.urgency) ?? null,
     followUp: taskFollowUpFromApi(dto.followUp) ?? null,
     investmentType: investmentTypeFromApi(dto.investmentType) ?? null,
-    responsibility: dto.responsibility?.trim() ?? null,
+    responsibility: trimToNull(dto.responsibility),
     delayWarning: delayWarning ?? null,
   };
 }
