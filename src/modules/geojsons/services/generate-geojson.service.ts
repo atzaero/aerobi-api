@@ -39,8 +39,8 @@ export interface GenerateGeojsonResult {
 }
 
 /**
- * Caso de uso server-side de geração KML/KMZ → GeoJSON, **best-effort**: nunca
- * lança para o chamador. Espelha `generateAndSaveAerodromeGeojson` do web:
+ * Caso de uso server-side de geração KML/KMZ → GeoJSON. Espelha
+ * `generateAndSaveAerodromeGeojson` do web:
  *
  *  - **skip** se o aeródromo pai não existe (o web pula quando falta
  *    icao/uf/group_id — na API esses são colunas obrigatórias, logo a existência
@@ -51,8 +51,17 @@ export interface GenerateGeojsonResult {
  *    (inclusive soft-deletado → re-ativa), com ator real em `createdBy`/
  *    `updatedBy` e trilha de auditoria (`CREATE`/`UPDATE`).
  *
- * Exportado pelo `GeojsonsModule` para o `documents` (#366) disparar no upload de
- * KML/KMZ; o endpoint admin de regeneração o consome diretamente.
+ * **Escopo do best-effort**: a garantia de "não derrubar a operação" cobre
+ * apenas a etapa de **conversão/limite** — uma falha ali vira `status = ERROR`
+ * (nunca relança). Falhas de **infraestrutura** (Postgres nas queries/upsert, ou
+ * a gravação da auditoria — esta já best-effort no próprio recorder) **propagam**
+ * para o chamador, exatamente como no web (onde o `getAerodromesCollection` fica
+ * fora do try e o `upload-aerodrome-file` é que envolve tudo). Portanto o
+ * chamador do #366 **deve envolver esta chamada em try/catch** para o upload de
+ * KML/KMZ não reverter; o endpoint admin de regeneração a consome diretamente e
+ * uma falha de infra vira 500 (esperado para um endpoint interno).
+ *
+ * Exportado pelo `GeojsonsModule` para o `documents` (#366) disparar no upload.
  */
 @Injectable()
 export class GenerateGeojsonService {
