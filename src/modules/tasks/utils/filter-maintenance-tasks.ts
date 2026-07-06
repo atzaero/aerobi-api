@@ -10,6 +10,7 @@ import {
   isTaskCurrentlyOverdue,
   isTaskDeliveredLate,
 } from '@/modules/maintenances/utils/maintenance-domain.util';
+import { toLocalCivilDate } from '@/common/utils/civil-date.util';
 import type { TaskFilterQueryDTO } from '../dtos/list-tasks-query.dto';
 
 const URGENCY_RANK: Record<string, number> = {
@@ -18,6 +19,22 @@ const URGENCY_RANK: Record<string, number> = {
   MEDIUM: 2,
   LOW: 3,
 };
+
+/**
+ * Igualdade numérica do valor previsto tolerando separador de milhar/decimal
+ * pt-BR (`1.500,50`); texto não-numérico não casa nada. Espelha o
+ * `matchesPredictedValueFilter` do aerobi-web.
+ */
+function matchesPredictedValueFilter(
+  taskValue: number,
+  filter: string,
+): boolean {
+  const trimmed = filter.trim();
+  if (!trimmed) return true;
+  const normalized = trimmed.replace(/\./g, '').replace(',', '.');
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) && taskValue === parsed;
+}
 
 /**
  * Aplica filtros de listagem de tarefas em memória (paridade com o web).
@@ -75,17 +92,17 @@ export function filterMaintenanceTasks(
 
   if (filters.predictedDate) {
     out = out.filter(
-      (task) =>
-        task.predictedDate.toISOString().slice(0, 10) === filters.predictedDate,
+      (task) => toLocalCivilDate(task.predictedDate) === filters.predictedDate,
     );
   }
 
   if (filters.predictedValue) {
-    const needle = filters.predictedValue.trim();
-    out = out.filter((task) => {
-      const value = task.predictedValue.toNumber();
-      return String(value) === needle || value.toFixed(2) === needle;
-    });
+    out = out.filter((task) =>
+      matchesPredictedValueFilter(
+        task.predictedValue.toNumber(),
+        filters.predictedValue as string,
+      ),
+    );
   }
 
   return out;
