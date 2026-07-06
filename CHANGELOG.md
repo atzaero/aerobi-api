@@ -1,3 +1,10 @@
+# [2.6.0-beta.46](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.45...v2.6.0-beta.46) (2026-07-06)
+
+
+### Features
+
+* **maintenances:** paridade web — CRUD, tasks, guesses e rotas públicas ([#486](https://github.com/atzaero/aerobi-api/issues/486)) ([ae8a17e](https://github.com/atzaero/aerobi-api/commit/ae8a17e3013ad12e25a775225ae5c3bb7968434a)), closes [#378](https://github.com/atzaero/aerobi-api/issues/378) [#378](https://github.com/atzaero/aerobi-api/issues/378)
+
 # [2.6.0-beta.45](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.44...v2.6.0-beta.45) (2026-07-05)
 
 
