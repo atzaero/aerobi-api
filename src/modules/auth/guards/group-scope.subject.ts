@@ -16,6 +16,8 @@ export const GroupScopeSubject = {
   FEEDBACK: 'feedback',
   /** `Camera` — resolve o `groupId` via FK para o aeródromo. */
   CAMERA: 'camera',
+  /** `Geojson` — resolve o `groupId` via FK para o aeródromo. */
+  GEOJSON: 'geojson',
 } as const;
 
 export type GroupScopeSubject =

@@ -70,4 +70,13 @@ export const groupScopeResolvers: Record<GroupScopeSubject, GroupResolver> = {
 
     return camera?.aerodrome.groupId ?? null;
   },
+
+  [GroupScopeSubject.GEOJSON]: async (prisma, id) => {
+    const geojson = await prisma.geojson.findFirst({
+      where: { id, deletedAt: null },
+      select: { aerodrome: { select: { groupId: true } } },
+    });
+
+    return geojson?.aerodrome.groupId ?? null;
+  },
 };

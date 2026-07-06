@@ -30,6 +30,7 @@ export const AUDIT_ENTITY_TYPE_LABELS_PT: Record<AuditEntityType, string> = {
   feedback: 'Feedback',
   camera: 'Câmera',
   contact: 'Mensagem de contato',
+  geojson: 'GeoJSON',
 };
 
 /**

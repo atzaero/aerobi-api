@@ -1,10 +1,12 @@
 import { applyDecorators } from '@nestjs/common';
 import {
+  ApiBearerAuth,
   ApiExtraModels,
+  ApiForbiddenResponse,
   ApiOkResponse,
   ApiOperation,
   ApiQuery,
-  ApiSecurity,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
 import { PaginationMetadataUtil } from '@/common/utils/pagination.util';
@@ -15,13 +17,18 @@ import { GeojsonResponseDTO } from '../dtos/geojson-response.dto';
 
 export function ListGeojsonsDocs() {
   return applyDecorators(
-    ApiSecurity('api_key'),
+    ApiBearerAuth(),
     ApiExtraModels(
       PaginationMetadataUtil,
       GeojsonResponseDTO,
       GeojsonsPaginatedResponseDTO,
     ),
-    ApiOperation({ summary: 'Lista paginada de Geojsons' }),
+    ApiOperation({
+      summary: 'Lista paginada de Geojsons',
+      description:
+        'Requer `aerodrome:list`. Escopo por grupo do ator ' +
+        '(ADMIN vê tudo; COORDINATOR/OPERATOR/TECHNICAL restritos ao seu grupo).',
+    }),
     ApiQuery({ name: 'page', required: false, example: 1 }),
     ApiQuery({ name: 'limit', required: false, example: 10 }),
     ApiQuery({
@@ -37,5 +44,7 @@ export function ListGeojsonsDocs() {
         '`READY`, `ERROR` — filtro pelo estado da geração do GeoJSON',
     }),
     ApiOkResponse({ type: GeojsonsPaginatedResponseDTO }),
+    ApiUnauthorizedResponse({ description: 'Token ausente ou inválido.' }),
+    ApiForbiddenResponse({ description: 'Sem permissão `aerodrome:list`.' }),
   );
 }
