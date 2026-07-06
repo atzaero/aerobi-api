@@ -2,9 +2,9 @@ import { MovementSource, MovementType } from '@/generated/prisma/enums';
 
 import type { MovementCreatedEvent } from '@/modules/movements/events/movement-created.event';
 import type {
-  FirestoreDirectoryPort,
+  DirectoryPort,
   GroupContact,
-} from '@/modules/conformity/ports/firestore-directory.port';
+} from '@/modules/conformity/ports/directory.port';
 
 import { NotificationType } from '../enums/notification-type.enum';
 import type { NotificationDispatchService } from '../services/notification-dispatch.service';
@@ -47,7 +47,7 @@ describe('MovementNotificationsListener', () => {
     const directory = {
       findAerodromeGroupByIcao,
       findGroupContacts,
-    } as unknown as FirestoreDirectoryPort;
+    } as unknown as DirectoryPort;
     const dispatchService = {
       dispatch,
     } as unknown as NotificationDispatchService;

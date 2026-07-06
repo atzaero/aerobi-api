@@ -11,7 +11,7 @@ movement.created (single/manual)         movements.batch.created (lote)
         │                                          │
         └──────────► MovementNotificationsListener ◄┘
                           │
-                          ├─ ContactDirectoryPort  (FirestoreDirectoryPort: Firebase hoje → Postgres no futuro)
+                          ├─ ContactDirectoryPort  (DirectoryPort: Postgres via PostgresDirectoryAdapter — #475)
                           │     resolve grupo do aeródromo → coordenadores com telefone
                           │
                           └─ NotificationDispatchService.dispatch({ recipients, type, params })

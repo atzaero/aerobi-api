@@ -9,10 +9,7 @@ import {
   MOVEMENT_NON_CONFORMITY_EVENT,
   MovementNonConformityEvent,
 } from '../events/movement-non-conformity.event';
-import {
-  FIRESTORE_DIRECTORY_PORT,
-  FirestoreDirectoryPort,
-} from '../ports/firestore-directory.port';
+import { DIRECTORY_PORT, DirectoryPort } from '../ports/directory.port';
 import { OperationalEventRepository } from '../repositories/operational-event.repository';
 
 /** Janela default (minutos) para deduplicar notificações de não-conformidade. */
@@ -25,7 +22,7 @@ const NOTIFY_ROLES = ['coordinator', 'operator'];
  * Listener de notificação de conformidade (#253).
  *
  * Reage a {@link MOVEMENT_NON_CONFORMITY_EVENT}: resolve o grupo do aeródromo e
- * os contactos (coordenadores/operadores) via {@link FirestoreDirectoryPort} e
+ * os contactos (coordenadores/operadores) via {@link DirectoryPort} e
  * envia um e-mail. Faz dedupe por matrícula+aeródromo numa janela configurável
  * (`CONFORMITY_NOTIFY_DEDUPE_MINUTES`, default {@link DEFAULT_DEDUPE_MINUTES}),
  * marcando a não-conformidade como notificada (`notifiedAt`) após o envio.
@@ -36,8 +33,8 @@ export class NotificationListener {
   private readonly dedupeMinutes: number;
 
   constructor(
-    @Inject(FIRESTORE_DIRECTORY_PORT)
-    private readonly directory: FirestoreDirectoryPort,
+    @Inject(DIRECTORY_PORT)
+    private readonly directory: DirectoryPort,
     private readonly operationalEventRepository: OperationalEventRepository,
     private readonly emailService: EmailService,
     config: ConfigService,

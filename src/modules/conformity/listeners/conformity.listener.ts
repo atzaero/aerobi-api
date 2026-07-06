@@ -23,10 +23,7 @@ import {
   MOVEMENT_NON_CONFORMITY_EVENT,
   MovementNonConformityEvent,
 } from '../events/movement-non-conformity.event';
-import {
-  FIRESTORE_DIRECTORY_PORT,
-  FirestoreDirectoryPort,
-} from '../ports/firestore-directory.port';
+import { DIRECTORY_PORT, DirectoryPort } from '../ports/directory.port';
 import { OperationalEventRepository } from '../repositories/operational-event.repository';
 
 /** Janela default (horas) para casar o pouso com uma solicitação aprovada. */
@@ -42,7 +39,7 @@ const NON_CONFORMITY_TYPE =
  * Reage a {@link MOVEMENT_CREATED_EVENT} e a
  * {@link MOVEMENT_CONFORMITY_REQUESTED_EVENT} (reavaliação após edição). Para
  * **pousos com aeródromo conhecido** (de qualquer origem — AUTOMATIC ou MANUAL),
- * procura uma solicitação de aterragem aprovada via {@link FirestoreDirectoryPort}
+ * procura uma solicitação de aterragem aprovada via {@link DirectoryPort}
  * e resolve a conformidade do movimento emitindo
  * {@link MOVEMENT_CONFORMITY_RESOLVED_EVENT} (o módulo `movements` persiste o
  * status). Não havendo match, registra uma não-conformidade (`OperationalEvent`,
@@ -56,8 +53,8 @@ export class ConformityListener {
   private readonly windowHours: number;
 
   constructor(
-    @Inject(FIRESTORE_DIRECTORY_PORT)
-    private readonly directory: FirestoreDirectoryPort,
+    @Inject(DIRECTORY_PORT)
+    private readonly directory: DirectoryPort,
     private readonly operationalEventRepository: OperationalEventRepository,
     private readonly eventEmitter: EventEmitter2,
     config: ConfigService,

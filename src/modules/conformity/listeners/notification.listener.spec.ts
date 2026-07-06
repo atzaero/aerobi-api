@@ -7,9 +7,9 @@ import type { OperationalEvent } from '@/generated/prisma/client';
 import type { MovementNonConformityEvent } from '../events/movement-non-conformity.event';
 import type {
   AerodromeGroup,
-  FirestoreDirectoryPort,
+  DirectoryPort,
   GroupContact,
-} from '../ports/firestore-directory.port';
+} from '../ports/directory.port';
 import type {
   FindRecentNotifiedInput,
   OperationalEventRepository,
@@ -61,7 +61,7 @@ describe('NotificationListener', () => {
     const directory = {
       findAerodromeGroupByIcao,
       findGroupContacts,
-    } as unknown as FirestoreDirectoryPort;
+    } as unknown as DirectoryPort;
     const repository = {
       findRecentNotified,
       markNotified,

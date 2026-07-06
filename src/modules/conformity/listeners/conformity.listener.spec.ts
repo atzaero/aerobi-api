@@ -12,7 +12,7 @@ import type { MovementCreatedEvent } from '@/modules/movements/events/movement-c
 import { MOVEMENT_CONFORMITY_RESOLVED_EVENT } from '@/modules/movements/events/movement-conformity-resolved.event';
 
 import { MOVEMENT_NON_CONFORMITY_EVENT } from '../events/movement-non-conformity.event';
-import type { FirestoreDirectoryPort } from '../ports/firestore-directory.port';
+import type { DirectoryPort } from '../ports/directory.port';
 import type { OperationalEventRepository } from '../repositories/operational-event.repository';
 
 import { ConformityListener } from './conformity.listener';
@@ -42,7 +42,7 @@ describe('ConformityListener', () => {
   function build(): ConformityListener {
     const directory = {
       findApprovedLandingRequestMatch,
-    } as unknown as FirestoreDirectoryPort;
+    } as unknown as DirectoryPort;
     const repository = {
       create,
       findOpenByMovement,

@@ -24,7 +24,7 @@ import { NotificationDispatchService } from './services/notification-dispatch.se
  * registrado em {@link NOTIFICATION_MESSAGE_BUILDERS}. O
  * {@link MovementNotificationsListener} reage a `movement.created` /
  * `movements.batch.created`, resolve os coordenadores do grupo via
- * {@link ConformityModule} (port do diretório, Firebase hoje) e dispara.
+ * {@link ConformityModule} (port do diretório, sobre Postgres — #475) e dispara.
  *
  * **Environment (Aerobi → Evolution GO):** `EVOLUTION_GO_BASE_URL` (base interna
  * na warpgate, ex.: `http://evolution_go:4000`), `EVOLUTION_GO_API_KEY` (token da
