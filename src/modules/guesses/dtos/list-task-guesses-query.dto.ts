@@ -1,5 +1,10 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsIn, IsOptional, IsString } from 'class-validator';
+
+import {
+  IsYmdDate,
+  IsYmdDateOnOrAfter,
+} from '@/common/validators/is-ymd-date.validator';
 
 import { GUESS_STATUSES } from '../mappers/maintenance-guess.prisma.mapper';
 
@@ -9,7 +14,7 @@ import { GUESS_STATUSES } from '../mappers/maintenance-guess.prisma.mapper';
 export class ListTaskGuessesQueryDTO {
   @ApiPropertyOptional({ enum: GUESS_STATUSES })
   @IsOptional()
-  @IsEnum(GUESS_STATUSES)
+  @IsIn(GUESS_STATUSES)
   status?: (typeof GUESS_STATUSES)[number];
 
   @ApiPropertyOptional({
@@ -31,7 +36,7 @@ export class ListTaskGuessesQueryDTO {
     example: '2026-01-01',
   })
   @IsOptional()
-  @IsString()
+  @IsYmdDate()
   startDate?: string;
 
   @ApiPropertyOptional({
@@ -39,6 +44,7 @@ export class ListTaskGuessesQueryDTO {
     example: '2026-12-31',
   })
   @IsOptional()
-  @IsString()
+  @IsYmdDate()
+  @IsYmdDateOnOrAfter('startDate')
   endDate?: string;
 }

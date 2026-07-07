@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum } from 'class-validator';
+import { IsIn } from 'class-validator';
 
 import { GUESS_STATUSES } from '../mappers/maintenance-guess.prisma.mapper';
 
@@ -8,6 +8,6 @@ import { GUESS_STATUSES } from '../mappers/maintenance-guess.prisma.mapper';
  */
 export class UpdateGuessStatusDTO {
   @ApiProperty({ enum: GUESS_STATUSES })
-  @IsEnum(GUESS_STATUSES)
+  @IsIn(GUESS_STATUSES)
   status!: (typeof GUESS_STATUSES)[number];
 }
