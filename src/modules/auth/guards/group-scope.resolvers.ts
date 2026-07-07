@@ -100,7 +100,7 @@ export const groupScopeResolvers: Record<GroupScopeSubject, GroupResolver> = {
 
   [GroupScopeSubject.TASK]: async (prisma, id) => {
     const task = await prisma.maintenanceTask.findFirst({
-      where: { id, deletedAt: null },
+      where: { id, deletedAt: null, maintenance: { deletedAt: null } },
       select: {
         maintenance: { select: { aerodrome: { select: { groupId: true } } } },
       },

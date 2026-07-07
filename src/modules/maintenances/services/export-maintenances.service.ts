@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { EXPORT_MAX_ROWS, toCsv } from '@/common/utils/csv.util';
-import { resolveActorGroupScope } from '@/common/utils/group-scope.util';
+import { resolveOperationalActorScope } from '@/common/utils/group-scope.util';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 import { UserRepository } from '@/modules/users/repositories/user.repository';
 
@@ -39,7 +39,7 @@ export class ExportMaintenancesService {
     query: ExportMaintenancesQueryDTO,
     actor: AuthenticatedUser,
   ): Promise<ExportMaintenancesResult> {
-    const scope = await resolveActorGroupScope(
+    const scope = await resolveOperationalActorScope(
       actor.role,
       actor.id,
       this.userRepository,

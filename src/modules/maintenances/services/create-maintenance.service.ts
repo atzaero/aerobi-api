@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
-import { resolveActorGroupScope } from '@/common/utils/group-scope.util';
+import { resolveOperationalActorScope } from '@/common/utils/group-scope.util';
 import { resourceNotFound } from '@/common/utils/resource-not-found.util';
 import { AuditAction } from '@/generated/prisma/client';
 import { AuditRecorderService } from '@/modules/audit/services/audit-recorder.service';
@@ -37,7 +37,7 @@ export class CreateMaintenanceService {
     auditContext: RecordAuditContext = {},
   ): Promise<CreateMaintenanceResponseDTO> {
     const aerodrome = await this.repo.findActiveAerodrome(dto.aerodromeId);
-    const scope = await resolveActorGroupScope(
+    const scope = await resolveOperationalActorScope(
       actor.role,
       actor.id,
       this.userRepository,

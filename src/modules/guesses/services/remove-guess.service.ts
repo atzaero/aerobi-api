@@ -9,6 +9,7 @@ import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-
 
 import { RemoveGuessResponseDTO } from '../dtos/guess.dto';
 import { MaintenanceGuessRepository } from '../repositories/maintenance-guess.repository';
+import { guessAuditSnapshot } from '../utils/guess-audit';
 
 @Injectable()
 export class RemoveGuessService {
@@ -35,7 +36,7 @@ export class RemoveGuessService {
         action: AuditAction.DELETE,
         entityType: 'guess',
         entityId: id,
-        before: { id: existing.id },
+        before: guessAuditSnapshot(existing),
         metadata: { maintenanceId: existing.task.maintenanceId },
       },
       auditContext,

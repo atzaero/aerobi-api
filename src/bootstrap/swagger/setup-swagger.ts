@@ -70,7 +70,9 @@ Clique em **Authorize** acima e preencha um ou ambos os campos:
  * `@ApiTags(...)` de cada controller. Padrão canônico (blocos, nomenclatura,
  * decoradores por rota): ver `./README.md`.
  */
-const TAGS: ReadonlyArray<readonly [name: string, description: string]> = [
+type SwaggerTag = readonly [name: string, description: string];
+
+export const TAGS: readonly SwaggerTag[] = [
   /** Identidade & acesso */
   ['Auth', 'Login, refresh de sessão, perfil (`/auth/me`) e logout.'],
   [
@@ -101,6 +103,16 @@ const TAGS: ReadonlyArray<readonly [name: string, description: string]> = [
   ],
   ['Pilot Landings', 'Registos de aterragem de pilotos.'],
   ['Technical Visits', 'Visitas técnicas aos aeródromos.'],
+  [
+    'Maintenances',
+    'Intervenções de manutenção em aeródromos: CRUD, convites, export e stats.',
+  ],
+  ['Tasks', 'Tarefas de uma intervenção de manutenção.'],
+  ['Guesses', 'Palpites das tarefas de manutenção: listagem e moderação.'],
+  [
+    'Public Maintenances',
+    'Acesso público ao feedback de manutenção (gate por security_code + e-mail autorizado).',
+  ],
   ['Movements', 'Movimentos: registos manuais e consulta canônica.'],
   [
     'Readings',

@@ -13,43 +13,20 @@ function buildRequest(overrides: {
 }
 
 describe('extractIpAddress', () => {
-  it('retorna o primeiro IP de X-Forwarded-For quando presente', () => {
+  it('retorna request.ip (resolvido pelo Express com trust proxy)', () => {
+    const req = buildRequest({ ip: '203.0.113.1' });
+    expect(extractIpAddress(req)).toBe('203.0.113.1');
+  });
+
+  it('ignora o X-Forwarded-For cru — não é falsificável via header', () => {
     const req = buildRequest({
-      headers: { 'x-forwarded-for': '203.0.113.1, 10.0.0.1, 192.168.0.1' },
-      ip: '127.0.0.1',
+      headers: { 'x-forwarded-for': '1.2.3.4' },
+      ip: '203.0.113.1',
     });
     expect(extractIpAddress(req)).toBe('203.0.113.1');
   });
 
-  it('faz trim de espaços no IP retornado', () => {
-    const req = buildRequest({
-      headers: { 'x-forwarded-for': '  203.0.113.1  , 10.0.0.1' },
-    });
-    expect(extractIpAddress(req)).toBe('203.0.113.1');
-  });
-
-  it('cai para request.ip quando o header está ausente', () => {
-    const req = buildRequest({ ip: '198.51.100.7' });
-    expect(extractIpAddress(req)).toBe('198.51.100.7');
-  });
-
-  it('cai para request.ip quando o header é array (não string)', () => {
-    const req = buildRequest({
-      headers: { 'x-forwarded-for': ['203.0.113.1'] },
-      ip: '198.51.100.7',
-    });
-    expect(extractIpAddress(req)).toBe('198.51.100.7');
-  });
-
-  it('cai para request.ip quando o header é string vazia', () => {
-    const req = buildRequest({
-      headers: { 'x-forwarded-for': '' },
-      ip: '198.51.100.7',
-    });
-    expect(extractIpAddress(req)).toBe('198.51.100.7');
-  });
-
-  it('retorna undefined quando nem header nem request.ip estão presentes', () => {
+  it('retorna undefined quando request.ip não está presente', () => {
     const req = buildRequest({});
     expect(extractIpAddress(req)).toBeUndefined();
   });

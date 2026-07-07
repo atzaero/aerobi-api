@@ -24,7 +24,7 @@ describe('AcceptInviteController', () => {
     } as unknown as AcceptInviteService);
   });
 
-  it('passa body + userAgent + ipAddress (X-Forwarded-For) ao service', async () => {
+  it('passa body + userAgent + ipAddress (request.ip) ao service', async () => {
     const dto: AcceptInviteRequestDto = {
       email: 'piloto@aerobi.local',
       token: 'plain-invite-token',
@@ -40,7 +40,7 @@ describe('AcceptInviteController', () => {
     expect(execute).toHaveBeenCalledWith({
       ...dto,
       userAgent: 'jest',
-      ipAddress: '203.0.113.5',
+      ipAddress: '127.0.0.1',
     });
   });
 });

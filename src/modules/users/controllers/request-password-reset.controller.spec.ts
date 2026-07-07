@@ -36,7 +36,7 @@ describe('RequestPasswordResetController', () => {
     });
   });
 
-  it('prioriza X-Forwarded-For sobre request.ip', async () => {
+  it('usa request.ip e ignora o X-Forwarded-For cru', async () => {
     const dto: RequestPasswordResetDto = { email: 'u@aerobi.local' };
     execute.mockResolvedValue({ message: 'ok' });
 
@@ -44,11 +44,12 @@ describe('RequestPasswordResetController', () => {
       dto,
       buildRequest({
         headers: { 'x-forwarded-for': '203.0.113.42, 10.0.0.1' },
+        ip: '198.51.100.7',
       }),
     );
     expect(execute).toHaveBeenCalledWith({
       ...dto,
-      ipAddress: '203.0.113.42',
+      ipAddress: '198.51.100.7',
     });
   });
 });

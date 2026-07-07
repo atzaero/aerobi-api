@@ -7,6 +7,7 @@ import { applyCors } from '@/bootstrap/cors/apply-cors';
 import { isDevelopmentEnvironment } from '@/bootstrap/environment/is-development-environment';
 import { applyGlobalExceptionFilter } from '@/bootstrap/http-pipeline/apply-global-exception-filter';
 import { applyGlobalValidationPipe } from '@/bootstrap/http-pipeline/apply-global-validation-pipe';
+import { applyTrustProxy } from '@/bootstrap/http-pipeline/apply-trust-proxy';
 import { listenWithRetries } from '@/bootstrap/listen-retries';
 import { resolveHttpPort } from '@/bootstrap/port/resolve-http-port';
 import { applyShutdownHooks } from '@/bootstrap/shutdown/apply-shutdown-hooks';
@@ -17,6 +18,7 @@ async function bootstrap(): Promise<void> {
   const configService = app.get(ConfigService);
 
   const isDevelopment = isDevelopmentEnvironment(configService);
+  applyTrustProxy(app, configService);
   applyCors(app, configService, isDevelopment);
   applyGlobalExceptionFilter(app);
   applyGlobalValidationPipe(app);
