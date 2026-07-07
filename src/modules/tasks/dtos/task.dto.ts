@@ -39,6 +39,7 @@ export class TaskFormFieldsDTO {
   @TrimString()
   @IsString()
   @IsNotEmpty()
+  @MaxLength(2000)
   description!: string;
 
   @ApiProperty()
@@ -85,6 +86,7 @@ export class TaskFormFieldsDTO {
   @IsOptional()
   @TrimOptionalString()
   @IsString()
+  @MaxLength(2000)
   impact?: string;
 
   @ApiPropertyOptional({ format: 'date-time' })
@@ -102,6 +104,7 @@ export class TaskFormFieldsDTO {
   @IsOptional()
   @TrimOptionalString()
   @IsString()
+  @MaxLength(2000)
   completionDescription?: string;
 
   @ApiPropertyOptional()
