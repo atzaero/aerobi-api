@@ -35,7 +35,4 @@ export interface IMaintenanceTaskRepository {
     id: string,
     actorId: string,
   ): Promise<{ task: MaintenanceTask; deletedGuesses: number }>;
-  findMaintenanceAerodromeId(
-    maintenanceId: string,
-  ): Promise<{ aerodromeId: string } | null>;
 }

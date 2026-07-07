@@ -26,14 +26,15 @@ export class MaintenanceTaskRepository implements IMaintenanceTaskRepository {
     });
   }
 
+  /**
+   * Tarefas ativas da manutenção, sem `orderBy` no banco: a ordenação final por
+   * rank de urgência (não alfabético) é aplicada em memória por
+   * `sortMaintenanceTasks`. Ordenar aqui seria esforço morto e sugeriria uma
+   * ordem que não é a devolvida.
+   */
   findManyByMaintenanceId(maintenanceId: string): Promise<MaintenanceTask[]> {
     return this.prisma.maintenanceTask.findMany({
       where: { maintenanceId, deletedAt: null },
-      orderBy: [
-        { urgency: 'asc' },
-        { predictedDate: 'asc' },
-        { createdAt: 'desc' },
-      ],
     });
   }
 
@@ -141,15 +142,6 @@ export class MaintenanceTaskRepository implements IMaintenanceTaskRepository {
         data: audit,
       });
       return { task, deletedGuesses: guessResult.count };
-    });
-  }
-
-  findMaintenanceAerodromeId(
-    maintenanceId: string,
-  ): Promise<{ aerodromeId: string } | null> {
-    return this.prisma.maintenance.findFirst({
-      where: { id: maintenanceId, deletedAt: null },
-      select: { aerodromeId: true },
     });
   }
 }

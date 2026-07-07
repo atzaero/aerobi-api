@@ -55,13 +55,11 @@ export class MaintenanceGuessRepository implements IMaintenanceGuessRepository {
   }
 
   softDelete(id: string, actorId: string): Promise<MaintenanceGuess> {
-    const now = new Date();
     return this.prisma.maintenanceGuess.update({
       where: { id, deletedAt: null },
       data: {
-        deletedAt: now,
+        deletedAt: new Date(),
         deletedBy: actorId,
-        updatedAt: now,
         updatedBy: actorId,
       },
     });

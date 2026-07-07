@@ -8,13 +8,8 @@ import type { ListTaskGuessesQueryDTO } from '../dtos/list-task-guesses-query.dt
 import { guessStatusToApi } from './maintenance-guess.prisma.mapper';
 import { toLocalCivilDate } from '@/common/utils/civil-date.util';
 
-function emailMatches(stored: string, filter: string): boolean {
-  const needle = filter.trim().toLowerCase();
-  if (!needle) return true;
-  return stored.toLowerCase().includes(needle);
-}
-
-function textMatches(stored: string, filter: string): boolean {
+/** Substring case-insensitive (trim no filtro); filtro vazio casa tudo. */
+function containsCaseInsensitive(stored: string, filter: string): boolean {
   const needle = filter.trim().toLowerCase();
   if (!needle) return true;
   return stored.toLowerCase().includes(needle);
@@ -52,9 +47,10 @@ export function filterTaskGuesses(
 ): GuessListItemResponseDTO[] {
   return guesses.filter((guess) => {
     if (filters.status && guess.status !== filters.status) return false;
-    if (filters.email && !emailMatches(guess.email, filters.email))
+    if (filters.email && !containsCaseInsensitive(guess.email, filters.email))
       return false;
-    if (filters.text && !textMatches(guess.text, filters.text)) return false;
+    if (filters.text && !containsCaseInsensitive(guess.text, filters.text))
+      return false;
     if (!matchesDateRange(guess, filters.startDate, filters.endDate)) {
       return false;
     }
