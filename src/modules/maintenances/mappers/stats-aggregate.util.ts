@@ -1,3 +1,7 @@
+import {
+  isTaskCurrentlyOverdue,
+  isTaskDeliveredLate,
+} from '@/modules/maintenances/utils/maintenance-domain.util';
 import type { StatusBreakdown } from '@/modules/maintenances/dtos/maintenances-stats-response.dto';
 import type {
   InvestmentType,
@@ -154,18 +158,14 @@ export function aggregateMaintenancesDashboard(
     maintenances.map((m) => m.aerodromeId),
   );
 
+  const now = nowMs ?? Date.now();
   const pendingOverdueMaintenanceIds = new Set<string>();
   const completedLateMaintenanceIds = new Set<string>();
   for (const task of tasks) {
-    if (
-      task.status === 'PENDING' &&
-      task.predictedDate != null &&
-      startOfDayMs(nowMs ?? Date.now()) >
-        startOfDayMs(task.predictedDate.getTime())
-    ) {
+    if (isTaskCurrentlyOverdue(task, now)) {
       pendingOverdueMaintenanceIds.add(task.maintenanceId);
     }
-    if (task.status === 'COMPLETED' && task.delayWarning === true) {
+    if (isTaskDeliveredLate(task)) {
       completedLateMaintenanceIds.add(task.maintenanceId);
     }
   }
@@ -182,10 +182,4 @@ export function aggregateMaintenancesDashboard(
     byUrgency: countTasksByUrgency(tasks),
     tasksByAerodrome: countTasksByAerodrome(tasks),
   };
-}
-
-function startOfDayMs(timestampMs: number): number {
-  const d = new Date(timestampMs);
-  d.setHours(0, 0, 0, 0);
-  return d.getTime();
 }
