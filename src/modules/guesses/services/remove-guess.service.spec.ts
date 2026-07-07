@@ -1,5 +1,6 @@
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
-import { UserRole } from '@/generated/prisma/client';
+import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
+import { AuditAction, GuessStatus, UserRole } from '@/generated/prisma/client';
 import { AuditRecorderService } from '@/modules/audit/services/audit-recorder.service';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
@@ -46,5 +47,45 @@ describe('RemoveGuessService', () => {
     expect(result.id).toBe('g1');
     expect(result.maintenanceId).toBe('maint-1');
     expect(softDelete).toHaveBeenCalledWith('g1', actor.id);
+  });
+
+  /**
+   * O `before` é afirmado por igualdade profunda (`{ id, status }`): a PII do
+   * palpiteiro (`email`/`text`) presente no registro carregado nunca entra na
+   * trilha — um vazamento faria o `toHaveBeenCalledWith` falhar.
+   */
+  it('audita DELETE de guess com before (só id/status) e maintenanceId, sem PII', async () => {
+    findById.mockResolvedValue({
+      id: 'g1',
+      email: 'piloto@example.com',
+      text: 'instalar cerca',
+      status: GuessStatus.PENDING,
+      task: { maintenanceId: 'maint-1' },
+    });
+    softDelete.mockResolvedValue({ id: 'g1' });
+    const auditContext = { ipAddress: '9.9.9.9', userAgent: 'jest' };
+
+    await service.execute('g1', actor, auditContext);
+
+    expect(auditRecord).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: AuditAction.DELETE,
+        entityType: 'guess',
+        entityId: 'g1',
+        before: { id: 'g1', status: GuessStatus.PENDING },
+        metadata: { maintenanceId: 'maint-1' },
+      }),
+      auditContext,
+    );
+  });
+
+  it('404 quando o palpite não existe: não remove nem audita', async () => {
+    findById.mockResolvedValue(null);
+
+    await expect(service.execute('missing', actor)).rejects.toBeInstanceOf(
+      CustomHttpException,
+    );
+    expect(softDelete).not.toHaveBeenCalled();
+    expect(auditRecord).not.toHaveBeenCalled();
   });
 });

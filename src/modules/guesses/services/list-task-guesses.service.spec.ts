@@ -1,4 +1,5 @@
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
+import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { MaintenanceTaskRepository } from '@/modules/tasks/repositories/maintenance-task.repository';
 
 import { MaintenanceGuessRepository } from '../repositories/maintenance-guess.repository';
@@ -64,5 +65,14 @@ describe('ListTaskGuessesService', () => {
 
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe('g2');
+  });
+
+  it('404 quando a tarefa não existe e não consulta palpites', async () => {
+    findById.mockResolvedValue(null);
+
+    await expect(service.execute('missing', {})).rejects.toBeInstanceOf(
+      CustomHttpException,
+    );
+    expect(findActiveByTaskId).not.toHaveBeenCalled();
   });
 });
