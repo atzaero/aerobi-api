@@ -6,6 +6,7 @@ import { AuditAction } from '@/generated/prisma/client';
 import { AuditRecorderService } from '@/modules/audit/services/audit-recorder.service';
 import type { RecordAuditContext } from '@/modules/audit/services/audit-recorder.service';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
+import { MaintenanceRepository } from '@/modules/maintenances/repositories/maintenance.repository';
 
 import { TaskResponseDTO } from '../dtos/task.dto';
 import { UpdateTaskDTO } from '../dtos/task.dto';
@@ -17,6 +18,7 @@ import { MaintenanceTaskRepository } from '../repositories/maintenance-task.repo
 export class UpdateTaskService {
   constructor(
     private readonly taskRepo: MaintenanceTaskRepository,
+    private readonly maintenanceRepo: MaintenanceRepository,
     private readonly errorMessageService: ErrorMessageService,
     private readonly auditRecorder: AuditRecorderService,
   ) {}
@@ -37,6 +39,10 @@ export class UpdateTaskService {
       buildTaskUpdateInput({ dto, actorId: actor.id }),
     );
 
+    const maintenance = await this.maintenanceRepo.findById(
+      updated.maintenanceId,
+    );
+
     await this.auditRecorder.record(
       {
         action: AuditAction.UPDATE,
@@ -48,7 +54,10 @@ export class UpdateTaskService {
           status: existing.status,
         },
         after: { id: updated.id, title: updated.title, status: updated.status },
-        metadata: { maintenanceId: updated.maintenanceId },
+        metadata: {
+          maintenanceId: updated.maintenanceId,
+          aerodromeId: maintenance?.aerodromeId,
+        },
       },
       auditContext,
     );
