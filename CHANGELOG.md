@@ -1,3 +1,15 @@
+# [2.6.0-beta.49](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.48...v2.6.0-beta.49) (2026-07-07)
+
+
+### Bug Fixes
+
+* **audit:** scope de sub-operação + helper de snapshot (guesses/tasks) ([69ab224](https://github.com/atzaero/aerobi-api/commit/69ab224dee9bf9cba24e38c0b6e5fdef8e83a46d)), closes [#493](https://github.com/atzaero/aerobi-api/issues/493)
+* **auth:** resolver GroupScope TASK revalida manutenção-pai + escopo operacional ([8f8822d](https://github.com/atzaero/aerobi-api/commit/8f8822d17a64961eebc84fee272d4009afe0f2f2)), closes [#494](https://github.com/atzaero/aerobi-api/issues/494)
+* **dtos:** endurece validações de guesses/tasks (data yyyy-MM-dd, IsIn, limites) ([195cfe2](https://github.com/atzaero/aerobi-api/commit/195cfe2d3985b45ba8a9219406a335580a7738db)), closes [#496](https://github.com/atzaero/aerobi-api/issues/496)
+* **security:** rate-limit público por IP confiável (trust proxy) + eviction ([9d41bea](https://github.com/atzaero/aerobi-api/commit/9d41beab84367537d2429427962837112b6b34cb)), closes [#489](https://github.com/atzaero/aerobi-api/issues/489)
+* **tasks,guesses:** filtros de list por dia civil local + predictedValue pt-BR ([ba037cf](https://github.com/atzaero/aerobi-api/commit/ba037cff8d50776cd8d1aaed74aa3c294079ec40)), closes [#491](https://github.com/atzaero/aerobi-api/issues/491)
+* **tasks:** normaliza strings do write para null (empty/whitespace) ([ba414e6](https://github.com/atzaero/aerobi-api/commit/ba414e6dc45a256bb64fc9c19093ab079e75d19f)), closes [#488](https://github.com/atzaero/aerobi-api/issues/488)
+
 # [2.6.0-beta.48](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.47...v2.6.0-beta.48) (2026-07-06)
 
 
