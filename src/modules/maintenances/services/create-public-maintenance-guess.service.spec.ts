@@ -77,4 +77,95 @@ describe('CreatePublicMaintenanceGuessService', () => {
     expect(result.id).toBe('g1');
     expect(create).toHaveBeenCalled();
   });
+
+  it('rejeita e-mail fora da lista autorizada com 401', async () => {
+    findMaintenanceById.mockResolvedValue({
+      id: 'maint-1',
+      securityCode: 'CORRECT1',
+      authorizedEmails: ['a@x.com'],
+    });
+
+    await expect(
+      service.execute('maint-1', {
+        taskId: 'task-1',
+        email: 'intruso@x.com',
+        text: 'Sugestão',
+        securityCode: 'CORRECT1',
+      }),
+    ).rejects.toMatchObject({
+      errorCode: ErrorCode.UNAUTHORIZED,
+      status: HttpStatus.UNAUTHORIZED,
+    } satisfies Partial<CustomHttpException>);
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it('retorna 404 quando a intervenção não tem acesso público', async () => {
+    findMaintenanceById.mockResolvedValue({
+      id: 'maint-1',
+      securityCode: 'CORRECT1',
+      authorizedEmails: [],
+    });
+
+    await expect(
+      service.execute('maint-1', {
+        taskId: 'task-1',
+        email: 'a@x.com',
+        text: 'Sugestão',
+        securityCode: 'CORRECT1',
+      }),
+    ).rejects.toMatchObject({ status: HttpStatus.NOT_FOUND });
+  });
+
+  it('retorna 404 quando a intervenção não existe', async () => {
+    findMaintenanceById.mockResolvedValue(null);
+
+    await expect(
+      service.execute('missing', {
+        taskId: 'task-1',
+        email: 'a@x.com',
+        text: 'Sugestão',
+        securityCode: 'CORRECT1',
+      }),
+    ).rejects.toMatchObject({ status: HttpStatus.NOT_FOUND });
+  });
+
+  it('retorna 404 quando a tarefa é de outra intervenção', async () => {
+    findMaintenanceById.mockResolvedValue({
+      id: 'maint-1',
+      securityCode: 'CORRECT1',
+      authorizedEmails: ['a@x.com'],
+    });
+    findTaskById.mockResolvedValue({
+      id: 'task-1',
+      maintenanceId: 'outra-maint',
+    });
+
+    await expect(
+      service.execute('maint-1', {
+        taskId: 'task-1',
+        email: 'a@x.com',
+        text: 'Sugestão',
+        securityCode: 'CORRECT1',
+      }),
+    ).rejects.toMatchObject({ status: HttpStatus.NOT_FOUND });
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it('retorna 404 quando a tarefa não existe', async () => {
+    findMaintenanceById.mockResolvedValue({
+      id: 'maint-1',
+      securityCode: 'CORRECT1',
+      authorizedEmails: ['a@x.com'],
+    });
+    findTaskById.mockResolvedValue(null);
+
+    await expect(
+      service.execute('maint-1', {
+        taskId: 'task-1',
+        email: 'a@x.com',
+        text: 'Sugestão',
+        securityCode: 'CORRECT1',
+      }),
+    ).rejects.toMatchObject({ status: HttpStatus.NOT_FOUND });
+  });
 });
