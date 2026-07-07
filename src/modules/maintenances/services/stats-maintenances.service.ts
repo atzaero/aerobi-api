@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
-import { resolveActorGroupScope } from '@/common/utils/group-scope.util';
+import { resolveOperationalActorScope } from '@/common/utils/group-scope.util';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 import { UserRepository } from '@/modules/users/repositories/user.repository';
 
@@ -30,7 +30,7 @@ export class StatsMaintenancesService {
   async execute(
     actor: AuthenticatedUser,
   ): Promise<MaintenancesStatsResponseDTO> {
-    const scope = await resolveActorGroupScope(
+    const scope = await resolveOperationalActorScope(
       actor.role,
       actor.id,
       this.userRepository,

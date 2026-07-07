@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
-import { resolveActorGroupScope } from '@/common/utils/group-scope.util';
+import { resolveOperationalActorScope } from '@/common/utils/group-scope.util';
 import { resolvePaginationParams } from '@/common/utils/pagination-params.util';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 import { UserRepository } from '@/modules/users/repositories/user.repository';
@@ -35,7 +35,7 @@ export class ListMaintenancesService {
   ): Promise<MaintenancesPaginatedResponseDTO> {
     const { page, limit } = resolvePaginationParams(query, MAX_LIMIT);
 
-    const scope = await resolveActorGroupScope(
+    const scope = await resolveOperationalActorScope(
       actor.role,
       actor.id,
       this.userRepository,
