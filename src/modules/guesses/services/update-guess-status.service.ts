@@ -14,6 +14,7 @@ import {
   guessStatusToApi,
 } from '../mappers/maintenance-guess.prisma.mapper';
 import { MaintenanceGuessRepository } from '../repositories/maintenance-guess.repository';
+import { guessAuditSnapshot } from '../utils/guess-audit';
 
 @Injectable()
 export class UpdateGuessStatusService {
@@ -42,9 +43,12 @@ export class UpdateGuessStatusService {
         action: AuditAction.UPDATE,
         entityType: 'guess',
         entityId: id,
-        before: { id: existing.id, status: existing.status },
-        after: { id: updated.id, status: updated.status },
-        metadata: { maintenanceId: existing.task.maintenanceId },
+        before: guessAuditSnapshot(existing),
+        after: guessAuditSnapshot(updated),
+        metadata: {
+          scope: 'moderate',
+          maintenanceId: existing.task.maintenanceId,
+        },
       },
       auditContext,
     );

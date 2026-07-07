@@ -1,5 +1,5 @@
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
-import { GuessStatus, UserRole } from '@/generated/prisma/client';
+import { AuditAction, GuessStatus, UserRole } from '@/generated/prisma/client';
 import { AuditRecorderService } from '@/modules/audit/services/audit-recorder.service';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
@@ -48,6 +48,15 @@ describe('UpdateGuessStatusService', () => {
 
     expect(result.status).toBe('considered');
     expect(result.maintenanceId).toBe('maint-1');
-    expect(auditRecord).toHaveBeenCalled();
+    expect(auditRecord).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: AuditAction.UPDATE,
+        entityType: 'guess',
+        before: { id: 'g1', status: GuessStatus.PENDING },
+        after: { id: 'g1', status: GuessStatus.CONSIDERED },
+        metadata: { scope: 'moderate', maintenanceId: 'maint-1' },
+      }),
+      {},
+    );
   });
 });
