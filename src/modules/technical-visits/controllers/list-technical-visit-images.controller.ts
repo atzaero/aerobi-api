@@ -1,8 +1,6 @@
-import { Controller, Get, Param, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import type { Response } from 'express';
 
-import { applyPdfDownloadHeaders } from '@/common/utils/pdf-download.util';
 import { RequirePermission } from '@/modules/auth/decorators/require-permission.decorator';
 import { RequiresGroupScope } from '@/modules/auth/decorators/requires-group-scope.decorator';
 import { GroupScopeGuard } from '@/modules/auth/guards/group-scope.guard';
@@ -10,28 +8,24 @@ import { GroupScopeSubject } from '@/modules/auth/guards/group-scope.subject';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '@/modules/auth/guards/permissions.guard';
 
-import { ExportTechnicalVisitPdfDocs } from '../docs/export-technical-visit-pdf.docs';
+import { ListTechnicalVisitImagesDocs } from '../docs/list-technical-visit-images.docs';
+import { TechnicalVisitImageResponseDTO } from '../dtos/technical-visit-image-response.dto';
 import { TechnicalVisitParamDTO } from '../dtos/technical-visit-param.dto';
-import { ExportTechnicalVisitPdfService } from '../services/export-technical-visit-pdf.service';
+import { ListTechnicalVisitImagesService } from '../services/list-technical-visit-images.service';
 
 @ApiTags('Technical Visits')
 @Controller('technical-visits')
 @UseGuards(JwtAuthGuard, PermissionsGuard, GroupScopeGuard)
-export class ExportTechnicalVisitPdfController {
-  constructor(private readonly service: ExportTechnicalVisitPdfService) {}
+export class ListTechnicalVisitImagesController {
+  constructor(private readonly service: ListTechnicalVisitImagesService) {}
 
-  @Get(':technicalVisitId/export')
-  @RequirePermission('technical_visit', 'export')
+  @Get(':technicalVisitId/images')
+  @RequirePermission('technical_visit', 'read')
   @RequiresGroupScope(GroupScopeSubject.TECHNICAL_VISIT, 'technicalVisitId')
-  @ExportTechnicalVisitPdfDocs()
-  async handle(
+  @ListTechnicalVisitImagesDocs()
+  handle(
     @Param() params: TechnicalVisitParamDTO,
-    @Res() res: Response,
-  ): Promise<void> {
-    const { buffer, filename } = await this.service.execute(
-      params.technicalVisitId,
-    );
-    applyPdfDownloadHeaders(res, filename);
-    res.send(buffer);
+  ): Promise<TechnicalVisitImageResponseDTO[]> {
+    return this.service.execute(params.technicalVisitId);
   }
 }

@@ -5,7 +5,10 @@ import { ErrorMessageService } from '@/common/error-messages/error-message.servi
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { getErrorMessage } from '@/common/utils/error.util';
 import { resourceNotFound } from '@/common/utils/resource-not-found.util';
+import { AuditAction } from '@/generated/prisma/client';
 import type { TechnicalVisitImageSection } from '@/generated/prisma/client';
+import { AuditRecorderService } from '@/modules/audit/services/audit-recorder.service';
+import type { RecordAuditContext } from '@/modules/audit/services/audit-recorder.service';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 import { StorageService } from '@/modules/storage/services/storage.service';
 
@@ -19,6 +22,7 @@ import {
   isAllowedImageMimetype,
   MAX_TECHNICAL_VISIT_IMAGE_BYTES,
 } from '../utils/technical-visit-image';
+import { technicalVisitImageAuditSnapshot } from '../utils/technical-visit-image-audit';
 
 @Injectable()
 export class AddTechnicalVisitImageService {
@@ -29,6 +33,7 @@ export class AddTechnicalVisitImageService {
     private readonly imageRepo: TechnicalVisitImageRepository,
     private readonly storage: StorageService,
     private readonly errorMessageService: ErrorMessageService,
+    private readonly auditRecorder: AuditRecorderService,
   ) {}
 
   async execute(
@@ -36,6 +41,7 @@ export class AddTechnicalVisitImageService {
     section: TechnicalVisitImageSection,
     image: Express.Multer.File | undefined,
     actor: AuthenticatedUser,
+    auditContext: RecordAuditContext = {},
   ): Promise<TechnicalVisitImageResponseDTO> {
     const visit = await this.visitRepo.findById(technicalVisitId);
     if (!visit) {
@@ -96,6 +102,17 @@ export class AddTechnicalVisitImageService {
         createdBy: actor.id,
         updatedBy: actor.id,
       });
+
+      await this.auditRecorder.record(
+        {
+          action: AuditAction.CREATE,
+          entityType: 'technical_visit_image',
+          entityId: created.id,
+          after: technicalVisitImageAuditSnapshot(created),
+        },
+        auditContext,
+      );
+
       return TechnicalVisitImageMapper.toApiRow(this.storage, created);
     } catch (err) {
       try {
@@ -109,10 +126,16 @@ export class AddTechnicalVisitImageService {
     }
   }
 
-  private validation(message: string): CustomHttpException {
+  /**
+   * Constrói uma exceção `VALIDATION_FAILED` (400) interpolando o detalhe no
+   * placeholder `[DETAILS]` do template da mensagem, espelhando o helper de
+   * `groups`. A chave tem de ser `DETAILS` (não `MESSAGE`), caso contrário o
+   * motivo específico não é substituído na resposta.
+   */
+  private validation(details: string): CustomHttpException {
     return new CustomHttpException(
       this.errorMessageService.getMessage(ErrorCode.VALIDATION_FAILED, {
-        MESSAGE: message,
+        DETAILS: details,
       }),
       HttpStatus.BAD_REQUEST,
       ErrorCode.VALIDATION_FAILED,

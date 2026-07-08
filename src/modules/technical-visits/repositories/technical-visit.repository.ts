@@ -3,7 +3,10 @@ import { Injectable } from '@nestjs/common';
 import { Prisma, type TechnicalVisit } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 
-import type { ITechnicalVisitRepository } from './technical-visit.repository.interface';
+import type {
+  AerodromeScopeRef,
+  ITechnicalVisitRepository,
+} from './technical-visit.repository.interface';
 import {
   technicalVisitWithAerodromeInclude,
   type TechnicalVisitWithAerodrome,
@@ -16,6 +19,7 @@ const activeWhere: Pick<Prisma.TechnicalVisitWhereInput, 'deletedAt'> = {
 const listOrderBy: Prisma.TechnicalVisitOrderByWithRelationInput[] = [
   { visitAt: 'desc' },
   { createdAt: 'desc' },
+  { id: 'desc' },
 ];
 
 @Injectable()
@@ -78,6 +82,15 @@ export class TechnicalVisitRepository implements ITechnicalVisitRepository {
       where: {
         AND: [{ ...where }, activeWhere],
       },
+    });
+  }
+
+  findAerodromeGroupForScope(
+    aerodromeId: string,
+  ): Promise<AerodromeScopeRef | null> {
+    return this.prisma.aerodrome.findFirst({
+      where: { id: aerodromeId, deletedAt: null },
+      select: { groupId: true },
     });
   }
 

@@ -27,6 +27,39 @@ describe('technical-visit prisma mapper', () => {
     expect(input.updatedBy).toBe(actorId);
   });
 
+  const checklistBooleanKeys = [
+    'hasGatesPadlocks',
+    'hasFence',
+    'hasStandardPlate',
+    'hasQualityHoles',
+    'hasQualityAsphalt',
+    'hasQualityOthers',
+    'hasHorizontalSignage',
+    'hasUnobstructedHeadboards',
+    'hasTrackRange',
+    'pavementRegularity',
+    'hasTrashDebris',
+    'hasDelimitedPerimeter',
+    'hasInvasion',
+  ] as const;
+
+  it('create default booleans do checklist para false quando omitidos', () => {
+    const input = buildTechnicalVisitCreateInput(minimalCreate(), actorId);
+    for (const key of checklistBooleanKeys) {
+      expect(input[key]).toBe(false);
+    }
+  });
+
+  it('create preserva booleans explícitos do payload', () => {
+    const input = buildTechnicalVisitCreateInput(
+      { ...minimalCreate(), hasFence: true, hasInvasion: true },
+      actorId,
+    );
+    expect(input.hasFence).toBe(true);
+    expect(input.hasInvasion).toBe(true);
+    expect(input.hasGatesPadlocks).toBe(false);
+  });
+
   it('patch append modifierUsers e updatedBy', () => {
     const at = new Date('2024-06-02T10:00:00.000Z');
     expect(

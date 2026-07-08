@@ -6,13 +6,13 @@ import { StorageModule } from '@/modules/storage/storage.module';
 import { UsersModule } from '@/modules/users/users.module';
 import { PrismaModule } from '@/prisma/prisma.module';
 
-import { AddTechnicalVisitImageController } from './controllers/technical-visit-images.controller';
+import { AddTechnicalVisitImageController } from './controllers/add-technical-visit-image.controller';
 import { CreateTechnicalVisitController } from './controllers/create-technical-visit.controller';
 import { ExportTechnicalVisitPdfController } from './controllers/export-technical-visit-pdf.controller';
 import { FindTechnicalVisitByIdController } from './controllers/find-technical-visit-by-id.controller';
-import { ListTechnicalVisitImagesController } from './controllers/technical-visit-images.controller';
+import { ListTechnicalVisitImagesController } from './controllers/list-technical-visit-images.controller';
 import { ListTechnicalVisitsController } from './controllers/list-technical-visits.controller';
-import { RemoveTechnicalVisitImageController } from './controllers/technical-visit-images.controller';
+import { RemoveTechnicalVisitImageController } from './controllers/remove-technical-visit-image.controller';
 import { RemoveTechnicalVisitController } from './controllers/remove-technical-visit.controller';
 import { UpdateTechnicalVisitController } from './controllers/update-technical-visit.controller';
 
@@ -29,6 +29,12 @@ import { RemoveTechnicalVisitImageService } from './services/remove-technical-vi
 import { RemoveTechnicalVisitService } from './services/remove-technical-visit.service';
 import { UpdateTechnicalVisitService } from './services/update-technical-visit.service';
 
+/**
+ * Módulo de visitas técnicas: CRUD + imagens por seção (MinIO) + export PDF,
+ * sob autenticação JWT e escopo operacional por grupo (`JwtAuthGuard` +
+ * `PermissionsGuard` + `GroupScopeGuard`). Importa `StorageModule` (imagens),
+ * `AuditModule` (trilha de mutações) e `UsersModule` (resolução de modificadores).
+ */
 @Module({
   imports: [PrismaModule, AuthModule, UsersModule, StorageModule, AuditModule],
   controllers: [

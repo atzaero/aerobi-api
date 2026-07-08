@@ -10,6 +10,18 @@ export interface TechnicalVisitModifierUser {
   email: string;
 }
 
+/** Indexa por id os usuários carregados, para projetar modificadores sem N+1. */
+export function buildTechnicalVisitModifierUserMap(
+  users: ReadonlyArray<{ id: string; name: string | null; email: string }>,
+): Map<string, TechnicalVisitModifierUser> {
+  return new Map(
+    users.map((user) => [
+      user.id,
+      { id: user.id, name: user.name, email: user.email },
+    ]),
+  );
+}
+
 /**
  * Projeta `modifierUsers` + `modifierAtTimes` em DTOs, usando um mapa de
  * usuários já carregado (evita N+1 na listagem).
@@ -20,12 +32,14 @@ export function mapTechnicalVisitModifiers(
   usersById: ReadonlyMap<string, TechnicalVisitModifierUser>,
 ): TechnicalVisitModifierResponseDTO[] {
   return modifierUserIds.map((userId, index) => {
-    const user = isUUID(userId) ? usersById.get(userId) : undefined;
+    const isUuid = isUUID(userId);
+    const user = isUuid ? usersById.get(userId) : undefined;
     const at = modifierAtTimes[index];
     const row = new TechnicalVisitModifierResponseDTO();
-    row.userId = user?.id ?? (isUUID(userId) ? userId : null);
-    row.name = user?.name ?? user?.email ?? 'Usuário';
-    row.email = user?.email ?? '';
+    row.userId = user?.id ?? (isUuid ? userId : null);
+    /** Entrada legada não-UUID (e-mail no import): preserva a string bruta. */
+    row.name = user?.name ?? user?.email ?? (isUuid ? 'Usuário' : userId);
+    row.email = user?.email ?? (isUuid ? '' : userId);
     row.date = at ? at.toISOString() : null;
     return row;
   });
@@ -59,11 +73,6 @@ export async function resolveTechnicalVisitModifiers(
     ),
   ];
   const users = ids.length > 0 ? await userRepository.findManyByIds(ids) : [];
-  const byId = new Map(
-    users.map((user) => [
-      user.id,
-      { id: user.id, name: user.name, email: user.email },
-    ]),
-  );
+  const byId = buildTechnicalVisitModifierUserMap(users);
   return mapTechnicalVisitModifiers(modifierUserIds, modifierAtTimes, byId);
 }

@@ -4,14 +4,17 @@ import type { TechnicalVisitImageSection } from '@/generated/prisma/client';
 
 import type { TechnicalVisitResponseDTO } from '@/modules/technical-visits/dtos/technical-visit-response.dto';
 
+/** Buffers das imagens já baixadas do storage, agrupados por seção de inspeção. */
 export interface TechnicalVisitPdfImageBuffers {
   bySection: Partial<Record<TechnicalVisitImageSection, Buffer[]>>;
 }
 
+/** Marca de checklist `[X]`/`[ ]` para um item booleano do formulário. */
 function check(value: boolean | null | undefined): string {
   return value ? '[X]' : '[ ]';
 }
 
+/** Formata a data da visita em `dd/mm/aaaa` (pt-BR). */
 function formatVisitDate(visitAt: string): string {
   return new Date(visitAt).toLocaleDateString('pt-BR', {
     day: '2-digit',
@@ -20,6 +23,7 @@ function formatVisitDate(visitAt: string): string {
   });
 }
 
+/** Formata a data/hora de um modificador em `dd/mm/aaaa hh:mm` (pt-BR); vazio se ausente. */
 function formatModifierDate(date: string | null): string {
   if (!date) return '';
   return new Date(date).toLocaleString('pt-BR', {
@@ -31,14 +35,24 @@ function formatModifierDate(date: string | null): string {
   });
 }
 
+/**
+ * Desenha as imagens de uma seção num grid de 2 colunas, quebrando a página
+ * quando a próxima linha ultrapassaria a margem inferior. Imagem inválida é
+ * omitida sem derrubar o PDF.
+ */
 function writeImageGrid(
   doc: PDFKit.PDFDocument,
   buffers: Buffer[] | undefined,
 ): void {
   if (!buffers?.length) return;
   const columnWidth = (doc.page.width - 96) / 2 - 4;
+  const rowHeight = 120;
   for (let i = 0; i < buffers.length; i += 2) {
     const row = buffers.slice(i, i + 2);
+    /** Quebra a página quando a próxima linha do grid passaria da margem inferior. */
+    if (doc.y + rowHeight + 8 > doc.page.height - doc.page.margins.bottom) {
+      doc.addPage();
+    }
     const startY = doc.y;
     let maxHeight = 0;
     row.forEach((buffer, idx) => {
@@ -55,6 +69,7 @@ function writeImageGrid(
   doc.moveDown(0.4);
 }
 
+/** Escreve um item de inspeção: marca + label, observação opcional e o grid de fotos. */
 function writeInspectionItem(
   doc: PDFKit.PDFDocument,
   label: string,
@@ -71,6 +86,22 @@ function writeInspectionItem(
   writeImageGrid(doc, imageBuffers);
 }
 
+/** Rodapé de marca ancorado ao fundo da página (desenhado em cada página). */
+function drawFooter(doc: PDFKit.PDFDocument): void {
+  doc
+    .fontSize(8)
+    .fillColor('#a1a1aa')
+    .text(
+      'Aerobi · Gestão aeroportuária · aerobi.com.br',
+      48,
+      doc.page.height - 36,
+      {
+        align: 'center',
+        width: doc.page.width - 96,
+      },
+    );
+}
+
 /**
  * Gera o PDF da visita técnica (A4) — paridade estrutural com `build-visit-pdf.ts`
  * do aerobi-web, usando pdfkit server-side (#369 Bloco G).
@@ -81,7 +112,7 @@ export function buildTechnicalVisitPdfBuffer(
 ): Promise<Buffer> {
   const { bySection } = imageBuffers;
   return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ size: 'A4', margin: 48 });
+    const doc = new PDFDocument({ size: 'A4', margin: 48, bufferPages: true });
     const chunks: Buffer[] = [];
     doc.on('data', (chunk: Buffer) => chunks.push(chunk));
     doc.on('end', () => resolve(Buffer.concat(chunks)));
@@ -206,9 +237,12 @@ export function buildTechnicalVisitPdfBuffer(
     writeImageGrid(doc, bySection.delimited_perimeter);
     doc.moveDown(0.4);
 
-    if (visit.extraObservation) {
+    if (visit.extraObservation || bySection.extra?.length) {
       doc.fontSize(13).fillColor('#1e3a5f').text('Observações adicionais');
-      doc.fillColor('#000000').fontSize(10).text(visit.extraObservation);
+      doc.fillColor('#000000');
+      if (visit.extraObservation) {
+        doc.fontSize(10).text(visit.extraObservation);
+      }
       doc.moveDown();
     }
     writeImageGrid(doc, bySection.extra);
@@ -229,22 +263,38 @@ export function buildTechnicalVisitPdfBuffer(
     doc.text('_______________________________', { align: 'center' });
     doc.text(visit.visitorName, { align: 'center' });
 
-    doc.fontSize(8).fillColor('#a1a1aa');
-    doc.text(
-      'Aerobi · Gestão aeroportuária · aerobi.com.br',
-      48,
-      doc.page.height - 36,
-      {
-        align: 'center',
-        width: doc.page.width - 96,
-      },
-    );
+    const pages = doc.bufferedPageRange();
+    for (let i = 0; i < pages.count; i++) {
+      doc.switchToPage(pages.start + i);
+      drawFooter(doc);
+    }
 
     doc.end();
   });
 }
 
-export function buildTechnicalVisitPdfFilename(icao: string): string {
-  const slug = icao.trim() || 'visita';
-  return `visita-tecnica-${slug}.pdf`;
+/**
+ * Normaliza um texto para uso seguro em nome de ficheiro: remove acentos
+ * (NFD), baixa a caixa e troca sequências não-alfanuméricas por `-`.
+ */
+function slugifyForFilename(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+/**
+ * Nome do arquivo do PDF: `visita-tecnica-{slug}.pdf`. O slug deriva do ICAO ou,
+ * se vazio, do nome do aeródromo (paridade com `export/service.ts` do web);
+ * fallback final `visita`.
+ */
+export function buildTechnicalVisitPdfFilename(
+  icao: string | null | undefined,
+  aerodromeName?: string | null,
+): string {
+  const slug = slugifyForFilename(icao?.trim() || aerodromeName || '');
+  return `visita-tecnica-${slug || 'visita'}.pdf`;
 }

@@ -1,8 +1,7 @@
-import { HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
-import { ErrorCode } from '@/common/enums/error-code.enum';
-import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
+import { resourceNotFound } from '@/common/utils/resource-not-found.util';
 import {
   buildTechnicalVisitPdfBuffer,
   buildTechnicalVisitPdfFilename,
@@ -37,14 +36,7 @@ export class ExportTechnicalVisitPdfService {
   async execute(id: string): Promise<ExportTechnicalVisitPdfResult> {
     const visit = await this.visitRepo.findByIdWithAerodrome(id);
     if (!visit) {
-      throw new CustomHttpException(
-        this.errorMessageService.getMessage(ErrorCode.RESOURCE_NOT_FOUND, {
-          RESOURCE: 'Visita técnica',
-          ID: id,
-        }),
-        HttpStatus.NOT_FOUND,
-        ErrorCode.RESOURCE_NOT_FOUND,
-      );
+      throw resourceNotFound(this.errorMessageService, 'Visita técnica', id);
     }
 
     const visitDto: TechnicalVisitResponseDTO = await toTechnicalVisitApiRow(
@@ -90,7 +82,10 @@ export class ExportTechnicalVisitPdfService {
 
     return {
       buffer,
-      filename: buildTechnicalVisitPdfFilename(visitDto.icao),
+      filename: buildTechnicalVisitPdfFilename(
+        visitDto.icao,
+        visitDto.aerodromeName,
+      ),
     };
   }
 }
