@@ -1,3 +1,15 @@
+# [2.6.0-beta.51](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.50...v2.6.0-beta.51) (2026-07-08)
+
+
+### Bug Fixes
+
+* **technical-visits:** interpola detalhe na mensagem de validação de upload de imagem ([9ee265e](https://github.com/atzaero/aerobi-api/commit/9ee265edd4dcae9fe2a25d69a734a80d51fd5062)), closes [#514](https://github.com/atzaero/aerobi-api/issues/514)
+
+
+### Features
+
+* **technical-visits:** audita CREATE de imagem de visita técnica ([098234e](https://github.com/atzaero/aerobi-api/commit/098234e5354f37e24d6663f494d3fa7f10c57047)), closes [#519](https://github.com/atzaero/aerobi-api/issues/519)
+
 # [2.6.0-beta.50](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.49...v2.6.0-beta.50) (2026-07-08)
 
 
