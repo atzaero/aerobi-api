@@ -6,13 +6,13 @@ import { StorageModule } from '@/modules/storage/storage.module';
 import { UsersModule } from '@/modules/users/users.module';
 import { PrismaModule } from '@/prisma/prisma.module';
 
-import { AddTechnicalVisitImageController } from './controllers/technical-visit-images.controller';
+import { AddTechnicalVisitImageController } from './controllers/add-technical-visit-image.controller';
 import { CreateTechnicalVisitController } from './controllers/create-technical-visit.controller';
 import { ExportTechnicalVisitPdfController } from './controllers/export-technical-visit-pdf.controller';
 import { FindTechnicalVisitByIdController } from './controllers/find-technical-visit-by-id.controller';
-import { ListTechnicalVisitImagesController } from './controllers/technical-visit-images.controller';
+import { ListTechnicalVisitImagesController } from './controllers/list-technical-visit-images.controller';
 import { ListTechnicalVisitsController } from './controllers/list-technical-visits.controller';
-import { RemoveTechnicalVisitImageController } from './controllers/technical-visit-images.controller';
+import { RemoveTechnicalVisitImageController } from './controllers/remove-technical-visit-image.controller';
 import { RemoveTechnicalVisitController } from './controllers/remove-technical-visit.controller';
 import { UpdateTechnicalVisitController } from './controllers/update-technical-visit.controller';
 
