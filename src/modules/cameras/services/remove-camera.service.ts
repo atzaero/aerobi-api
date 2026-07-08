@@ -7,6 +7,8 @@ import { CameraResponseDTO } from '../dtos/camera-response.dto';
 import { CameraMapper } from '../mappers/camera.mapper';
 import { CameraRepository } from '../repositories/camera.repository';
 
+import { CameraQueryService } from './camera-query.service';
+
 export type RemoveCameraServiceInput = { id: string; deletedBy: string };
 
 /**
@@ -18,6 +20,7 @@ export class RemoveCameraService {
   constructor(
     private readonly repo: CameraRepository,
     private readonly errorMessageService: ErrorMessageService,
+    private readonly cameraQuery: CameraQueryService,
   ) {}
 
   async execute(input: RemoveCameraServiceInput): Promise<CameraResponseDTO> {
@@ -26,6 +29,8 @@ export class RemoveCameraService {
       throw resourceNotFound(this.errorMessageService, 'Câmera', input.id);
     }
     const deleted = await this.repo.softDelete(input.id, input.deletedBy);
+    /** Câmera saiu do ar (soft-delete + enabled=false): tira do cache do proxy. */
+    this.cameraQuery.invalidate(input.id);
     return CameraMapper.toApiRow(deleted);
   }
 }

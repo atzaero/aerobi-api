@@ -93,6 +93,10 @@ export const TAGS: readonly SwaggerTag[] = [
   ['Aerodromes', 'Aeródromos operacionais, vinculados a um grupo.'],
   ['Cameras', 'Câmeras associadas a um aeródromo.'],
   ['Streams', 'Proxy HLS de transmissão ao vivo das câmeras.'],
+  [
+    'Camera Streams',
+    'Proxy HLS v2 (lê os metadados de câmera do Postgres); sucede o Streams (Firestore).',
+  ],
   ['Geojsons', 'Camadas GeoJSON (mapas) dos aeródromos.'],
   ['Documents', 'Documentos de aeródromo (KML, imagens, portarias, etc.).'],
 

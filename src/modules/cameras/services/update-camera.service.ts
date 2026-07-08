@@ -11,6 +11,7 @@ import { patchCameraToPrisma } from '../mappers/camera.prisma.mapper';
 import { CameraRepository } from '../repositories/camera.repository';
 import type { StreamIdentity } from '../repositories/camera.repository.interface';
 
+import { CameraQueryService } from './camera-query.service';
 import {
   assertStreamUnique,
   rethrowCameraStreamConflict,
@@ -27,6 +28,7 @@ export class UpdateCameraService {
   constructor(
     private readonly repo: CameraRepository,
     private readonly errorMessageService: ErrorMessageService,
+    private readonly cameraQuery: CameraQueryService,
   ) {}
 
   async execute(
@@ -58,6 +60,11 @@ export class UpdateCameraService {
         id,
         patchCameraToPrisma(dto, actor.id),
       );
+      /**
+       * Reflete a mudança no proxy imediatamente (enabled/node/path podem ter
+       * mudado); sem isto, o TTL positivo seguraria o estado antigo por até 60s.
+       */
+      this.cameraQuery.invalidate(id);
       return CameraMapper.toApiRow(updated);
     } catch (err) {
       rethrowCameraStreamConflict(err, this.errorMessageService, identity);

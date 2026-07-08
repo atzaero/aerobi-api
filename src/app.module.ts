@@ -29,6 +29,7 @@ import { GuessesModule } from '@/modules/guesses/guesses.module';
 import { NotificationsModule } from '@/modules/notifications/notifications.module';
 import { StreamsModule } from '@/modules/streams/streams.module';
 import { CamerasModule } from '@/modules/cameras/cameras.module';
+import { CameraStreamsModule } from '@/modules/camera-streams/camera-streams.module';
 import { SchedulerModule } from '@/modules/scheduler/scheduler.module';
 import { TechnicalVisitsModule } from '@/modules/technical-visits/technical-visits.module';
 import { TokensModule } from '@/modules/tokens/tokens.module';
@@ -70,6 +71,7 @@ import { PrismaModule } from '@/prisma/prisma.module';
     TasksModule,
     GuessesModule,
     CamerasModule,
+    CameraStreamsModule,
     AuditModule,
   ],
 })

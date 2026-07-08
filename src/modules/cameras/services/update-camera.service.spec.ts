@@ -7,6 +7,7 @@ import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-
 import type { CameraRepository } from '../repositories/camera.repository';
 import { buildCameraFixture } from '../testing/camera.entity.fixture';
 
+import type { CameraQueryService } from './camera-query.service';
 import { UpdateCameraService } from './update-camera.service';
 
 describe('UpdateCameraService', () => {
@@ -14,6 +15,7 @@ describe('UpdateCameraService', () => {
   let findById: jest.Mock;
   let update: jest.Mock;
   let findActiveStreamConflict: jest.Mock;
+  let invalidate: jest.Mock;
 
   const actor: AuthenticatedUser = {
     id: 'u1',
@@ -34,12 +36,18 @@ describe('UpdateCameraService', () => {
     findById = jest.fn();
     update = jest.fn();
     findActiveStreamConflict = jest.fn().mockResolvedValue(null);
+    invalidate = jest.fn();
     const repo = {
       findById,
       update,
       findActiveStreamConflict,
     } as unknown as CameraRepository;
-    service = new UpdateCameraService(repo, new ErrorMessageService());
+    const cameraQuery = { invalidate } as unknown as CameraQueryService;
+    service = new UpdateCameraService(
+      repo,
+      new ErrorMessageService(),
+      cameraQuery,
+    );
   });
 
   it('404 quando a câmera não existe', async () => {
@@ -63,6 +71,8 @@ describe('UpdateCameraService', () => {
       enabled: undefined,
       updatedBy: 'u1',
     });
+    /** Reflete a mudança no proxy (invalida o cache pelo id). */
+    expect(invalidate).toHaveBeenCalledWith('id-1');
   });
 
   it('muda node: revalida unicidade (icao do registro + exceptId) → 409 se conflito', async () => {

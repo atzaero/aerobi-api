@@ -110,6 +110,15 @@ Módulo **`streams`** (épica #317): listagem de câmeras por aeródromo e **pro
 
 A config da câmera é resolvida no Firestore **com cache** em memória (não consulta a cada segmento). Variáveis opcionais: **`STREAMS_CAMERA_CACHE_TTL_MS`** (default `60000`), **`STREAMS_PROXY_TIMEOUT_MS`** (default `10000`), **`STREAMS_MEDIAMTX_HLS_PORT`** (default `8888`). Detalhes, diagrama e dicas de debug: [`src/modules/streams/README.md`](src/modules/streams/README.md).
 
+#### Camera Streams — proxy HLS v2 (`/camera-streams/*`, `#473`)
+
+Módulo **`camera-streams`** é o **sucessor** do `streams`: mesmas listagem e proxy HLS, mas lê os metadados de câmera do **Postgres** (módulo `cameras`), não do Firestore. Roda **em paralelo** ao legado (estratégia strangler-fig; o frontend migra no seu ritmo, remoção do legado na #474). Rotas **públicas** (sem `X-API-Key`), com `:cameraId` = **UUID** do Postgres:
+
+- `GET /aerodromes/:icao/camera-streams` — lista as câmeras ativas do aeródromo (lê o Postgres).
+- `GET /camera-streams/:cameraId/index.m3u8` e `GET /camera-streams/:cameraId/:segment` — proxy da playlist e dos segmentos HLS.
+
+Variáveis opcionais: **`CAMERA_STREAMS_CACHE_TTL_MS`** (default `60000`), **`CAMERA_STREAMS_PROXY_TIMEOUT_MS`** (default `10000`), **`CAMERA_STREAMS_MEDIAMTX_HLS_PORT`** (default `8888`). Detalhes: [`src/modules/camera-streams/README.md`](src/modules/camera-streams/README.md).
+
 ## Project setup
 
 ```bash

@@ -13,6 +13,7 @@ import { buildCameraCreateInput } from '../mappers/camera.prisma.mapper';
 import { CameraRepository } from '../repositories/camera.repository';
 import type { StreamIdentity } from '../repositories/camera.repository.interface';
 
+import { CameraQueryService } from './camera-query.service';
 import {
   assertStreamUnique,
   rethrowCameraStreamConflict,
@@ -30,6 +31,7 @@ export class CreateCameraService {
     private readonly repo: CameraRepository,
     private readonly userRepository: UserRepository,
     private readonly errorMessageService: ErrorMessageService,
+    private readonly cameraQuery: CameraQueryService,
   ) {}
 
   async execute(
@@ -85,6 +87,8 @@ export class CreateCameraService {
           createdBy: actor.id,
         }),
       );
+      /** Descarta qualquer negativo cacheado pelo proxy para este id. */
+      this.cameraQuery.invalidate(created.id);
       return CameraMapper.toApiRow(created);
     } catch (err) {
       rethrowCameraStreamConflict(err, this.errorMessageService, identity);
