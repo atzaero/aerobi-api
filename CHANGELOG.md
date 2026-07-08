@@ -1,3 +1,10 @@
+# [2.6.0-beta.52](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.51...v2.6.0-beta.52) (2026-07-08)
+
+
+### Features
+
+* **camera-streams:** proxy HLS v2 lendo do Postgres ([#533](https://github.com/atzaero/aerobi-api/issues/533)) ([1dddadd](https://github.com/atzaero/aerobi-api/commit/1dddaddcc6f40f725ef06d58097e4d073b6b8b10)), closes [#473](https://github.com/atzaero/aerobi-api/issues/473) [#353](https://github.com/atzaero/aerobi-api/issues/353) [#474](https://github.com/atzaero/aerobi-api/issues/474) [#473](https://github.com/atzaero/aerobi-api/issues/473) [#372](https://github.com/atzaero/aerobi-api/issues/372)
+
 # [2.6.0-beta.51](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.50...v2.6.0-beta.51) (2026-07-08)
 
 
