@@ -168,12 +168,7 @@ export const PERMISSIONS: Record<
       UserRole.OPERATOR,
       UserRole.TECHNICAL,
     ],
-    delete: [
-      UserRole.ADMIN,
-      UserRole.COORDINATOR,
-      UserRole.OPERATOR,
-      UserRole.TECHNICAL,
-    ],
+    delete: [UserRole.ADMIN, UserRole.COORDINATOR, UserRole.TECHNICAL],
     export: [
       UserRole.ADMIN,
       UserRole.COORDINATOR,

@@ -129,4 +129,26 @@ export const groupScopeResolvers: Record<GroupScopeSubject, GroupResolver> = {
 
     return guess?.task.maintenance.aerodrome.groupId ?? null;
   },
+
+  [GroupScopeSubject.TECHNICAL_VISIT]: async (prisma, id) => {
+    const visit = await prisma.technicalVisit.findFirst({
+      where: { id, deletedAt: null },
+      select: { aerodrome: { select: { groupId: true } } },
+    });
+
+    return visit?.aerodrome.groupId ?? null;
+  },
+
+  [GroupScopeSubject.TECHNICAL_VISIT_IMAGE]: async (prisma, id) => {
+    const image = await prisma.technicalVisitImage.findFirst({
+      where: { id, deletedAt: null, technicalVisit: { deletedAt: null } },
+      select: {
+        technicalVisit: {
+          select: { aerodrome: { select: { groupId: true } } },
+        },
+      },
+    });
+
+    return image?.technicalVisit.aerodrome.groupId ?? null;
+  },
 };

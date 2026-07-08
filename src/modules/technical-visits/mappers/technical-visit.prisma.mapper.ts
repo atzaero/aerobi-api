@@ -5,89 +5,71 @@ import { UpdateTechnicalVisitDTO } from '../dtos/update-technical-visit.dto';
 
 export function buildTechnicalVisitCreateInput(
   dto: CreateTechnicalVisitDTO,
+  actorId: string,
+  createdAt: Date = new Date(),
 ): Prisma.TechnicalVisitCreateInput {
   const { aerodromeId, ...rest } = dto;
   return {
     ...rest,
+    modifierUsers: [actorId],
+    modifierAtTimes: [createdAt],
+    createdBy: actorId,
+    updatedBy: actorId,
     aerodrome: {
       connect: { id: aerodromeId },
     },
   };
 }
 
+/**
+ * Monta o patch Prisma da visita. Campos `undefined` (ausentes no payload) viram
+ * no-op no Prisma. `modifierUsers` é append-only (timeline de edições —
+ * paridade `modifier_users` do web; o mesmo ator pode aparecer N vezes).
+ */
 export function patchTechnicalVisitToPrisma(
   dto: UpdateTechnicalVisitDTO,
+  actorId: string,
+  existingModifierUsers: string[],
+  existingModifierAtTimes: Date[],
+  modifiedAt: Date = new Date(),
 ): Prisma.TechnicalVisitUpdateInput {
-  const data: Prisma.TechnicalVisitUpdateInput = {};
-  if (dto.modifierUsers !== undefined) data.modifierUsers = dto.modifierUsers;
-  if (dto.gatesPadlocksObservation !== undefined) {
-    data.gatesPadlocksObservation = dto.gatesPadlocksObservation;
-  }
-  if (dto.hasGatesPadlocks !== undefined) {
-    data.hasGatesPadlocks = dto.hasGatesPadlocks;
-  }
-  if (dto.fenceObservation !== undefined) {
-    data.fenceObservation = dto.fenceObservation;
-  }
-  if (dto.hasFence !== undefined) data.hasFence = dto.hasFence;
-  if (dto.standardPlateObservation !== undefined) {
-    data.standardPlateObservation = dto.standardPlateObservation;
-  }
-  if (dto.hasStandardPlate !== undefined) {
-    data.hasStandardPlate = dto.hasStandardPlate;
-  }
-  if (dto.qualityObservation !== undefined) {
-    data.qualityObservation = dto.qualityObservation;
-  }
-  if (dto.qualityOthersObservation !== undefined) {
-    data.qualityOthersObservation = dto.qualityOthersObservation;
-  }
-  if (dto.hasQualityHoles !== undefined) {
-    data.hasQualityHoles = dto.hasQualityHoles;
-  }
-  if (dto.hasQualityAsphalt !== undefined) {
-    data.hasQualityAsphalt = dto.hasQualityAsphalt;
-  }
-  if (dto.hasQualityOthers !== undefined) {
-    data.hasQualityOthers = dto.hasQualityOthers;
-  }
-  if (dto.horizontalSignageObservation !== undefined) {
-    data.horizontalSignageObservation = dto.horizontalSignageObservation;
-  }
-  if (dto.hasHorizontalSignage !== undefined) {
-    data.hasHorizontalSignage = dto.hasHorizontalSignage;
-  }
-  if (dto.unobstructedHeadboardsObservation !== undefined) {
-    data.unobstructedHeadboardsObservation =
-      dto.unobstructedHeadboardsObservation;
-  }
-  if (dto.hasUnobstructedHeadboards !== undefined) {
-    data.hasUnobstructedHeadboards = dto.hasUnobstructedHeadboards;
-  }
-  if (dto.trackRangeObservation !== undefined) {
-    data.trackRangeObservation = dto.trackRangeObservation;
-  }
-  if (dto.hasTrackRange !== undefined) data.hasTrackRange = dto.hasTrackRange;
-  if (dto.pavementRegularity !== undefined) {
-    data.pavementRegularity = dto.pavementRegularity;
-  }
-  if (dto.trashDebrisObservation !== undefined) {
-    data.trashDebrisObservation = dto.trashDebrisObservation;
-  }
-  if (dto.hasTrashDebris !== undefined) {
-    data.hasTrashDebris = dto.hasTrashDebris;
-  }
-  if (dto.delimitedPerimeterObservation !== undefined) {
-    data.delimitedPerimeterObservation = dto.delimitedPerimeterObservation;
-  }
-  if (dto.hasDelimitedPerimeter !== undefined) {
-    data.hasDelimitedPerimeter = dto.hasDelimitedPerimeter;
-  }
-  if (dto.hasInvasion !== undefined) data.hasInvasion = dto.hasInvasion;
-  if (dto.extraObservation !== undefined) {
-    data.extraObservation = dto.extraObservation;
-  }
-  if (dto.visitAt !== undefined) data.visitAt = dto.visitAt;
-  if (dto.visitBy !== undefined) data.visitBy = dto.visitBy;
-  return data;
+  return {
+    visitorName: dto.visitorName,
+    city: dto.city,
+    ciad: dto.ciad,
+    designation: dto.designation,
+    length: dto.length,
+    width: dto.width,
+    resistance: dto.resistance,
+    surface: dto.surface,
+    altitude: dto.altitude,
+    gatesPadlocksObservation: dto.gatesPadlocksObservation,
+    hasGatesPadlocks: dto.hasGatesPadlocks,
+    fenceObservation: dto.fenceObservation,
+    hasFence: dto.hasFence,
+    standardPlateObservation: dto.standardPlateObservation,
+    hasStandardPlate: dto.hasStandardPlate,
+    qualityObservation: dto.qualityObservation,
+    qualityOthersObservation: dto.qualityOthersObservation,
+    hasQualityHoles: dto.hasQualityHoles,
+    hasQualityAsphalt: dto.hasQualityAsphalt,
+    hasQualityOthers: dto.hasQualityOthers,
+    horizontalSignageObservation: dto.horizontalSignageObservation,
+    hasHorizontalSignage: dto.hasHorizontalSignage,
+    unobstructedHeadboardsObservation: dto.unobstructedHeadboardsObservation,
+    hasUnobstructedHeadboards: dto.hasUnobstructedHeadboards,
+    trackRangeObservation: dto.trackRangeObservation,
+    hasTrackRange: dto.hasTrackRange,
+    pavementRegularity: dto.pavementRegularity,
+    trashDebrisObservation: dto.trashDebrisObservation,
+    hasTrashDebris: dto.hasTrashDebris,
+    delimitedPerimeterObservation: dto.delimitedPerimeterObservation,
+    hasDelimitedPerimeter: dto.hasDelimitedPerimeter,
+    hasInvasion: dto.hasInvasion,
+    extraObservation: dto.extraObservation,
+    visitAt: dto.visitAt,
+    modifierUsers: [...existingModifierUsers, actorId],
+    modifierAtTimes: [...existingModifierAtTimes, modifiedAt],
+    updatedBy: actorId,
+  };
 }

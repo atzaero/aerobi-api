@@ -668,14 +668,44 @@ model OperationalEvent {
   @@map("operational_event")
 }
 
-/// Visita técnica em aeródromo (`technicalVisit` no Firestore). ICAO, CIAD, pista, nome e município do aeródromo vêm de `aerodromes` via FK (evita duplicar o cadastro).
+/// Seção de inspeção de uma foto de visita técnica (paridade `technical_visit_images` do web).
+enum TechnicalVisitImageSection {
+  gates_padlocks
+  fence
+  standard_plate
+  quality
+  horizontal_signage
+  unobstructed_headboards
+  track_range
+  trash_debris
+  delimited_perimeter
+  extra
+
+  @@map("technical_visit_image_section")
+}
+
+/// Visita técnica em aeródromo (`technicalVisit` no Firestore). ICAO/nome/UF do aeródromo derivam via join; snapshot de pista fica na visita.
 model TechnicalVisit {
   id          String    @id @default(uuid()) @db.Uuid
   aerodromeId String    @map("aerodrome_id") @db.Uuid
   aerodrome   Aerodrome @relation(fields: [aerodromeId], references: [id], onDelete: Restrict)
 
+  visitorName String @default("") @map("visitor_name")
+  city        String @default("") @map("city")
+  ciad        String? @map("ciad")
+  designation String? @map("designation")
+  length      String? @map("length")
+  width       String? @map("width")
+  resistance  String? @map("resistance")
+  surface     String? @map("surface")
+  altitude    String? @map("altitude")
+
   /// Uids Auth (preferencial) ou e-mail na importação legada — quem editou a visita, em ordem. Firestore ainda usa objetos `{ name, email, date }?` até cutover.
   modifierUsers String[] @default([]) @map("modifier_users")
+  /// Instante de cada entrada em `modifierUsers` (mesmo índice) — paridade `date` do web.
+  modifierAtTimes DateTime[] @default([]) @map("modifier_at_times") @db.Timestamptz(3)
+
+  images TechnicalVisitImage[]
 
   gatesPadlocksObservation          String?  @map("gates_padlocks_observation") @db.Text
   hasGatesPadlocks                  Boolean? @map("has_gates_padlocks")
@@ -715,6 +745,28 @@ model TechnicalVisit {
 
   @@index([aerodromeId, visitAt])
   @@map("technical_visits")
+}
+
+/// Imagem de visita técnica por seção de inspeção (N por visita/seção; soft-delete).
+model TechnicalVisitImage {
+  id               String                     @id @default(uuid()) @db.Uuid
+  technicalVisitId String                     @map("technical_visit_id") @db.Uuid
+  technicalVisit   TechnicalVisit             @relation(fields: [technicalVisitId], references: [id], onDelete: Restrict)
+  section          TechnicalVisitImageSection
+  imageKey         String                     @map("image_key") @db.Text
+  originalFilename String                     @map("original_filename")
+  mimeType         String                     @map("mime_type")
+  sizeBytes        Int                        @map("size_bytes")
+  uploadedBy       String?                    @map("uploaded_by")
+  createdAt        DateTime                   @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdBy        String?                    @map("created_by")
+  updatedAt        DateTime                   @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedBy        String?                    @map("updated_by")
+  deletedAt        DateTime?                  @map("deleted_at") @db.Timestamptz(3)
+  deletedBy        String?                    @map("deleted_by")
+
+  @@index([technicalVisitId, section])
+  @@map("technical_visit_images")
 }
 
 /// GeoJSON operacional inline (1:1 com o aeródromo; equivale a um doc na coleção `geojsons` no Firestore).

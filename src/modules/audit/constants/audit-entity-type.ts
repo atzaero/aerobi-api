@@ -12,6 +12,7 @@ export const AUDIT_ENTITY_TYPES = [
   'document',
   'landing_request',
   'technical_visit',
+  'technical_visit_image',
   'maintenance',
   'task',
   'guess',

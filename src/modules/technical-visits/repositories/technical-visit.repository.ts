@@ -4,26 +4,41 @@ import { Prisma, type TechnicalVisit } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 
 import type { ITechnicalVisitRepository } from './technical-visit.repository.interface';
+import {
+  technicalVisitWithAerodromeInclude,
+  type TechnicalVisitWithAerodrome,
+} from '../types/technical-visit-with-aerodrome.type';
 
 const activeWhere: Pick<Prisma.TechnicalVisitWhereInput, 'deletedAt'> = {
   deletedAt: null,
 };
 
+const listOrderBy: Prisma.TechnicalVisitOrderByWithRelationInput[] = [
+  { visitAt: 'desc' },
+  { createdAt: 'desc' },
+];
+
 @Injectable()
 export class TechnicalVisitRepository implements ITechnicalVisitRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  create(data: Prisma.TechnicalVisitCreateInput): Promise<TechnicalVisit> {
-    return this.prisma.technicalVisit.create({ data });
+  create(
+    data: Prisma.TechnicalVisitCreateInput,
+  ): Promise<TechnicalVisitWithAerodrome> {
+    return this.prisma.technicalVisit.create({
+      data,
+      include: technicalVisitWithAerodromeInclude,
+    });
   }
 
   update(
     id: string,
     data: Prisma.TechnicalVisitUpdateInput,
-  ): Promise<TechnicalVisit> {
+  ): Promise<TechnicalVisitWithAerodrome> {
     return this.prisma.technicalVisit.update({
       where: { id, ...activeWhere },
       data,
+      include: technicalVisitWithAerodromeInclude,
     });
   }
 
@@ -33,18 +48,28 @@ export class TechnicalVisitRepository implements ITechnicalVisitRepository {
     });
   }
 
+  findByIdWithAerodrome(
+    id: string,
+  ): Promise<TechnicalVisitWithAerodrome | null> {
+    return this.prisma.technicalVisit.findFirst({
+      where: { id, ...activeWhere },
+      include: technicalVisitWithAerodromeInclude,
+    });
+  }
+
   findMany(
     where: Prisma.TechnicalVisitWhereInput,
     skip: number,
     take: number,
-  ): Promise<TechnicalVisit[]> {
+  ): Promise<TechnicalVisitWithAerodrome[]> {
     return this.prisma.technicalVisit.findMany({
       where: {
         AND: [{ ...where }, activeWhere],
       },
       skip,
       take,
-      orderBy: { visitAt: 'desc' },
+      orderBy: listOrderBy,
+      include: technicalVisitWithAerodromeInclude,
     });
   }
 
