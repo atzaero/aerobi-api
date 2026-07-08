@@ -2,7 +2,7 @@ import { Controller, Get, Param, Res, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 
-import { buildAttachmentContentDisposition } from '@/common/utils/content-disposition.util';
+import { applyPdfDownloadHeaders } from '@/common/utils/pdf-download.util';
 import { RequirePermission } from '@/modules/auth/decorators/require-permission.decorator';
 import { RequiresGroupScope } from '@/modules/auth/decorators/requires-group-scope.decorator';
 import { GroupScopeGuard } from '@/modules/auth/guards/group-scope.guard';
@@ -31,10 +31,7 @@ export class ExportTechnicalVisitPdfController {
     const { buffer, filename } = await this.service.execute(
       params.technicalVisitId,
     );
-    res.set({
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': buildAttachmentContentDisposition(filename),
-    });
+    applyPdfDownloadHeaders(res, filename);
     res.send(buffer);
   }
 }
