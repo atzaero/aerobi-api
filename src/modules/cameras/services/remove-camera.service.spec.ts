@@ -5,18 +5,26 @@ import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import type { CameraRepository } from '../repositories/camera.repository';
 import { buildCameraFixture } from '../testing/camera.entity.fixture';
 
+import type { CameraQueryService } from './camera-query.service';
 import { RemoveCameraService } from './remove-camera.service';
 
 describe('RemoveCameraService', () => {
   let service: RemoveCameraService;
   let findById: jest.Mock;
   let softDelete: jest.Mock;
+  let invalidate: jest.Mock;
 
   beforeEach(() => {
     findById = jest.fn();
     softDelete = jest.fn();
+    invalidate = jest.fn();
     const repo = { findById, softDelete } as unknown as CameraRepository;
-    service = new RemoveCameraService(repo, new ErrorMessageService());
+    const cameraQuery = { invalidate } as unknown as CameraQueryService;
+    service = new RemoveCameraService(
+      repo,
+      new ErrorMessageService(),
+      cameraQuery,
+    );
   });
 
   it('404 quando não existe', async () => {
@@ -45,5 +53,7 @@ describe('RemoveCameraService', () => {
     expect(softDelete).toHaveBeenCalledWith('id-1', 'u9');
     expect(out.deletedBy).toBe('u9');
     expect(out.enabled).toBe(false);
+    /** Tira a câmera do cache do proxy. */
+    expect(invalidate).toHaveBeenCalledWith('id-1');
   });
 });

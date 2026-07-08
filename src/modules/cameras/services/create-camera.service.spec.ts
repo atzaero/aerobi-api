@@ -9,6 +9,7 @@ import type { CreateCameraDTO } from '../dtos/create-camera.dto';
 import type { CameraRepository } from '../repositories/camera.repository';
 import { buildCameraFixture } from '../testing/camera.entity.fixture';
 
+import type { CameraQueryService } from './camera-query.service';
 import { CreateCameraService } from './create-camera.service';
 
 describe('CreateCameraService', () => {
@@ -17,6 +18,7 @@ describe('CreateCameraService', () => {
   let findActiveAerodrome: jest.Mock;
   let findActiveStreamConflict: jest.Mock;
   let findActiveById: jest.Mock;
+  let invalidate: jest.Mock;
 
   const aerodromeId = '22222222-2222-4222-8222-222222222222';
   const admin: AuthenticatedUser = {
@@ -53,16 +55,19 @@ describe('CreateCameraService', () => {
     findActiveAerodrome = jest.fn();
     findActiveStreamConflict = jest.fn().mockResolvedValue(null);
     findActiveById = jest.fn();
+    invalidate = jest.fn();
     const repo = {
       create,
       findActiveAerodrome,
       findActiveStreamConflict,
     } as unknown as CameraRepository;
     const userRepo = { findActiveById } as unknown as UserRepository;
+    const cameraQuery = { invalidate } as unknown as CameraQueryService;
     service = new CreateCameraService(
       repo,
       userRepo,
       new ErrorMessageService(),
+      cameraQuery,
     );
   });
 
@@ -127,6 +132,8 @@ describe('CreateCameraService', () => {
     expect(input.createdBy).toBe('admin-1');
     expect(input.enabled).toBe(true);
     expect(input.aerodrome).toEqual({ connect: { id: aerodromeId } });
+    /** Invalida o cache do proxy pelo id recém-criado. */
+    expect(invalidate).toHaveBeenCalledWith(buildCameraFixture().id);
   });
 
   it('P2002 no create → 409 (rede de segurança da corrida)', async () => {

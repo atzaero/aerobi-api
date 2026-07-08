@@ -130,4 +130,37 @@ describe('CameraRepository', () => {
     });
     expect(out).toEqual({ id: 'aid', groupId: 'g', icao: 'SBXX' });
   });
+
+  it('findStreamSourceById: projeção mínima do stream, ativo (não filtra enabled)', async () => {
+    camera.findFirst.mockResolvedValue(null);
+    await repo.findStreamSourceById('id-1');
+    expect(camera.findFirst).toHaveBeenCalledWith({
+      where: { id: 'id-1', deletedAt: null },
+      select: {
+        id: true,
+        icao: true,
+        name: true,
+        mediamtxNode: true,
+        mediamtxPath: true,
+        enabled: true,
+      },
+    });
+  });
+
+  it('findEnabledStreamSourcesByIcao: ativas + enabled=true, order name/id', async () => {
+    camera.findMany.mockResolvedValue([]);
+    await repo.findEnabledStreamSourcesByIcao('SBXX');
+    expect(camera.findMany).toHaveBeenCalledWith({
+      where: { deletedAt: null, icao: 'SBXX', enabled: true },
+      select: {
+        id: true,
+        icao: true,
+        name: true,
+        mediamtxNode: true,
+        mediamtxPath: true,
+        enabled: true,
+      },
+      orderBy: [{ name: 'asc' }, { id: 'asc' }],
+    });
+  });
 });

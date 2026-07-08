@@ -3,6 +3,8 @@ import { Injectable } from '@nestjs/common';
 import { Prisma, type Camera } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 
+import type { CameraStreamSource } from '../types/camera-stream-source';
+
 import type {
   ICameraRepository,
   StreamIdentity,
@@ -11,6 +13,20 @@ import type {
 const activeWhere: Pick<Prisma.CameraWhereInput, 'deletedAt'> = {
   deletedAt: null,
 };
+
+/**
+ * Colunas projetadas para o {@link CameraStreamSource} — só o que o proxy HLS
+ * público precisa, sem auditoria/timestamps. Tipado via `satisfies` para o
+ * Prisma inferir o shape exato do retorno.
+ */
+const STREAM_SOURCE_SELECT = {
+  id: true,
+  icao: true,
+  name: true,
+  mediamtxNode: true,
+  mediamtxPath: true,
+  enabled: true,
+} satisfies Prisma.CameraSelect;
 
 @Injectable()
 export class CameraRepository implements ICameraRepository {
@@ -89,6 +105,22 @@ export class CameraRepository implements ICameraRepository {
         ...(identity.exceptId ? { id: { not: identity.exceptId } } : {}),
       },
       select: { id: true },
+    });
+  }
+
+  findStreamSourceById(id: string): Promise<CameraStreamSource | null> {
+    return this.prisma.camera.findFirst({
+      where: { id, ...activeWhere },
+      select: STREAM_SOURCE_SELECT,
+    });
+  }
+
+  findEnabledStreamSourcesByIcao(icao: string): Promise<CameraStreamSource[]> {
+    return this.prisma.camera.findMany({
+      where: { ...activeWhere, icao, enabled: true },
+      select: STREAM_SOURCE_SELECT,
+      /** `name ASC` (paridade com a listagem pública legada) + `id` tiebreaker. */
+      orderBy: [{ name: 'asc' }, { id: 'asc' }],
     });
   }
 }

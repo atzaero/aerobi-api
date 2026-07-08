@@ -1,10 +1,10 @@
 /**
- * Padrões e limites de validação dos campos de stream de uma câmera, alinhados
- * ao boundary anti-SSRF do proxy `streams`
- * (`src/modules/streams/repositories/camera.repository.ts`) — a fonte que virá a
- * consumir estes metadados (streams v2, #473). Recriados aqui para que o CRUD
- * valide na escrita o que o proxy exige na leitura, mantendo os nomes de campo
- * idênticos para o cutover.
+ * Padrões e limites de validação dos campos de stream de uma câmera. **Fonte
+ * canônica** do boundary anti-SSRF, compartilhada entre a **escrita** (CRUD de
+ * `cameras`) e a **leitura** (proxy HLS v2 `camera-streams`, #473, que importa
+ * `MEDIAMTX_*_PATTERN` daqui): o CRUD valida na escrita exatamente o que o proxy
+ * exige na leitura, sem duplicar o regex. O proxy `streams` legado (Firestore)
+ * mantém a sua própria cópia até ser removido (#474).
  */
 
 /**

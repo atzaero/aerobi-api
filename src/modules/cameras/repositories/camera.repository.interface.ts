@@ -1,5 +1,7 @@
 import type { Camera, Prisma } from '@/generated/prisma/client';
 
+import type { CameraStreamSource } from '../types/camera-stream-source';
+
 /**
  * Trio que identifica um stream único entre câmeras ativas. `exceptId` ignora a
  * própria câmera no check (usado no update).
@@ -41,4 +43,18 @@ export interface ICameraRepository {
   findActiveStreamConflict(
     identity: StreamIdentity,
   ): Promise<{ id: string } | null>;
+
+  /**
+   * Projeção mínima de uma câmera ativa (`deletedAt IS NULL`) por id, para o
+   * proxy HLS público (`camera-streams`). **Não** filtra `enabled` — o proxy
+   * trata câmera desativada como 404 (permite cachear o negativo). `null` se
+   * inexistente/removida.
+   */
+  findStreamSourceById(id: string): Promise<CameraStreamSource | null>;
+
+  /**
+   * Câmeras **publicáveis** de um aeródromo (por ICAO): ativas
+   * (`deletedAt IS NULL`) e ligadas (`enabled = true`), ordenadas por `name`.
+   */
+  findEnabledStreamSourcesByIcao(icao: string): Promise<CameraStreamSource[]>;
 }
