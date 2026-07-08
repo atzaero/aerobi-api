@@ -99,45 +99,50 @@ export class TechnicalVisitFormFieldsDTO {
   @IsString()
   altitude?: string | null;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String })
+  @TrimToNull()
   @IsOptional()
   @IsString()
-  gatesPadlocksObservation?: string;
+  gatesPadlocksObservation?: string | null;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsBoolean()
   hasGatesPadlocks?: boolean;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String })
+  @TrimToNull()
   @IsOptional()
   @IsString()
-  fenceObservation?: string;
+  fenceObservation?: string | null;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsBoolean()
   hasFence?: boolean;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String })
+  @TrimToNull()
   @IsOptional()
   @IsString()
-  standardPlateObservation?: string;
+  standardPlateObservation?: string | null;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsBoolean()
   hasStandardPlate?: boolean;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String })
+  @TrimToNull()
   @IsOptional()
   @IsString()
-  qualityObservation?: string;
+  qualityObservation?: string | null;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String })
+  @TrimToNull()
   @IsOptional()
   @IsString()
-  qualityOthersObservation?: string;
+  qualityOthersObservation?: string | null;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -154,30 +159,33 @@ export class TechnicalVisitFormFieldsDTO {
   @IsBoolean()
   hasQualityOthers?: boolean;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String })
+  @TrimToNull()
   @IsOptional()
   @IsString()
-  horizontalSignageObservation?: string;
+  horizontalSignageObservation?: string | null;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsBoolean()
   hasHorizontalSignage?: boolean;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String })
+  @TrimToNull()
   @IsOptional()
   @IsString()
-  unobstructedHeadboardsObservation?: string;
+  unobstructedHeadboardsObservation?: string | null;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsBoolean()
   hasUnobstructedHeadboards?: boolean;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String })
+  @TrimToNull()
   @IsOptional()
   @IsString()
-  trackRangeObservation?: string;
+  trackRangeObservation?: string | null;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -189,20 +197,22 @@ export class TechnicalVisitFormFieldsDTO {
   @IsBoolean()
   pavementRegularity?: boolean;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String })
+  @TrimToNull()
   @IsOptional()
   @IsString()
-  trashDebrisObservation?: string;
+  trashDebrisObservation?: string | null;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsBoolean()
   hasTrashDebris?: boolean;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String })
+  @TrimToNull()
   @IsOptional()
   @IsString()
-  delimitedPerimeterObservation?: string;
+  delimitedPerimeterObservation?: string | null;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -214,10 +224,11 @@ export class TechnicalVisitFormFieldsDTO {
   @IsBoolean()
   hasInvasion?: boolean;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String })
+  @TrimToNull()
   @IsOptional()
   @IsString()
-  extraObservation?: string;
+  extraObservation?: string | null;
 
   @ApiProperty({ example: '2024-06-01T09:00:00.000Z' })
   @Type(() => Date)
