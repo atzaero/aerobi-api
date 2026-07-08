@@ -65,3 +65,71 @@ describe('groupScopeResolvers[TASK]', () => {
     await expect(resolve()).resolves.toBeNull();
   });
 });
+
+describe('groupScopeResolvers[TECHNICAL_VISIT]', () => {
+  const id = '11111111-1111-4111-8111-111111111111';
+  let findFirst: jest.Mock;
+  let prisma: PrismaService;
+
+  beforeEach(() => {
+    findFirst = jest.fn();
+    prisma = {
+      technicalVisit: { findFirst },
+    } as unknown as PrismaService;
+  });
+
+  it('resolve o groupId via aeródromo da visita', async () => {
+    findFirst.mockResolvedValue({ aerodrome: { groupId: 'g-tv' } });
+    await expect(
+      groupScopeResolvers[GroupScopeSubject.TECHNICAL_VISIT](prisma, id),
+    ).resolves.toBe('g-tv');
+  });
+
+  it('null quando visita não existe', async () => {
+    findFirst.mockResolvedValue(null);
+    await expect(
+      groupScopeResolvers[GroupScopeSubject.TECHNICAL_VISIT](prisma, id),
+    ).resolves.toBeNull();
+  });
+});
+
+describe('groupScopeResolvers[TECHNICAL_VISIT_IMAGE]', () => {
+  const id = '99999999-9999-4999-8999-999999999999';
+  let findFirst: jest.Mock;
+  let prisma: PrismaService;
+
+  beforeEach(() => {
+    findFirst = jest.fn();
+    prisma = {
+      technicalVisitImage: { findFirst },
+    } as unknown as PrismaService;
+  });
+
+  it('resolve o groupId via visita → aeródromo', async () => {
+    findFirst.mockResolvedValue({
+      technicalVisit: { aerodrome: { groupId: 'g-img' } },
+    });
+    await expect(
+      groupScopeResolvers[GroupScopeSubject.TECHNICAL_VISIT_IMAGE](prisma, id),
+    ).resolves.toBe('g-img');
+    expect(findFirst).toHaveBeenCalledWith({
+      where: {
+        id,
+        deletedAt: null,
+        technicalVisit: { deletedAt: null },
+      },
+      select: {
+        technicalVisit: {
+          select: { aerodrome: { select: { groupId: true } } },
+        },
+      },
+    });
+  });
+
+  it('null quando imagem não existe', async () => {
+    findFirst.mockResolvedValue(null);
+    await expect(
+      groupScopeResolvers[GroupScopeSubject.TECHNICAL_VISIT_IMAGE](prisma, id),
+    ).resolves.toBeNull();
+  });
+});

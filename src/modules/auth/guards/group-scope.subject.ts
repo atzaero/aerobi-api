@@ -26,6 +26,10 @@ export const GroupScopeSubject = {
   TASK: 'task',
   /** `MaintenanceGuess` — resolve o `groupId` via tarefa → manutenção → aeródromo. */
   GUESS: 'guess',
+  /** `TechnicalVisit` — resolve o `groupId` via FK para o aeródromo. */
+  TECHNICAL_VISIT: 'technicalVisit',
+  /** `TechnicalVisitImage` — resolve o `groupId` via visita → aeródromo. */
+  TECHNICAL_VISIT_IMAGE: 'technicalVisitImage',
 } as const;
 
 export type GroupScopeSubject =

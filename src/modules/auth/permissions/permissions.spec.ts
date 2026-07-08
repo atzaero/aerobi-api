@@ -91,7 +91,7 @@ const EXPECTED: Record<
     read: ALL_ROLES,
     create: ALL_ROLES,
     update: ALL_ROLES,
-    delete: ALL_ROLES,
+    delete: [UserRole.ADMIN, UserRole.COORDINATOR, UserRole.TECHNICAL],
     export: ALL_ROLES,
   },
   maintenance: {
@@ -224,6 +224,7 @@ describe('can — por papel (amostras-chave)', () => {
     );
     expect(can(UserRole.OPERATOR, 'document', 'read')).toBe(true);
     expect(can(UserRole.OPERATOR, 'rab', 'read')).toBe(true);
+    expect(can(UserRole.OPERATOR, 'technical_visit', 'delete')).toBe(false);
     expect(can(UserRole.OPERATOR, 'aerodrome', 'create')).toBe(false);
     expect(can(UserRole.OPERATOR, 'aerodrome', 'update')).toBe(false);
     expect(can(UserRole.OPERATOR, 'document', 'create')).toBe(false);

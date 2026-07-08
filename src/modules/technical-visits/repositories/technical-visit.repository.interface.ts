@@ -1,12 +1,16 @@
 import type { Prisma, TechnicalVisit } from '@/generated/prisma/client';
 
+import type { TechnicalVisitWithAerodrome } from '../types/technical-visit-with-aerodrome.type';
+
 export interface ITechnicalVisitRepository {
-  create(data: Prisma.TechnicalVisitCreateInput): Promise<TechnicalVisit>;
+  create(
+    data: Prisma.TechnicalVisitCreateInput,
+  ): Promise<TechnicalVisitWithAerodrome>;
 
   update(
     id: string,
     data: Prisma.TechnicalVisitUpdateInput,
-  ): Promise<TechnicalVisit>;
+  ): Promise<TechnicalVisitWithAerodrome>;
 
   findById(id: string): Promise<TechnicalVisit | null>;
 

@@ -25,6 +25,7 @@ export const AUDIT_ENTITY_TYPE_LABELS_PT: Record<AuditEntityType, string> = {
   document: 'Documento',
   landing_request: 'Solicitação de pouso',
   technical_visit: 'Visita técnica',
+  technical_visit_image: 'Imagem de visita técnica',
   maintenance: 'Manutenção',
   task: 'Tarefa',
   guess: 'Palpite',
