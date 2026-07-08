@@ -3,7 +3,8 @@ import {
   TechnicalVisitImageSection,
 } from '@/generated/prisma/client';
 
-import type { ErrorMessageService } from '@/common/error-messages/error-message.service';
+import { ErrorCode } from '@/common/enums/error-code.enum';
+import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { buildAuthenticatedUserFixture } from '@/modules/auth/testing/authenticated-user.fixtures';
 
@@ -22,6 +23,25 @@ const actor = buildAuthenticatedUserFixture({
 });
 
 const visitId = '11111111-1111-4111-8111-111111111111';
+
+/**
+ * Asserta que a promise rejeita com `VALIDATION_FAILED` (400) e que a mensagem
+ * final traz o detalhe específico interpolado — nunca o placeholder literal
+ * `[DETAILS]` (regressão do bug da chave `MESSAGE` vs `DETAILS`).
+ */
+async function expectValidation(
+  promise: Promise<unknown>,
+  expectedDetail: string,
+): Promise<void> {
+  await expect(promise).rejects.toBeInstanceOf(CustomHttpException);
+  await promise.catch((e) => {
+    const err = e as CustomHttpException;
+    expect(err.getErrorCode()).toBe(ErrorCode.VALIDATION_FAILED);
+    const { message } = err.getResponse() as { message: string };
+    expect(message).toContain(expectedDetail);
+    expect(message).not.toContain('[DETAILS]');
+  });
+}
 
 describe('AddTechnicalVisitImageService', () => {
   let service: AddTechnicalVisitImageService;
@@ -48,7 +68,7 @@ describe('AddTechnicalVisitImageService', () => {
         delete: jest.fn(),
         getPresignedUrl: jest.fn().mockResolvedValue('https://signed'),
       } as unknown as StorageService,
-      { getMessage: jest.fn() } as unknown as ErrorMessageService,
+      new ErrorMessageService(),
     );
   });
 
@@ -60,12 +80,73 @@ describe('AddTechnicalVisitImageService', () => {
     expect(upload).not.toHaveBeenCalled();
   });
 
-  it('rejeita imagem vazia', async () => {
-    findById.mockResolvedValue(buildTechnicalVisitFixture({ id: visitId }));
-    const empty: Express.Multer.File = { ...image, size: 0 };
-    await expect(
-      service.execute(visitId, TechnicalVisitImageSection.fence, empty, actor),
-    ).rejects.toBeInstanceOf(CustomHttpException);
+  describe('validação da imagem (com visita existente)', () => {
+    beforeEach(() => {
+      findById.mockResolvedValue(buildTechnicalVisitFixture({ id: visitId }));
+    });
+
+    it('rejeita imagem ausente com detalhe interpolado', async () => {
+      await expectValidation(
+        service.execute(
+          visitId,
+          TechnicalVisitImageSection.fence,
+          undefined,
+          actor,
+        ),
+        'a imagem é obrigatória',
+      );
+      expect(upload).not.toHaveBeenCalled();
+    });
+
+    it('rejeita imagem vazia (0 bytes) com detalhe interpolado', async () => {
+      const empty: Express.Multer.File = { ...image, size: 0 };
+      await expectValidation(
+        service.execute(
+          visitId,
+          TechnicalVisitImageSection.fence,
+          empty,
+          actor,
+        ),
+        'não pode estar vazia',
+      );
+      expect(upload).not.toHaveBeenCalled();
+    });
+
+    it('rejeita mimetype não permitido com detalhe interpolado', async () => {
+      const gif: Express.Multer.File = { ...image, mimetype: 'image/gif' };
+      await expectValidation(
+        service.execute(visitId, TechnicalVisitImageSection.fence, gif, actor),
+        'jpg, png ou webp',
+      );
+      expect(upload).not.toHaveBeenCalled();
+    });
+
+    it('rejeita imagem acima de 5 MB com detalhe interpolado', async () => {
+      const big: Express.Multer.File = { ...image, size: 6 * 1024 * 1024 };
+      await expectValidation(
+        service.execute(visitId, TechnicalVisitImageSection.fence, big, actor),
+        'excede o limite de 5 MB',
+      );
+      expect(upload).not.toHaveBeenCalled();
+    });
+
+    it('rejeita conteúdo divergente do mimetype declarado (magic bytes)', async () => {
+      const spoofed: Express.Multer.File = {
+        ...image,
+        mimetype: 'image/png',
+        buffer: Buffer.from([0xff, 0xd8, 0xff]),
+      };
+      await expectValidation(
+        service.execute(
+          visitId,
+          TechnicalVisitImageSection.fence,
+          spoofed,
+          actor,
+        ),
+        'não corresponde a uma imagem',
+      );
+      expect(upload).not.toHaveBeenCalled();
+    });
   });
 
   it('faz upload e persiste metadados', async () => {

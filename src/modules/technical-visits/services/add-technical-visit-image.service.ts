@@ -109,10 +109,16 @@ export class AddTechnicalVisitImageService {
     }
   }
 
-  private validation(message: string): CustomHttpException {
+  /**
+   * Constrói uma exceção `VALIDATION_FAILED` (400) interpolando o detalhe no
+   * placeholder `[DETAILS]` do template da mensagem, espelhando o helper de
+   * `groups`. A chave tem de ser `DETAILS` (não `MESSAGE`), caso contrário o
+   * motivo específico não é substituído na resposta.
+   */
+  private validation(details: string): CustomHttpException {
     return new CustomHttpException(
       this.errorMessageService.getMessage(ErrorCode.VALIDATION_FAILED, {
-        MESSAGE: message,
+        DETAILS: details,
       }),
       HttpStatus.BAD_REQUEST,
       ErrorCode.VALIDATION_FAILED,
