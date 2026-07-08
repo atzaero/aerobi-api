@@ -11,6 +11,23 @@ export function buildTechnicalVisitCreateInput(
   const { aerodromeId, ...rest } = dto;
   return {
     ...rest,
+    /**
+     * Booleans do checklist: ausência no payload ⇒ `false` (paridade com o
+     * `.default(false)` do Zod no web), nunca NULL na coluna `Boolean?`.
+     */
+    hasGatesPadlocks: dto.hasGatesPadlocks ?? false,
+    hasFence: dto.hasFence ?? false,
+    hasStandardPlate: dto.hasStandardPlate ?? false,
+    hasQualityHoles: dto.hasQualityHoles ?? false,
+    hasQualityAsphalt: dto.hasQualityAsphalt ?? false,
+    hasQualityOthers: dto.hasQualityOthers ?? false,
+    hasHorizontalSignage: dto.hasHorizontalSignage ?? false,
+    hasUnobstructedHeadboards: dto.hasUnobstructedHeadboards ?? false,
+    hasTrackRange: dto.hasTrackRange ?? false,
+    pavementRegularity: dto.pavementRegularity ?? false,
+    hasTrashDebris: dto.hasTrashDebris ?? false,
+    hasDelimitedPerimeter: dto.hasDelimitedPerimeter ?? false,
+    hasInvasion: dto.hasInvasion ?? false,
     modifierUsers: [actorId],
     modifierAtTimes: [createdAt],
     createdBy: actorId,
