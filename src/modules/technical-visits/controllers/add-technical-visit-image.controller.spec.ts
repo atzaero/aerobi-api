@@ -31,7 +31,7 @@ describe('AddTechnicalVisitImageController', () => {
     } as unknown as AddTechnicalVisitImageService);
   });
 
-  it('delega upload com visita, seção, arquivo e ator', async () => {
+  it('delega upload com visita, seção, arquivo, ator e contexto de audit', async () => {
     const params: TechnicalVisitParamDTO = { technicalVisitId: visitId };
     const body: AddTechnicalVisitImageBodyDTO = {
       section: TechnicalVisitImageSection.fence,
@@ -39,10 +39,17 @@ describe('AddTechnicalVisitImageController', () => {
     const file = { buffer: Buffer.from('x') } as Express.Multer.File;
     const row = new TechnicalVisitImageResponseDTO();
     execute.mockResolvedValue(row);
+    const request = { headers: {} } as never;
 
-    await expect(controller.handle(params, body, file, actor)).resolves.toBe(
-      row,
+    await expect(
+      controller.handle(params, body, file, actor, request),
+    ).resolves.toBe(row);
+    expect(execute).toHaveBeenCalledWith(
+      visitId,
+      body.section,
+      file,
+      actor,
+      expect.objectContaining({ actorId: actor.id }),
     );
-    expect(execute).toHaveBeenCalledWith(visitId, body.section, file, actor);
   });
 });

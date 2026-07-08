@@ -5,13 +5,16 @@ import {
   HttpStatus,
   Param,
   Post,
+  Req,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags } from '@nestjs/swagger';
+import type { Request } from 'express';
 
+import { buildAuditContext } from '@/modules/audit/utils/audit-context.util';
 import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator';
 import { RequirePermission } from '@/modules/auth/decorators/require-permission.decorator';
 import { RequiresGroupScope } from '@/modules/auth/decorators/requires-group-scope.decorator';
@@ -49,12 +52,14 @@ export class AddTechnicalVisitImageController {
     @Body() body: AddTechnicalVisitImageBodyDTO,
     @UploadedFile() image: Express.Multer.File | undefined,
     @CurrentUser() actor: AuthenticatedUser,
+    @Req() request: Request,
   ): Promise<TechnicalVisitImageResponseDTO> {
     return this.service.execute(
       params.technicalVisitId,
       body.section,
       image,
       actor,
+      buildAuditContext(actor, request),
     );
   }
 }

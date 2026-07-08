@@ -1,4 +1,5 @@
 import {
+  AuditAction,
   UserRole,
   TechnicalVisitImageSection,
 } from '@/generated/prisma/client';
@@ -6,6 +7,7 @@ import {
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
+import type { AuditRecorderService } from '@/modules/audit/services/audit-recorder.service';
 import { buildAuthenticatedUserFixture } from '@/modules/auth/testing/authenticated-user.fixtures';
 
 import { buildTechnicalVisitFixture } from '../testing/technical-visit.entity.fixture';
@@ -48,6 +50,7 @@ describe('AddTechnicalVisitImageService', () => {
   let findById: jest.Mock;
   let create: jest.Mock;
   let upload: jest.Mock;
+  let record: jest.Mock;
 
   const image = {
     originalname: 'foto.jpg',
@@ -60,6 +63,7 @@ describe('AddTechnicalVisitImageService', () => {
     findById = jest.fn();
     create = jest.fn();
     upload = jest.fn();
+    record = jest.fn().mockResolvedValue(undefined);
     service = new AddTechnicalVisitImageService(
       { findById } as unknown as TechnicalVisitRepository,
       { create } as unknown as TechnicalVisitImageRepository,
@@ -69,6 +73,7 @@ describe('AddTechnicalVisitImageService', () => {
         getPresignedUrl: jest.fn().mockResolvedValue('https://signed'),
       } as unknown as StorageService,
       new ErrorMessageService(),
+      { record } as unknown as AuditRecorderService,
     );
   });
 
@@ -167,5 +172,23 @@ describe('AddTechnicalVisitImageService', () => {
     expect(out.id).toBe(saved.id);
     expect(out.imageUrl).toBe('https://signed');
     expect(out).not.toHaveProperty('imageKey');
+    expect(record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: AuditAction.CREATE,
+        entityType: 'technical_visit_image',
+        entityId: saved.id,
+      }),
+      expect.anything(),
+    );
+  });
+
+  it('não grava auditoria quando a validação falha', async () => {
+    findById.mockResolvedValue(buildTechnicalVisitFixture({ id: visitId }));
+    const gif: Express.Multer.File = { ...image, mimetype: 'image/gif' };
+    await expectValidation(
+      service.execute(visitId, TechnicalVisitImageSection.fence, gif, actor),
+      'jpg, png ou webp',
+    );
+    expect(record).not.toHaveBeenCalled();
   });
 });
