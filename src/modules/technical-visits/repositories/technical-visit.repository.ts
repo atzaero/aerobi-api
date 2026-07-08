@@ -19,6 +19,7 @@ const activeWhere: Pick<Prisma.TechnicalVisitWhereInput, 'deletedAt'> = {
 const listOrderBy: Prisma.TechnicalVisitOrderByWithRelationInput[] = [
   { visitAt: 'desc' },
   { createdAt: 'desc' },
+  { id: 'desc' },
 ];
 
 @Injectable()

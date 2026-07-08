@@ -4,6 +4,7 @@ import { TechnicalVisitResponseDTO } from '../dtos/technical-visit-response.dto'
 import { TechnicalVisitMapper } from '../mappers/technical-visit.mapper';
 import type { TechnicalVisitWithAerodrome } from '../types/technical-visit-with-aerodrome.type';
 import {
+  buildTechnicalVisitModifierUserMap,
   collectTechnicalVisitModifierUserIds,
   mapTechnicalVisitModifiers,
   resolveTechnicalVisitModifiers,
@@ -29,12 +30,7 @@ export async function toTechnicalVisitApiRows(
 
   const ids = collectTechnicalVisitModifierUserIds(entities);
   const users = ids.length > 0 ? await userRepository.findManyByIds(ids) : [];
-  const byId = new Map(
-    users.map((user) => [
-      user.id,
-      { id: user.id, name: user.name, email: user.email },
-    ]),
-  );
+  const byId = buildTechnicalVisitModifierUserMap(users);
 
   return entities.map((entity) => {
     const modifiers = mapTechnicalVisitModifiers(
