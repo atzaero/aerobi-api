@@ -5,6 +5,8 @@ import { UserRole } from '@/generated/prisma/client';
 
 import {
   type ActorGroupLookup,
+  type UserGroupScope,
+  assertAerodromeInScope,
   resolveActorGroupScope,
   resolveOperationalActorScope,
 } from './group-scope.util';
@@ -128,5 +130,77 @@ describe('resolveOperationalActorScope', () => {
         ErrorCode.ACCOUNT_DELETED,
       );
     });
+  });
+});
+
+describe('assertAerodromeInScope', () => {
+  const aid = '22222222-2222-4222-8222-222222222222';
+  /** Shape rico (documents/maintenances): preserva `uf` no retorno. */
+  const aerodrome = { groupId: 'grp-1', uf: 'MG' };
+
+  it('all → passa e devolve o aeródromo (tipo concreto preservado)', () => {
+    const result = assertAerodromeInScope(
+      aerodrome,
+      { kind: 'all' },
+      errorMessageService,
+      aid,
+    );
+    expect(result).toBe(aerodrome);
+    expect(result.uf).toBe('MG');
+  });
+
+  it('group do mesmo grupo → passa', () => {
+    const scope: UserGroupScope = { kind: 'group', groupId: 'grp-1' };
+    expect(
+      assertAerodromeInScope(aerodrome, scope, errorMessageService, aid),
+    ).toBe(aerodrome);
+  });
+
+  it('shape mínimo (technical-visits, só groupId) → passa', () => {
+    const minimal = { groupId: 'grp-1' };
+    expect(
+      assertAerodromeInScope(
+        minimal,
+        { kind: 'group', groupId: 'grp-1' },
+        errorMessageService,
+        aid,
+      ),
+    ).toBe(minimal);
+  });
+
+  it('inexistente (null) → 404', () => {
+    expect(() =>
+      assertAerodromeInScope(null, { kind: 'all' }, errorMessageService, aid),
+    ).toThrow(CustomHttpException);
+  });
+
+  it('none (sem grupo provisionado) → 404', () => {
+    expect(() =>
+      assertAerodromeInScope(
+        aerodrome,
+        { kind: 'none' },
+        errorMessageService,
+        aid,
+      ),
+    ).toThrow(CustomHttpException);
+  });
+
+  it('group de outro grupo → 404 (não vaza existência)', () => {
+    const scope: UserGroupScope = { kind: 'group', groupId: 'outro' };
+    expect(() =>
+      assertAerodromeInScope(aerodrome, scope, errorMessageService, aid),
+    ).toThrow(CustomHttpException);
+  });
+
+  it('404 usa RESOURCE_NOT_FOUND', () => {
+    try {
+      assertAerodromeInScope(null, { kind: 'all' }, errorMessageService, aid);
+      throw new Error('esperava lançar');
+    } catch (e) {
+      expect((e as CustomHttpException).getErrorCode()).toBe(
+        ErrorCode.RESOURCE_NOT_FOUND,
+      );
+      expect((e as CustomHttpException).getStatus()).toBe(404);
+    }
   });
 });

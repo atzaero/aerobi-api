@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
-import { resolveOperationalActorScope } from '@/common/utils/group-scope.util';
+import {
+  assertAerodromeInScope,
+  resolveOperationalActorScope,
+} from '@/common/utils/group-scope.util';
 import { AuditAction } from '@/generated/prisma/client';
 import { AuditRecorderService } from '@/modules/audit/services/audit-recorder.service';
 import type { RecordAuditContext } from '@/modules/audit/services/audit-recorder.service';
@@ -12,7 +15,6 @@ import { CreateTechnicalVisitDTO } from '../dtos/create-technical-visit.dto';
 import { TechnicalVisitResponseDTO } from '../dtos/technical-visit-response.dto';
 import { buildTechnicalVisitCreateInput } from '../mappers/technical-visit.prisma.mapper';
 import { TechnicalVisitRepository } from '../repositories/technical-visit.repository';
-import { assertAerodromeOperationalScope } from '../utils/assert-aerodrome-operational-scope';
 import { technicalVisitAuditSnapshot } from '../utils/technical-visit-audit';
 import { toTechnicalVisitApiRow } from '../utils/technical-visit-response';
 
@@ -40,7 +42,7 @@ export class CreateTechnicalVisitService {
     const aerodrome = await this.repo.findAerodromeGroupForScope(
       dto.aerodromeId,
     );
-    assertAerodromeOperationalScope(
+    assertAerodromeInScope(
       aerodrome,
       scope,
       this.errorMessageService,

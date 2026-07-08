@@ -4,7 +4,10 @@ import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { httpError } from '@/common/exceptions/http-error.util';
 import { getErrorMessage } from '@/common/utils/error.util';
-import { resolveOperationalActorScope } from '@/common/utils/group-scope.util';
+import {
+  assertAerodromeInScope,
+  resolveOperationalActorScope,
+} from '@/common/utils/group-scope.util';
 import { AuditAction, DocumentType } from '@/generated/prisma/client';
 import { AuditRecorderService } from '@/modules/audit/services/audit-recorder.service';
 import type { RecordAuditContext } from '@/modules/audit/services/audit-recorder.service';
@@ -24,7 +27,6 @@ import { DocumentMapper } from '../mappers/document.mapper';
 import { buildDocumentCreateInput } from '../mappers/document.prisma.mapper';
 import { DocumentRepository } from '../repositories/document.repository';
 import { isAllowedAerodromeFile } from '../utils/aerodrome-file';
-import { assertAerodromeInScope } from '../utils/assert-aerodrome-in-scope';
 import { documentAuditSnapshot } from '../utils/document-audit';
 import { buildDocumentStorageKey } from '../utils/document-storage';
 
