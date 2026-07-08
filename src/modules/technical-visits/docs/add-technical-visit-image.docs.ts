@@ -4,7 +4,6 @@ import {
   ApiBody,
   ApiConsumes,
   ApiCreatedResponse,
-  ApiOkResponse,
   ApiOperation,
 } from '@nestjs/swagger';
 
@@ -27,29 +26,6 @@ export function AddTechnicalVisitImageDocs() {
       },
     }),
     ApiCreatedResponse({
-      type: TechnicalVisitImageResponseDTO,
-      schema: { example: TECHNICAL_VISIT_IMAGE_RESPONSE_EXAMPLE },
-    }),
-  );
-}
-
-export function ListTechnicalVisitImagesDocs() {
-  return applyDecorators(
-    ApiBearerAuth(),
-    ApiOperation({ summary: 'Lista imagens ativas da visita técnica' }),
-    ApiOkResponse({
-      type: TechnicalVisitImageResponseDTO,
-      isArray: true,
-      schema: { example: [TECHNICAL_VISIT_IMAGE_RESPONSE_EXAMPLE] },
-    }),
-  );
-}
-
-export function RemoveTechnicalVisitImageDocs() {
-  return applyDecorators(
-    ApiBearerAuth(),
-    ApiOperation({ summary: 'Remove (soft delete) imagem da visita técnica' }),
-    ApiOkResponse({
       type: TechnicalVisitImageResponseDTO,
       schema: { example: TECHNICAL_VISIT_IMAGE_RESPONSE_EXAMPLE },
     }),
