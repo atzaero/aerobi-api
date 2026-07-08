@@ -1,8 +1,7 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
-import { ErrorCode } from '@/common/enums/error-code.enum';
-import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
+import { resourceNotFound } from '@/common/utils/resource-not-found.util';
 import { AuditAction } from '@/generated/prisma/client';
 import { AuditRecorderService } from '@/modules/audit/services/audit-recorder.service';
 import type { RecordAuditContext } from '@/modules/audit/services/audit-recorder.service';
@@ -38,14 +37,7 @@ export class UpdateTechnicalVisitService {
 
     const existing = await this.repo.findByIdWithAerodrome(id);
     if (!existing) {
-      throw new CustomHttpException(
-        this.errorMessageService.getMessage(ErrorCode.RESOURCE_NOT_FOUND, {
-          RESOURCE: 'Visita técnica',
-          ID: id,
-        }),
-        HttpStatus.NOT_FOUND,
-        ErrorCode.RESOURCE_NOT_FOUND,
-      );
+      throw resourceNotFound(this.errorMessageService, 'Visita técnica', id);
     }
 
     const before = technicalVisitAuditSnapshot(existing);

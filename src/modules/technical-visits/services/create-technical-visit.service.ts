@@ -7,7 +7,6 @@ import { AuditRecorderService } from '@/modules/audit/services/audit-recorder.se
 import type { RecordAuditContext } from '@/modules/audit/services/audit-recorder.service';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 import { UserRepository } from '@/modules/users/repositories/user.repository';
-import { PrismaService } from '@/prisma/prisma.service';
 
 import { CreateTechnicalVisitDTO } from '../dtos/create-technical-visit.dto';
 import { TechnicalVisitResponseDTO } from '../dtos/technical-visit-response.dto';
@@ -22,7 +21,6 @@ export class CreateTechnicalVisitService {
   constructor(
     private readonly repo: TechnicalVisitRepository,
     private readonly userRepository: UserRepository,
-    private readonly prisma: PrismaService,
     private readonly errorMessageService: ErrorMessageService,
     private readonly auditRecorder: AuditRecorderService,
   ) {}
@@ -39,11 +37,14 @@ export class CreateTechnicalVisitService {
       this.errorMessageService,
     );
 
-    await assertAerodromeOperationalScope(
-      this.prisma,
+    const aerodrome = await this.repo.findAerodromeGroupForScope(
+      dto.aerodromeId,
+    );
+    assertAerodromeOperationalScope(
+      aerodrome,
+      scope,
       this.errorMessageService,
       dto.aerodromeId,
-      scope,
     );
 
     const row = await this.repo.create(

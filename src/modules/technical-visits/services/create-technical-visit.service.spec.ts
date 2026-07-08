@@ -5,7 +5,6 @@ import type { ErrorMessageService } from '@/common/error-messages/error-message.
 import type { AuditRecorderService } from '@/modules/audit/services/audit-recorder.service';
 import { buildAuthenticatedUserFixture } from '@/modules/auth/testing/authenticated-user.fixtures';
 import type { UserRepository } from '@/modules/users/repositories/user.repository';
-import type { PrismaService } from '@/prisma/prisma.service';
 
 import type { CreateTechnicalVisitDTO } from '../dtos/create-technical-visit.dto';
 import { buildTechnicalVisitCreateInput } from '../mappers/technical-visit.prisma.mapper';
@@ -30,18 +29,15 @@ describe('CreateTechnicalVisitService', () => {
   let service: CreateTechnicalVisitService;
   let create: jest.Mock;
   let findActiveById: jest.Mock;
-  let aerodromeFindFirst: jest.Mock;
+  let findAerodromeGroupForScope: jest.Mock;
 
   beforeEach(() => {
     create = jest.fn();
     findActiveById = jest.fn().mockResolvedValue({ groupId: 'g1' });
-    aerodromeFindFirst = jest.fn().mockResolvedValue({
-      id: 'a1',
-      groupId: 'g1',
-      group: { uf: 'GO' },
-    });
+    findAerodromeGroupForScope = jest.fn().mockResolvedValue({ groupId: 'g1' });
     const repo = {
       create,
+      findAerodromeGroupForScope,
     } as unknown as TechnicalVisitRepository;
     service = new CreateTechnicalVisitService(
       repo,
@@ -49,9 +45,6 @@ describe('CreateTechnicalVisitService', () => {
         findActiveById,
         findManyByIds: jest.fn().mockResolvedValue([]),
       } as unknown as UserRepository,
-      {
-        aerodrome: { findFirst: aerodromeFindFirst },
-      } as unknown as PrismaService,
       { getMessage: jest.fn() } as unknown as ErrorMessageService,
       { record: jest.fn() } as unknown as AuditRecorderService,
     );
@@ -85,11 +78,6 @@ describe('CreateTechnicalVisitService', () => {
 
   it('404 quando coordinator sem grupo tenta criar', async () => {
     findActiveById.mockResolvedValue({ groupId: null });
-    aerodromeFindFirst.mockResolvedValue({
-      id: '22222222-2222-4222-8222-222222222222',
-      groupId: 'g1',
-      group: { uf: 'GO' },
-    });
     const dto: CreateTechnicalVisitDTO = {
       aerodromeId: '22222222-2222-4222-8222-222222222222',
       visitorName: 'Vistoriador',
@@ -104,11 +92,7 @@ describe('CreateTechnicalVisitService', () => {
 
   it('404 quando aeródromo está fora do grupo do ator', async () => {
     findActiveById.mockResolvedValue({ groupId: 'g1' });
-    aerodromeFindFirst.mockResolvedValue({
-      id: '22222222-2222-4222-8222-222222222222',
-      groupId: 'g-other',
-      group: { uf: 'GO' },
-    });
+    findAerodromeGroupForScope.mockResolvedValue({ groupId: 'g-other' });
     const dto: CreateTechnicalVisitDTO = {
       aerodromeId: '22222222-2222-4222-8222-222222222222',
       visitorName: 'Vistoriador',
@@ -121,6 +105,20 @@ describe('CreateTechnicalVisitService', () => {
         buildAuthenticatedUserFixture({ role: UserRole.OPERATOR }),
       ),
     ).rejects.toBeInstanceOf(CustomHttpException);
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it('404 quando aeródromo não existe (repo devolve null)', async () => {
+    findAerodromeGroupForScope.mockResolvedValue(null);
+    const dto: CreateTechnicalVisitDTO = {
+      aerodromeId: '22222222-2222-4222-8222-222222222222',
+      visitorName: 'Vistoriador',
+      city: 'Goiânia',
+      visitAt: new Date('2024-03-01T08:00:00.000Z'),
+    };
+    await expect(service.execute(dto, actor)).rejects.toBeInstanceOf(
+      CustomHttpException,
+    );
     expect(create).not.toHaveBeenCalled();
   });
 });
