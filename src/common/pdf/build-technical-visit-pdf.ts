@@ -4,14 +4,17 @@ import type { TechnicalVisitImageSection } from '@/generated/prisma/client';
 
 import type { TechnicalVisitResponseDTO } from '@/modules/technical-visits/dtos/technical-visit-response.dto';
 
+/** Buffers das imagens já baixadas do storage, agrupados por seção de inspeção. */
 export interface TechnicalVisitPdfImageBuffers {
   bySection: Partial<Record<TechnicalVisitImageSection, Buffer[]>>;
 }
 
+/** Marca de checklist `[X]`/`[ ]` para um item booleano do formulário. */
 function check(value: boolean | null | undefined): string {
   return value ? '[X]' : '[ ]';
 }
 
+/** Formata a data da visita em `dd/mm/aaaa` (pt-BR). */
 function formatVisitDate(visitAt: string): string {
   return new Date(visitAt).toLocaleDateString('pt-BR', {
     day: '2-digit',
@@ -20,6 +23,7 @@ function formatVisitDate(visitAt: string): string {
   });
 }
 
+/** Formata a data/hora de um modificador em `dd/mm/aaaa hh:mm` (pt-BR); vazio se ausente. */
 function formatModifierDate(date: string | null): string {
   if (!date) return '';
   return new Date(date).toLocaleString('pt-BR', {
@@ -31,6 +35,11 @@ function formatModifierDate(date: string | null): string {
   });
 }
 
+/**
+ * Desenha as imagens de uma seção num grid de 2 colunas, quebrando a página
+ * quando a próxima linha ultrapassaria a margem inferior. Imagem inválida é
+ * omitida sem derrubar o PDF.
+ */
 function writeImageGrid(
   doc: PDFKit.PDFDocument,
   buffers: Buffer[] | undefined,
@@ -60,6 +69,7 @@ function writeImageGrid(
   doc.moveDown(0.4);
 }
 
+/** Escreve um item de inspeção: marca + label, observação opcional e o grid de fotos. */
 function writeInspectionItem(
   doc: PDFKit.PDFDocument,
   label: string,

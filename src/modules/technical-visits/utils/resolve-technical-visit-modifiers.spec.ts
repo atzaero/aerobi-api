@@ -31,4 +31,11 @@ describe('mapTechnicalVisitModifiers', () => {
     );
     expect(rows[0].date).toBeNull();
   });
+
+  it('entrada legada não-UUID preserva a string bruta em name/email', () => {
+    const rows = mapTechnicalVisitModifiers(['fulano@legado.com'], [at], users);
+    expect(rows[0].userId).toBeNull();
+    expect(rows[0].name).toBe('fulano@legado.com');
+    expect(rows[0].email).toBe('fulano@legado.com');
+  });
 });

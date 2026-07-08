@@ -29,6 +29,12 @@ import { RemoveTechnicalVisitImageService } from './services/remove-technical-vi
 import { RemoveTechnicalVisitService } from './services/remove-technical-visit.service';
 import { UpdateTechnicalVisitService } from './services/update-technical-visit.service';
 
+/**
+ * Módulo de visitas técnicas: CRUD + imagens por seção (MinIO) + export PDF,
+ * sob autenticação JWT e escopo operacional por grupo (`JwtAuthGuard` +
+ * `PermissionsGuard` + `GroupScopeGuard`). Importa `StorageModule` (imagens),
+ * `AuditModule` (trilha de mutações) e `UsersModule` (resolução de modificadores).
+ */
 @Module({
   imports: [PrismaModule, AuthModule, UsersModule, StorageModule, AuditModule],
   controllers: [
