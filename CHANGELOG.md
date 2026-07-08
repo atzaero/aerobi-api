@@ -1,3 +1,10 @@
+# [2.6.0-beta.50](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.49...v2.6.0-beta.50) (2026-07-08)
+
+
+### Features
+
+* **technical-visits:** paridade web com imagens, PDF e escopo JWT ([#511](https://github.com/atzaero/aerobi-api/issues/511)) ([2dacba0](https://github.com/atzaero/aerobi-api/commit/2dacba01006d76835a9db94c05b6b9523bafec75))
+
 # [2.6.0-beta.49](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.48...v2.6.0-beta.49) (2026-07-07)
 
 
