@@ -3,6 +3,7 @@ import { HttpStatus } from '@nestjs/common';
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
+import { resourceNotFound } from '@/common/utils/resource-not-found.util';
 import { UserRole } from '@/generated/prisma/client';
 
 /**
@@ -141,4 +142,35 @@ export function resolveOperationalActorScope(
     errorMessageService,
     OPERATIONAL_SCOPED_ROLES,
   );
+}
+
+/**
+ * Predicado **puro** de escopo por registro (record-level) sobre o aeródromo de
+ * destino, usado no create/upload quando o `aerodromeId` vem no corpo — caso em
+ * que o `GroupScopeGuard` não consegue resolver o escopo por grupo. Aeródromo
+ * inexistente/soft-deletado (`null`), `scope.none` (sem grupo provisionado) ou
+ * fora do grupo do ator ⇒ **404** (não vaza existência), espelhando
+ * `assertAerodromeAccess`/`assertAerodromeOperationalAccess` do `aerobi-web`.
+ * ADMIN (`scope.all`) passa direto.
+ *
+ * Genérico em `T extends { groupId: string }`: devolve o aeródromo já estreitado
+ * para não-`null`, preservando o tipo concreto do chamador (ex.: `documents`
+ * deriva `uf` do retorno). O carregamento do aeródromo fica no repositório/
+ * serviço; aqui só o gate. Centraliza o predicado antes triplicado em
+ * `documents`, `technical-visits` e `maintenances`.
+ */
+export function assertAerodromeInScope<T extends { groupId: string }>(
+  aerodrome: T | null,
+  scope: UserGroupScope,
+  errorMessageService: ErrorMessageService,
+  aerodromeId: string,
+): T {
+  if (
+    !aerodrome ||
+    scope.kind === 'none' ||
+    (scope.kind === 'group' && aerodrome.groupId !== scope.groupId)
+  ) {
+    throw resourceNotFound(errorMessageService, 'Aeródromo', aerodromeId);
+  }
+  return aerodrome;
 }
