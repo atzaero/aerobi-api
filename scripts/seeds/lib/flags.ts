@@ -10,10 +10,8 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { Uf } from '@/generated/prisma/enums';
-import {
-  detectImageMimetype,
-  MAX_GROUP_IMAGE_SIZE_BYTES,
-} from '@/modules/groups/utils/group-image';
+import { MAX_GROUP_IMAGE_SIZE_BYTES } from '@/modules/groups/utils/group-image';
+import { detectImageMimetype } from '@/modules/storage/utils/image-mimetype';
 
 /** Diretório dos PNGs versionados, relativo a este arquivo. */
 const FLAGS_DIR = path.resolve(__dirname, '..', 'assets', 'flags');

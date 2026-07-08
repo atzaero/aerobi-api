@@ -11,6 +11,7 @@ import { AuditRecorderService } from '@/modules/audit/services/audit-recorder.se
 import type { RecordAuditContext } from '@/modules/audit/services/audit-recorder.service';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 import { StorageService } from '@/modules/storage/services/storage.service';
+import { assertValidImageUpload } from '@/modules/storage/utils/assert-valid-image-upload';
 
 import { TechnicalVisitImageResponseDTO } from '../dtos/technical-visit-image-response.dto';
 import { TechnicalVisitImageMapper } from '../mappers/technical-visit-image.mapper';
@@ -18,8 +19,6 @@ import { TechnicalVisitImageRepository } from '../repositories/technical-visit-i
 import { TechnicalVisitRepository } from '../repositories/technical-visit.repository';
 import {
   buildTechnicalVisitImageKey,
-  detectImageMimetype,
-  isAllowedImageMimetype,
   MAX_TECHNICAL_VISIT_IMAGE_BYTES,
 } from '../utils/technical-visit-image';
 import { technicalVisitImageAuditSnapshot } from '../utils/technical-visit-image-audit';
@@ -52,23 +51,9 @@ export class AddTechnicalVisitImageService {
       );
     }
 
-    if (!image) {
-      throw this.validation('a imagem é obrigatória (campo `image`)');
-    }
-    if (image.size === 0) {
-      throw this.validation('a imagem não pode estar vazia (0 bytes)');
-    }
-    if (!isAllowedImageMimetype(image.mimetype)) {
-      throw this.validation('a imagem deve ser jpg, png ou webp');
-    }
-    if (image.size > MAX_TECHNICAL_VISIT_IMAGE_BYTES) {
-      throw this.validation('a imagem excede o limite de 5 MB');
-    }
-    if (detectImageMimetype(image.buffer) !== image.mimetype) {
-      throw this.validation(
-        'o conteúdo do arquivo não corresponde a uma imagem jpg, png ou webp',
-      );
-    }
+    assertValidImageUpload(image, this.errorMessageService, {
+      maxBytes: MAX_TECHNICAL_VISIT_IMAGE_BYTES,
+    });
 
     const key = buildTechnicalVisitImageKey(
       technicalVisitId,
@@ -124,21 +109,5 @@ export class AddTechnicalVisitImageService {
       }
       throw err;
     }
-  }
-
-  /**
-   * Constrói uma exceção `VALIDATION_FAILED` (400) interpolando o detalhe no
-   * placeholder `[DETAILS]` do template da mensagem, espelhando o helper de
-   * `groups`. A chave tem de ser `DETAILS` (não `MESSAGE`), caso contrário o
-   * motivo específico não é substituído na resposta.
-   */
-  private validation(details: string): CustomHttpException {
-    return new CustomHttpException(
-      this.errorMessageService.getMessage(ErrorCode.VALIDATION_FAILED, {
-        DETAILS: details,
-      }),
-      HttpStatus.BAD_REQUEST,
-      ErrorCode.VALIDATION_FAILED,
-    );
   }
 }

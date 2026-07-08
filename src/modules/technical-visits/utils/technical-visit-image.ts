@@ -8,12 +8,6 @@ import {
 } from '@/modules/storage/keys';
 import type { TechnicalVisitImageSection } from '@/generated/prisma/client';
 
-export {
-  ALLOWED_IMAGE_MIMETYPES,
-  isAllowedImageMimetype,
-  detectImageMimetype,
-} from '@/modules/groups/utils/group-image';
-
 /** Tamanho máximo da imagem (5 MB), paridade com `add/action.ts` do web. */
 export const MAX_TECHNICAL_VISIT_IMAGE_BYTES = 5 * 1024 * 1024;
 

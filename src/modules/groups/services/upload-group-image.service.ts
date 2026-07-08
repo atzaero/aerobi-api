@@ -9,6 +9,7 @@ import { resourceNotFound } from '@/common/utils/resource-not-found.util';
 import type { Group } from '@/generated/prisma/client';
 import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 import { StorageService } from '@/modules/storage/services/storage.service';
+import { assertValidImageUpload } from '@/modules/storage/utils/assert-valid-image-upload';
 
 import { GroupResponseDTO } from '../dtos/group-response.dto';
 import { GroupImageRepository } from '../repositories/group-image.repository';
@@ -16,8 +17,6 @@ import { GroupRepository } from '../repositories/group.repository';
 import { toGroupApiRowWithImage } from '../utils/group-response';
 import {
   buildGroupImageKey,
-  detectImageMimetype,
-  isAllowedImageMimetype,
   MAX_GROUP_IMAGE_SIZE_BYTES,
 } from '../utils/group-image';
 
@@ -47,28 +46,9 @@ export class UploadGroupImageService {
       );
     }
 
-    if (!image) {
-      throw this.validation('a imagem é obrigatória (campo `image`)');
-    }
-    if (image.size === 0) {
-      throw this.validation('a imagem não pode estar vazia (0 bytes)');
-    }
-    if (!isAllowedImageMimetype(image.mimetype)) {
-      throw this.validation('a imagem deve ser jpg, png ou webp');
-    }
-    if (image.size > MAX_GROUP_IMAGE_SIZE_BYTES) {
-      throw this.validation('a imagem excede o limite de 5 MB');
-    }
-    /**
-     * O `mimetype` do Multer vem do header `Content-Type` da parte multipart e é
-     * forjável; valida o conteúdo real por magic bytes e cruza com o declarado.
-     * Rejeita bytes arbitrários, polyglots e extensão/tipo divergente.
-     */
-    if (detectImageMimetype(image.buffer) !== image.mimetype) {
-      throw this.validation(
-        'o conteúdo do arquivo não corresponde a uma imagem jpg, png ou webp',
-      );
-    }
+    assertValidImageUpload(image, this.errorMessageService, {
+      maxBytes: MAX_GROUP_IMAGE_SIZE_BYTES,
+    });
 
     const key = buildGroupImageKey(groupId, image.mimetype);
 
@@ -121,15 +101,5 @@ export class UploadGroupImageService {
     }
 
     return toGroupApiRowWithImage(this.storage, updated);
-  }
-
-  private validation(details: string): CustomHttpException {
-    return new CustomHttpException(
-      this.errorMessageService.getMessage(ErrorCode.VALIDATION_FAILED, {
-        DETAILS: details,
-      }),
-      HttpStatus.BAD_REQUEST,
-      ErrorCode.VALIDATION_FAILED,
-    );
   }
 }
