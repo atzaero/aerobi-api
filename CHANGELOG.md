@@ -1,3 +1,10 @@
+# [2.6.0-beta.53](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.52...v2.6.0-beta.53) (2026-07-09)
+
+
+### Features
+
+* **dashboard:** módulo de agregação por papel (paridade aerobi-web) ([c09965a](https://github.com/atzaero/aerobi-api/commit/c09965a290ec295eaa92f68e6b93b06a9243f3f5)), closes [#353](https://github.com/atzaero/aerobi-api/issues/353) [#373](https://github.com/atzaero/aerobi-api/issues/373) [#361](https://github.com/atzaero/aerobi-api/issues/361) [#373](https://github.com/atzaero/aerobi-api/issues/373)
+
 # [2.6.0-beta.52](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.51...v2.6.0-beta.52) (2026-07-08)
 
 
