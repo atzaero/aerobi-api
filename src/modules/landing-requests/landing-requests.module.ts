@@ -78,5 +78,7 @@ import { ValidatePilotLicenseService } from './services/validate-pilot-license.s
     ValidatePilotLicenseService,
     LookupRabAircraftService,
   ],
+  /** Exporta o repositório para agregação read-only pelo `DashboardModule`. */
+  exports: [LandingRequestRepository],
 })
 export class LandingRequestsModule {}

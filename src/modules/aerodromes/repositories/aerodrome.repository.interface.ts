@@ -8,6 +8,15 @@ export type AerodromeWithGroup = Prisma.AerodromeGetPayload<{
   include: { group: { select: { uf: true } } };
 }>;
 
+/** Linha mínima do snapshot de aeródromos do dashboard (contagens por flag). */
+export interface AerodromeDashboardSnapshotRow {
+  isOpen: boolean;
+  isView: boolean;
+  construction: boolean | null;
+  lit: boolean | null;
+  fueling: boolean | null;
+}
+
 export interface IAerodromeRepository {
   create(data: Prisma.AerodromeCreateInput): Promise<AerodromeWithGroup>;
 
@@ -34,4 +43,16 @@ export interface IAerodromeRepository {
    * create/update. `null` quando inexistente ou soft-deletado.
    */
   findActiveGroup(groupId: string): Promise<{ id: string } | null>;
+
+  /**
+   * Snapshot (sem faixa de tempo) das flags dos aeródromos ativos no escopo
+   * (`aerodromeIds` `null` = sem filtro; `[]` = nenhum), para as contagens do
+   * dashboard.
+   */
+  findForDashboardSnapshot(
+    aerodromeIds: string[] | null,
+  ): Promise<AerodromeDashboardSnapshotRow[]>;
+
+  /** IDs dos aeródromos ativos de um grupo — materializa o escopo do dashboard. */
+  findActiveIdsByGroup(groupId: string): Promise<string[]>;
 }

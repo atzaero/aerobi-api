@@ -6,6 +6,7 @@ import { PrismaService } from '@/prisma/prisma.service';
 import type {
   AerodromeScopeRef,
   ITechnicalVisitRepository,
+  TechnicalVisitDashboardRow,
 } from './technical-visit.repository.interface';
 import {
   technicalVisitWithAerodromeInclude,
@@ -83,6 +84,48 @@ export class TechnicalVisitRepository implements ITechnicalVisitRepository {
         AND: [{ ...where }, activeWhere],
       },
     });
+  }
+
+  async findForDashboard(
+    aerodromeIds: string[] | null,
+    fromMs: number,
+    toMs: number,
+  ): Promise<TechnicalVisitDashboardRow[]> {
+    const where: Prisma.TechnicalVisitWhereInput = {
+      ...activeWhere,
+      visitAt: { gte: new Date(fromMs), lte: new Date(toMs) },
+    };
+    if (aerodromeIds !== null) where.aerodromeId = { in: aerodromeIds };
+
+    const rows = await this.prisma.technicalVisit.findMany({
+      where,
+      select: {
+        visitAt: true,
+        hasGatesPadlocks: true,
+        hasFence: true,
+        hasStandardPlate: true,
+        hasQualityHoles: true,
+        hasHorizontalSignage: true,
+        hasUnobstructedHeadboards: true,
+        pavementRegularity: true,
+        hasTrashDebris: true,
+        hasDelimitedPerimeter: true,
+        hasInvasion: true,
+      },
+    });
+    return rows.map((r) => ({
+      visitAtMs: r.visitAt.getTime(),
+      hasGatesPadlocks: r.hasGatesPadlocks,
+      hasFence: r.hasFence,
+      hasStandardPlate: r.hasStandardPlate,
+      hasQualityHoles: r.hasQualityHoles,
+      hasHorizontalSignage: r.hasHorizontalSignage,
+      hasUnobstructedHeadboards: r.hasUnobstructedHeadboards,
+      pavementRegularity: r.pavementRegularity,
+      hasTrashDebris: r.hasTrashDebris,
+      hasDelimitedPerimeter: r.hasDelimitedPerimeter,
+      hasInvasion: r.hasInvasion,
+    }));
   }
 
   findAerodromeGroupForScope(

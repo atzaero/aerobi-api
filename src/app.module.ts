@@ -9,6 +9,7 @@ import { AuditModule } from '@/modules/audit/audit.module';
 import { AuthModule } from '@/modules/auth/auth.module';
 import { ConformityModule } from '@/modules/conformity/conformity.module';
 import { ContactModule } from '@/modules/contact/contact.module';
+import { DashboardModule } from '@/modules/dashboard/dashboard.module';
 import { DocumentsModule } from '@/modules/documents/documents.module';
 import { GeojsonsModule } from '@/modules/geojsons/geojsons.module';
 import { GroupsModule } from '@/modules/groups/groups.module';
@@ -73,6 +74,7 @@ import { PrismaModule } from '@/prisma/prisma.module';
     CamerasModule,
     CameraStreamsModule,
     AuditModule,
+    DashboardModule,
   ],
 })
 export class AppModule {}

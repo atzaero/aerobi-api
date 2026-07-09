@@ -4,6 +4,7 @@ import { Prisma } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 
 import type {
+  AerodromeDashboardSnapshotRow,
   AerodromeWithGroup,
   IAerodromeRepository,
 } from './aerodrome.repository.interface';
@@ -93,5 +94,31 @@ export class AerodromeRepository implements IAerodromeRepository {
       where: { id: groupId, deletedAt: null },
       select: { id: true },
     });
+  }
+
+  findForDashboardSnapshot(
+    aerodromeIds: string[] | null,
+  ): Promise<AerodromeDashboardSnapshotRow[]> {
+    const where: Prisma.AerodromeWhereInput = { ...activeWhere };
+    if (aerodromeIds !== null) where.id = { in: aerodromeIds };
+
+    return this.prisma.aerodrome.findMany({
+      where,
+      select: {
+        isOpen: true,
+        isView: true,
+        construction: true,
+        lit: true,
+        fueling: true,
+      },
+    });
+  }
+
+  async findActiveIdsByGroup(groupId: string): Promise<string[]> {
+    const rows = await this.prisma.aerodrome.findMany({
+      where: { groupId, ...activeWhere },
+      select: { id: true },
+    });
+    return rows.map((r) => r.id);
   }
 }

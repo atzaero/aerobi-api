@@ -10,6 +10,7 @@ import { PrismaService } from '@/prisma/prisma.service';
 import type {
   ILandingRequestRepository,
   LandingRequestAircraftCreateData,
+  LandingRequestDashboardRow,
   LandingRequestWithAircraft,
   TargetAerodrome,
 } from './landing-request.repository.interface';
@@ -108,6 +109,28 @@ export class LandingRequestRepository implements ILandingRequestRepository {
     return this.prisma.landingRequest.count({
       where: { AND: [{ ...where }, activeWhere] },
     });
+  }
+
+  async findForDashboard(
+    aerodromeIds: string[] | null,
+    fromMs: number,
+    toMs: number,
+  ): Promise<LandingRequestDashboardRow[]> {
+    const where: Prisma.LandingRequestWhereInput = {
+      ...activeWhere,
+      requestDate: { gte: new Date(fromMs), lte: new Date(toMs) },
+    };
+    if (aerodromeIds !== null) where.aerodromeId = { in: aerodromeIds };
+
+    const rows = await this.prisma.landingRequest.findMany({
+      where,
+      select: { requestDate: true, reviewedAt: true, status: true },
+    });
+    return rows.map((r) => ({
+      requestDateMs: r.requestDate.getTime(),
+      reviewedAtMs: r.reviewedAt ? r.reviewedAt.getTime() : null,
+      status: r.status,
+    }));
   }
 
   softDelete(id: string, deletedBy: string): Promise<LandingRequest> {

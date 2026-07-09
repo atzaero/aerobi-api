@@ -119,4 +119,62 @@ describe('AerodromeRepository', () => {
     groupFindFirst.mockResolvedValue(null);
     await expect(repository.findActiveGroup('nope')).resolves.toBeNull();
   });
+
+  describe('findForDashboardSnapshot', () => {
+    const snapshotSelect = {
+      isOpen: true,
+      isView: true,
+      construction: true,
+      lit: true,
+      fueling: true,
+    };
+
+    it('escopo `all` (null): só soft-delete, sem filtro de id', async () => {
+      findMany.mockResolvedValue([]);
+
+      await repository.findForDashboardSnapshot(null);
+
+      expect(findMany).toHaveBeenCalledWith({
+        where: { deletedAt: null },
+        select: snapshotSelect,
+      });
+    });
+
+    it('escopo `group`: filtra id por lista', async () => {
+      findMany.mockResolvedValue([]);
+
+      await repository.findForDashboardSnapshot(['a-1', 'a-2']);
+
+      expect(findMany).toHaveBeenCalledWith({
+        where: { deletedAt: null, id: { in: ['a-1', 'a-2'] } },
+        select: snapshotSelect,
+      });
+    });
+
+    it('escopo vazio (`none`): id `in: []` (nenhum aeródromo)', async () => {
+      findMany.mockResolvedValue([]);
+
+      await repository.findForDashboardSnapshot([]);
+
+      expect(findMany).toHaveBeenCalledWith({
+        where: { deletedAt: null, id: { in: [] } },
+        select: snapshotSelect,
+      });
+    });
+  });
+
+  describe('findActiveIdsByGroup', () => {
+    it('lista os ids ativos do grupo', async () => {
+      findMany.mockResolvedValue([{ id: 'a-1' }, { id: 'a-2' }]);
+
+      await expect(repository.findActiveIdsByGroup('g-1')).resolves.toEqual([
+        'a-1',
+        'a-2',
+      ]);
+      expect(findMany).toHaveBeenCalledWith({
+        where: { groupId: 'g-1', deletedAt: null },
+        select: { id: true },
+      });
+    });
+  });
 });

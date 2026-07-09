@@ -3,7 +3,12 @@ import { Injectable } from '@nestjs/common';
 import type { MaintenanceTask, Prisma } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 
-import type { IMaintenanceTaskRepository } from './maintenance-task.repository.interface';
+import { decimalToApiNumber } from '../mappers/maintenance-task.prisma.mapper';
+
+import type {
+  IMaintenanceTaskRepository,
+  MaintenanceTaskDashboardRow,
+} from './maintenance-task.repository.interface';
 
 @Injectable()
 export class MaintenanceTaskRepository implements IMaintenanceTaskRepository {
@@ -119,6 +124,38 @@ export class MaintenanceTaskRepository implements IMaintenanceTaskRepository {
           urgency: row.urgency,
         })),
       );
+  }
+
+  async findForDashboard(
+    aerodromeIds: readonly string[] | null,
+    fromMs: number,
+    toMs: number,
+  ): Promise<MaintenanceTaskDashboardRow[]> {
+    const where: Prisma.MaintenanceTaskWhereInput = {
+      deletedAt: null,
+      createdAt: { gte: new Date(fromMs), lte: new Date(toMs) },
+    };
+    if (aerodromeIds != null) {
+      where.maintenance = { aerodromeId: { in: [...aerodromeIds] } };
+    }
+
+    const rows = await this.prisma.maintenanceTask.findMany({
+      where,
+      select: {
+        status: true,
+        urgency: true,
+        investmentType: true,
+        predictedValue: true,
+        delayWarning: true,
+      },
+    });
+    return rows.map((r) => ({
+      status: r.status,
+      urgency: r.urgency,
+      investmentType: r.investmentType,
+      predictedValue: decimalToApiNumber(r.predictedValue) ?? 0,
+      delayWarning: r.delayWarning,
+    }));
   }
 
   softDelete(

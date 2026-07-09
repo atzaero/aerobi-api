@@ -10,6 +10,11 @@ export interface FeedbackRatingCount {
   count: number;
 }
 
+/** Linha mínima de feedback para agregação do dashboard (só a avaliação). */
+export interface FeedbackDashboardRow {
+  rating: FeedbackRating;
+}
+
 export interface IFeedbackRepository {
   create(data: Prisma.FeedbackCreateInput): Promise<Feedback>;
 
@@ -22,6 +27,17 @@ export interface IFeedbackRepository {
   ): Promise<Feedback[]>;
 
   count(where: Prisma.FeedbackWhereInput): Promise<number>;
+
+  /**
+   * Linhas mínimas para o dashboard (agregação em memória): filtradas por escopo
+   * (`aerodromeIds` `null` = sem filtro; `[]` = nenhuma) e por `createdAt` no
+   * intervalo `[fromMs, toMs]`.
+   */
+  findForDashboard(
+    aerodromeIds: string[] | null,
+    fromMs: number,
+    toMs: number,
+  ): Promise<FeedbackDashboardRow[]>;
 
   /** Soft delete usando campos de auditoria deletedAt/deletedBy. */
   softDelete(id: string, deletedBy: string): Promise<Feedback>;
