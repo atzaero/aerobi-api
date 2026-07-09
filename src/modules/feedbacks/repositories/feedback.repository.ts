@@ -4,6 +4,7 @@ import { Prisma, type Feedback } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 
 import type {
+  FeedbackDashboardRow,
   FeedbackRatingCount,
   IFeedbackRepository,
 } from './feedback.repository.interface';
@@ -52,6 +53,20 @@ export class FeedbackRepository implements IFeedbackRepository {
         AND: [{ ...where }, activeWhere],
       },
     });
+  }
+
+  findForDashboard(
+    aerodromeIds: string[] | null,
+    fromMs: number,
+    toMs: number,
+  ): Promise<FeedbackDashboardRow[]> {
+    const where: Prisma.FeedbackWhereInput = {
+      ...activeWhere,
+      createdAt: { gte: new Date(fromMs), lte: new Date(toMs) },
+    };
+    if (aerodromeIds !== null) where.aerodromeId = { in: aerodromeIds };
+
+    return this.prisma.feedback.findMany({ where, select: { rating: true } });
   }
 
   /**

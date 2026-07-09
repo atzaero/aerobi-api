@@ -72,6 +72,59 @@ describe('MaintenanceTaskRepository', () => {
     });
   });
 
+  describe('findForDashboard', () => {
+    const FROM = Date.UTC(2026, 0, 1);
+    const TO = Date.UTC(2026, 1, 1);
+
+    it('escopo `all` (null) filtra só por range + não deletado, sem relação', async () => {
+      taskFindMany.mockResolvedValue([]);
+
+      await repository.findForDashboard(null, FROM, TO);
+
+      expect(taskFindMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            deletedAt: null,
+            createdAt: { gte: new Date(FROM), lte: new Date(TO) },
+          },
+        }),
+      );
+    });
+
+    it('escopo `group` filtra pela relação maintenance.aerodromeId', async () => {
+      taskFindMany.mockResolvedValue([]);
+
+      await repository.findForDashboard(['aero-1', 'aero-2'], FROM, TO);
+
+      const [call] = taskFindMany.mock.calls as Array<[{ where: unknown }]>;
+      expect(call[0].where).toMatchObject({
+        maintenance: { aerodromeId: { in: ['aero-1', 'aero-2'] } },
+      });
+    });
+
+    it('converte predictedValue (Decimal) para number', async () => {
+      taskFindMany.mockResolvedValue([
+        {
+          status: 'PENDING',
+          urgency: 'HIGH',
+          investmentType: 'CAPEX',
+          predictedValue: { toNumber: () => 100.5 },
+          delayWarning: true,
+        },
+      ]);
+
+      const [row] = await repository.findForDashboard(null, FROM, TO);
+
+      expect(row.predictedValue).toBe(100.5);
+      expect(row).toMatchObject({
+        status: 'PENDING',
+        urgency: 'HIGH',
+        investmentType: 'CAPEX',
+        delayWarning: true,
+      });
+    });
+  });
+
   describe('softDelete', () => {
     it('cascateia guesses e task na mesma transação e devolve a contagem', async () => {
       const callOrder: string[] = [];

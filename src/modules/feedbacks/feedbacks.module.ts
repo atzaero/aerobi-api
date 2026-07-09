@@ -54,5 +54,7 @@ import { SummaryFeedbacksService } from './services/summary-feedbacks.service';
     FindFeedbackByIdService,
     RemoveFeedbackService,
   ],
+  /** Exporta o repositório para agregação read-only pelo `DashboardModule`. */
+  exports: [FeedbackRepository],
 })
 export class FeedbacksModule {}

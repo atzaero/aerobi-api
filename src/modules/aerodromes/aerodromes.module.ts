@@ -57,5 +57,7 @@ import { UpdateAerodromeObservationService } from './services/update-aerodrome-o
     FindAerodromeByIdService,
     RemoveAerodromeService,
   ],
+  /** Exporta o repositório para agregação/escopo read-only pelo `DashboardModule`. */
+  exports: [AerodromeRepository],
 })
 export class AerodromesModule {}

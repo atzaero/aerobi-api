@@ -1,4 +1,19 @@
-import type { Prisma, LandingRequest, Uf } from '@/generated/prisma/client';
+import type {
+  Prisma,
+  LandingRequest,
+  LandingRequestStatus,
+  Uf,
+} from '@/generated/prisma/client';
+
+/**
+ * Linha mínima de solicitação para agregação do dashboard. Timestamps já em ms
+ * epoch (o repositório encapsula a conversão de `Date`).
+ */
+export interface LandingRequestDashboardRow {
+  requestDateMs: number;
+  reviewedAtMs: number | null;
+  status: LandingRequestStatus;
+}
 
 /** Solicitação com o snapshot RAB (1:1) incluído — usado no `GET /:id`. */
 export type LandingRequestWithAircraft = Prisma.LandingRequestGetPayload<{
@@ -51,6 +66,17 @@ export interface ILandingRequestRepository {
   ): Promise<LandingRequest[]>;
 
   count(where: Prisma.LandingRequestWhereInput): Promise<number>;
+
+  /**
+   * Linhas mínimas para o dashboard (agregação em memória): filtradas por escopo
+   * (`aerodromeIds` `null` = sem filtro; `[]` = nenhuma) e por `requestDate` no
+   * intervalo `[fromMs, toMs]`.
+   */
+  findForDashboard(
+    aerodromeIds: string[] | null,
+    fromMs: number,
+    toMs: number,
+  ): Promise<LandingRequestDashboardRow[]>;
 
   /** Soft delete usando campos de auditoria deletedAt/deletedBy. */
   softDelete(id: string, deletedBy: string): Promise<LandingRequest>;

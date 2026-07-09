@@ -85,6 +85,12 @@ export const TAGS: readonly SwaggerTag[] = [
     'Fluxo público de recuperação de senha: solicitar, validar token e confirmar.',
   ],
 
+  /** Visão geral (primeira tela pós-login) */
+  [
+    'Dashboard',
+    'Painel agregado por papel e escopo de grupo (solicitações, visitas, aeródromos, avaliações e tarefas).',
+  ],
+
   /** Estrutura organizacional (cadeia de dependência) */
   [
     'Groups',

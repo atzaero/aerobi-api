@@ -61,5 +61,7 @@ import { UpdateTechnicalVisitService } from './services/update-technical-visit.s
     RemoveTechnicalVisitImageService,
     ExportTechnicalVisitPdfService,
   ],
+  /** Exporta o repositório para agregação read-only pelo `DashboardModule`. */
+  exports: [TechnicalVisitRepository],
 })
 export class TechnicalVisitsModule {}
