@@ -29,6 +29,9 @@
     "seed": "node --env-file-if-exists=.env --require tsconfig-paths/register --require ts-node/register scripts/run-seeds.ts",
     "seed:admin": "npm run seed -- admin",
     "seed:states": "npm run seed -- states",
+    "seed:aerodromes": "SEED_DEMO=true npm run seed -- aerodromes",
+    "seed:cameras": "SEED_DEMO=true npm run seed -- cameras",
+    "seed:demo": "SEED_DEMO=true npm run seed -- aerodromes cameras",
     "postinstall": "prisma generate",
     "release": "npx -p semantic-release -p @semantic-release/changelog -p @semantic-release/git semantic-release",
     "security:check": "npm audit --package-lock-only --audit-level=high --omit=dev"
