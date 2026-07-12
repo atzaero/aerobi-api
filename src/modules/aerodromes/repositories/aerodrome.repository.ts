@@ -69,6 +69,21 @@ export class AerodromeRepository implements IAerodromeRepository {
     });
   }
 
+  findAllVisible(): Promise<AerodromeWithGroup[]> {
+    return this.prisma.aerodrome.findMany({
+      where: { isView: true, ...activeWhere },
+      orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+      include: includeGroupUf,
+    });
+  }
+
+  findVisibleByIcao(icao: string): Promise<AerodromeWithGroup | null> {
+    return this.prisma.aerodrome.findFirst({
+      where: { icao, isView: true, ...activeWhere },
+      include: includeGroupUf,
+    });
+  }
+
   count(where: Prisma.AerodromeWhereInput): Promise<number> {
     return this.prisma.aerodrome.count({
       where: {

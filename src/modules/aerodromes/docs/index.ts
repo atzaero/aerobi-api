@@ -1,7 +1,9 @@
 export { CreateAerodromeDocs } from './create-aerodrome.docs';
 export { ExportAerodromesDocs } from './export-aerodromes.docs';
 export { FindAerodromeByIdDocs } from './find-aerodrome-by-id.docs';
+export { FindVisibleAerodromeByIcaoDocs } from './find-visible-aerodrome-by-icao.docs';
 export { ListAerodromesDocs } from './list-aerodromes.docs';
+export { ListVisibleAerodromesDocs } from './list-visible-aerodromes.docs';
 export { RemoveAerodromeDocs } from './remove-aerodrome.docs';
 export { SetAerodromeStatusDocs } from './set-aerodrome-status.docs';
 export { UpdateAerodromeDocs } from './update-aerodrome.docs';

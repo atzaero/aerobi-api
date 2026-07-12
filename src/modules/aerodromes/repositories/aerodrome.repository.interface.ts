@@ -33,6 +33,18 @@ export interface IAerodromeRepository {
     take: number,
   ): Promise<AerodromeWithGroup[]>;
 
+  /**
+   * Todos os aeródromos ativos com `isView=true` (mapa público). Sem paginação —
+   * o cliente precisa de todos os marcadores de uma vez.
+   */
+  findAllVisible(): Promise<AerodromeWithGroup[]>;
+
+  /**
+   * Aeródromo ativo e visível pelo ICAO (ficha pública). `null` se inexistente,
+   * soft-deletado ou `isView !== true`.
+   */
+  findVisibleByIcao(icao: string): Promise<AerodromeWithGroup | null>;
+
   count(where: Prisma.AerodromeWhereInput): Promise<number>;
 
   /** Soft delete usando campos de auditoria deletedAt/deletedBy. */
