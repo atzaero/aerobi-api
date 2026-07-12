@@ -79,6 +79,31 @@ describe('AerodromeRepository', () => {
     });
   });
 
+  it('findAllVisible: só isView=true + soft-delete, sem paginação', async () => {
+    findMany.mockResolvedValue([]);
+
+    await repository.findAllVisible();
+    expect(findMany).toHaveBeenCalledWith({
+      where: { isView: true, deletedAt: null },
+      orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+      include: includeGroupUf,
+    });
+  });
+
+  it('findVisibleByIcao: ICAO + isView + soft-delete', async () => {
+    const found = buildAerodromeWithGroupFixture({
+      icao: 'SJ4E',
+      isView: true,
+    });
+    findFirst.mockResolvedValue(found);
+
+    await expect(repository.findVisibleByIcao('SJ4E')).resolves.toBe(found);
+    expect(findFirst).toHaveBeenCalledWith({
+      where: { icao: 'SJ4E', isView: true, deletedAt: null },
+      include: includeGroupUf,
+    });
+  });
+
   it('count: aplica o mesmo AND de soft-delete', async () => {
     count.mockResolvedValue(3);
     await expect(repository.count({ isOpen: true })).resolves.toBe(3);

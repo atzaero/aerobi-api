@@ -1,12 +1,15 @@
 import { Injectable } from '@nestjs/common';
 
-import { Prisma, type Geojson } from '@/generated/prisma/client';
+import { GeojsonStatus, Prisma, type Geojson } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 
 import type {
   GeojsonWithAerodrome,
   IGeojsonRepository,
 } from './geojson.repository.interface';
+
+/** Re-export para consumidores do repo sem expor a interface. */
+export type { GeojsonWithAerodrome } from './geojson.repository.interface';
 
 const activeWhere: Pick<Prisma.GeojsonWhereInput, 'deletedAt'> = {
   deletedAt: null,
@@ -72,6 +75,31 @@ export class GeojsonRepository implements IGeojsonRepository {
   ): Promise<GeojsonWithAerodrome | null> {
     return this.prisma.geojson.findFirst({
       where: { aerodromeId, ...activeWhere },
+      include: aerodromeSelect,
+    });
+  }
+
+  findAllActiveVisible(): Promise<GeojsonWithAerodrome[]> {
+    return this.prisma.geojson.findMany({
+      where: {
+        ...activeWhere,
+        status: GeojsonStatus.READY,
+        aerodrome: { isView: true, deletedAt: null },
+      },
+      include: aerodromeSelect,
+      orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
+    });
+  }
+
+  findActiveVisibleByAerodromeId(
+    aerodromeId: string,
+  ): Promise<GeojsonWithAerodrome | null> {
+    return this.prisma.geojson.findFirst({
+      where: {
+        aerodromeId,
+        ...activeWhere,
+        aerodrome: { isView: true, deletedAt: null },
+      },
       include: aerodromeSelect,
     });
   }

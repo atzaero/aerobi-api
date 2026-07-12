@@ -13,7 +13,7 @@ import type {
 } from '../repositories/geojson.repository';
 import { buildGeojsonFixture } from '../testing/geojson.entity.fixture';
 
-import { FindGeojsonForAerodromeService } from './find-geojson-for-aerodrome.service';
+import { FindVisibleGeojsonByAerodromeIdService } from './find-visible-geojson-by-aerodrome-id.service';
 
 const aerodromeId = '22222222-2222-4222-8222-222222222222';
 
@@ -32,20 +32,20 @@ function buildWithAerodrome(
   };
 }
 
-describe('FindGeojsonForAerodromeService', () => {
-  let service: FindGeojsonForAerodromeService;
-  let findActiveByAerodromeId: jest.Mock;
+describe('FindVisibleGeojsonByAerodromeIdService', () => {
+  let service: FindVisibleGeojsonByAerodromeIdService;
+  let findActiveVisibleByAerodromeId: jest.Mock;
 
   beforeEach(() => {
-    findActiveByAerodromeId = jest.fn();
-    service = new FindGeojsonForAerodromeService(
-      { findActiveByAerodromeId } as unknown as GeojsonRepository,
+    findActiveVisibleByAerodromeId = jest.fn();
+    service = new FindVisibleGeojsonByAerodromeIdService(
+      { findActiveVisibleByAerodromeId } as unknown as GeojsonRepository,
       new ErrorMessageService(),
     );
   });
 
-  it('READY: deriva icao/stateId/groupId e expõe enums lowercase + geoJson objeto', async () => {
-    findActiveByAerodromeId.mockResolvedValue(buildWithAerodrome());
+  it('READY visível: DTO público com geoJson objeto', async () => {
+    findActiveVisibleByAerodromeId.mockResolvedValue(buildWithAerodrome());
     const out = await service.execute({ aerodromeId });
     expect(out).toMatchObject({
       docId: aerodromeId,
@@ -56,11 +56,12 @@ describe('FindGeojsonForAerodromeService', () => {
       mapFileType: 'kmz',
     });
     expect(out.geoJson).toEqual({ type: 'FeatureCollection', features: [] });
-    expect(typeof out.generatedAt).toBe('string');
+    expect(out).not.toHaveProperty('sourceStoragePath');
+    expect(out).not.toHaveProperty('createdBy');
   });
 
-  it('inexistente/soft-deletado → 404', async () => {
-    findActiveByAerodromeId.mockResolvedValue(null);
+  it('oculto/inexistente/soft-deletado → 404', async () => {
+    findActiveVisibleByAerodromeId.mockResolvedValue(null);
     try {
       await service.execute({ aerodromeId });
       throw new Error('expected');
@@ -72,7 +73,7 @@ describe('FindGeojsonForAerodromeService', () => {
   });
 
   it('status ≠ READY → 422 GEOJSON_NOT_READY', async () => {
-    findActiveByAerodromeId.mockResolvedValue(
+    findActiveVisibleByAerodromeId.mockResolvedValue(
       buildWithAerodrome({ status: GeojsonStatus.ERROR }),
     );
     try {
@@ -87,7 +88,7 @@ describe('FindGeojsonForAerodromeService', () => {
   });
 
   it('geoJson ausente/inválido → 502 GEOJSON_READ_FAILED', async () => {
-    findActiveByAerodromeId.mockResolvedValue(
+    findActiveVisibleByAerodromeId.mockResolvedValue(
       buildWithAerodrome({ geoJson: null }),
     );
     try {

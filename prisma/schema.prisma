@@ -347,6 +347,9 @@ model Aerodrome {
   /// reservar o ICAO de registros soft-deletados e a impedir a recriação).
   @@index([groupId])
   @@index([icao, isView])
+  /// Lista do mapa público (`isView=true` + ativos): líder `isView` evita scan
+  /// completo que o índice `[icao, isView]` não cobre sem filtro de ICAO.
+  @@index([isView, deletedAt])
   @@map("aerodromes")
 }
 
