@@ -5,4 +5,3 @@ export { GenerateGeojsonDocs } from './generate-geojson.docs';
 export { ListGeojsonsDocs } from './list-geojsons.docs';
 export { ListVisibleGeojsonsDocs } from './list-visible-geojsons.docs';
 export { RemoveGeojsonDocs } from './remove-geojson.docs';
-

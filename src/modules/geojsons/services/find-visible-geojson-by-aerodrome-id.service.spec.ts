@@ -29,7 +29,7 @@ function buildWithAerodrome(
     }),
     aerodrome: { icao: 'sbsp', groupId: 'grp-1', group: { uf: Uf.SP } },
     ...overrides,
-  } as GeojsonWithAerodrome;
+  };
 }
 
 describe('FindVisibleGeojsonByAerodromeIdService', () => {

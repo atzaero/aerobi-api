@@ -1,10 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import {
-  GeojsonStatus,
-  Prisma,
-  type Geojson,
-} from '@/generated/prisma/client';
+import { GeojsonStatus, Prisma, type Geojson } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 
 import type {
