@@ -18,7 +18,9 @@ export interface FindVisibleGeojsonByAerodromeIdInput {
 /**
  * Leitura pública do GeoJSON por aeródromo visível (X-API-Key). Mesma ordem de
  * checagem do JWT `FindGeojsonForAerodromeService`, com filtro extra de
- * `isView=true` no repositório (oculto/inexistente → 404).
+ * `isView=true` no repositório (oculto/inexistente → 404). O 502
+ * (`GEOJSON_READ_FAILED`) mantém paridade com o endpoint JWT irmão — dado
+ * READY com `geoJson` inválido, não falha de gateway externo.
  */
 @Injectable()
 export class FindVisibleGeojsonByAerodromeIdService {

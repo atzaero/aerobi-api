@@ -12,6 +12,7 @@ import type {
   IGeojsonRepository,
 } from './geojson.repository.interface';
 
+/** Re-export para consumidores do repo sem expor a interface. */
 export type { GeojsonWithAerodrome } from './geojson.repository.interface';
 
 const activeWhere: Pick<Prisma.GeojsonWhereInput, 'deletedAt'> = {

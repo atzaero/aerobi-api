@@ -49,7 +49,9 @@ export interface IGeojsonRepository {
 
   /**
    * GeoJSON ativo de um aeródromo **visível** (`isView=true`, pai não
-   * soft-deletado). Usado por `GET /geojsons/visible/:aerodromeId`.
+   * soft-deletado). Retorna **qualquer `status`** — o service valida READY e
+   * lança 422 se necessário (não colapsar em 404). Usado por
+   * `GET /geojsons/visible/:aerodromeId`.
    */
   findActiveVisibleByAerodromeId(
     aerodromeId: string,
