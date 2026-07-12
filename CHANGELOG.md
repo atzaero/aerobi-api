@@ -1,3 +1,10 @@
+# [2.6.0-beta.54](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.53...v2.6.0-beta.54) (2026-07-12)
+
+
+### Bug Fixes
+
+* republicar beta skipado por prefixo EPIC no merge ([2acd65c](https://github.com/atzaero/aerobi-api/commit/2acd65c2826eb786c86f469e1ef1876b367be1af))
+
 # [2.6.0-beta.53](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.52...v2.6.0-beta.53) (2026-07-09)
 
 
