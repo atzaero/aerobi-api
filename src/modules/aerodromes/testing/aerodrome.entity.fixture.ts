@@ -1,6 +1,9 @@
 import type { Aerodrome } from '@/generated/prisma/client';
 
-import type { AerodromeWithGroup } from '../repositories/aerodrome.repository.interface';
+import type {
+  AerodromeVisibleWithGroup,
+  AerodromeWithGroup,
+} from '../repositories/aerodrome.repository.interface';
 
 const ts = new Date('2024-06-01T12:00:00.000Z');
 const gid = '44444444-4444-4444-8444-444444444444';
@@ -66,5 +69,20 @@ export function buildAerodromeWithGroupFixture(
   return {
     ...buildAerodromeFixture(aerodromeOverrides),
     group: group ?? { uf: 'PI' },
+  };
+}
+
+/**
+ * Fixture das leituras públicas `/visible*` (UF + GeoJSON). Default sem layer
+ * (`geojson: null`); passe `geojson` nos overrides para cenários com mapa.
+ */
+export function buildAerodromeVisibleWithGroupFixture(
+  overrides: Partial<AerodromeVisibleWithGroup> = {},
+): AerodromeVisibleWithGroup {
+  const { group, geojson, ...aerodromeOverrides } = overrides;
+  return {
+    ...buildAerodromeFixture(aerodromeOverrides),
+    group: group ?? { uf: 'PI' },
+    geojson: geojson === undefined ? null : geojson,
   };
 }

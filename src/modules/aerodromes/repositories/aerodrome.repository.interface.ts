@@ -8,6 +8,26 @@ export type AerodromeWithGroup = Prisma.AerodromeGetPayload<{
   include: { group: { select: { uf: true } } };
 }>;
 
+/**
+ * Aeródromo visível (mapa/ficha pública) com UF do grupo + GeoJSON ativo
+ * (subset: status/kind/mapFileType/geoJson). O `where: { deletedAt: null }` no
+ * include é só runtime — o `GetPayload` não expressa o filtro; GeoJSON
+ * soft-deletado chega como `geojson: null` no campo aninhado.
+ */
+export type AerodromeVisibleWithGroup = Prisma.AerodromeGetPayload<{
+  include: {
+    group: { select: { uf: true } };
+    geojson: {
+      select: {
+        status: true;
+        kind: true;
+        mapFileType: true;
+        geoJson: true;
+      };
+    };
+  };
+}>;
+
 /** Linha mínima do snapshot de aeródromos do dashboard (contagens por flag). */
 export interface AerodromeDashboardSnapshotRow {
   isOpen: boolean;
@@ -35,15 +55,17 @@ export interface IAerodromeRepository {
 
   /**
    * Todos os aeródromos ativos com `isView=true` (mapa público). Sem paginação —
-   * o cliente precisa de todos os marcadores de uma vez.
+   * o cliente precisa de todos os marcadores de uma vez. Inclui GeoJSON ativo
+   * (JSONB inline): o payload pode ser grande; preferir compressão HTTP (gzip)
+   * no proxy e medir tamanho agregado em staging antes de produção.
    */
-  findAllVisible(): Promise<AerodromeWithGroup[]>;
+  findAllVisible(): Promise<AerodromeVisibleWithGroup[]>;
 
   /**
    * Aeródromo ativo e visível pelo ICAO (ficha pública). `null` se inexistente,
-   * soft-deletado ou `isView !== true`.
+   * soft-deletado ou `isView !== true`. Inclui GeoJSON ativo.
    */
-  findVisibleByIcao(icao: string): Promise<AerodromeWithGroup | null>;
+  findVisibleByIcao(icao: string): Promise<AerodromeVisibleWithGroup | null>;
 
   count(where: Prisma.AerodromeWhereInput): Promise<number>;
 

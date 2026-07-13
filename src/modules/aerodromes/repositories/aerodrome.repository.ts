@@ -5,6 +5,7 @@ import { PrismaService } from '@/prisma/prisma.service';
 
 import type {
   AerodromeDashboardSnapshotRow,
+  AerodromeVisibleWithGroup,
   AerodromeWithGroup,
   IAerodromeRepository,
 } from './aerodrome.repository.interface';
@@ -19,6 +20,25 @@ const activeWhere: Pick<Prisma.AerodromeWhereInput, 'deletedAt'> = {
  */
 const includeGroupUf = {
   group: { select: { uf: true } },
+} satisfies Prisma.AerodromeInclude;
+
+/**
+ * Leituras públicas (`/visible*`): UF do grupo + GeoJSON ativo (não soft-deletado),
+ * só os campos necessários ao mapper slim do mapa. Atenção: `geoJson` é JSONB
+ * completo — em `findAllVisible` o volume cresce com o número de aeródromos
+ * READY (medir payload + gzip em staging).
+ */
+const includeVisible = {
+  group: { select: { uf: true } },
+  geojson: {
+    where: { deletedAt: null },
+    select: {
+      status: true,
+      kind: true,
+      mapFileType: true,
+      geoJson: true,
+    },
+  },
 } satisfies Prisma.AerodromeInclude;
 
 @Injectable()
@@ -69,18 +89,18 @@ export class AerodromeRepository implements IAerodromeRepository {
     });
   }
 
-  findAllVisible(): Promise<AerodromeWithGroup[]> {
+  findAllVisible(): Promise<AerodromeVisibleWithGroup[]> {
     return this.prisma.aerodrome.findMany({
       where: { isView: true, ...activeWhere },
       orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
-      include: includeGroupUf,
+      include: includeVisible,
     });
   }
 
-  findVisibleByIcao(icao: string): Promise<AerodromeWithGroup | null> {
+  findVisibleByIcao(icao: string): Promise<AerodromeVisibleWithGroup | null> {
     return this.prisma.aerodrome.findFirst({
       where: { icao, isView: true, ...activeWhere },
-      include: includeGroupUf,
+      include: includeVisible,
     });
   }
 

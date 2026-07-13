@@ -16,7 +16,7 @@ export function FindVisibleAerodromeByIcaoDocs() {
     ApiOperation({
       summary: 'Busca aeródromo visível por ICAO (ficha pública)',
       description:
-        'Consulta pública autenticada com `X-API-Key`. Retorna a ficha do aeródromo ativo com `isView=true` e ICAO informado. Sem JWT/RBAC.',
+        'Consulta pública autenticada com `X-API-Key`. Retorna a ficha do aeródromo ativo com `isView=true` e ICAO informado, incluindo `geojson` aninhado (layer READY) ou `null`. Sem JWT/RBAC.',
     }),
     ApiParam({
       name: 'icao',

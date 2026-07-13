@@ -3,7 +3,7 @@ import { ErrorMessageService } from '@/common/error-messages/error-message.servi
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 
 import type { AerodromeRepository } from '../repositories/aerodrome.repository';
-import { buildAerodromeWithGroupFixture } from '../testing/aerodrome.entity.fixture';
+import { buildAerodromeVisibleWithGroupFixture } from '../testing/aerodrome.entity.fixture';
 
 import { FindVisibleAerodromeByIcaoService } from './find-visible-aerodrome-by-icao.service';
 
@@ -22,13 +22,13 @@ describe('FindVisibleAerodromeByIcaoService', () => {
 
   it('sucesso: consulta pelo ICAO e projeta DTO público', async () => {
     findVisibleByIcao.mockResolvedValue(
-      buildAerodromeWithGroupFixture({ icao: 'SJ4E', isView: true }),
+      buildAerodromeVisibleWithGroupFixture({ icao: 'SJ4E', isView: true }),
     );
 
     const out = await service.execute({ icao: 'SJ4E' });
 
     expect(findVisibleByIcao).toHaveBeenCalledWith('SJ4E');
-    expect(out).toMatchObject({ icao: 'SJ4E', uf: 'PI' });
+    expect(out).toMatchObject({ icao: 'SJ4E', uf: 'PI', geojson: null });
     expect(out).not.toHaveProperty('isView');
     expect(out).not.toHaveProperty('emergencyPhone');
   });

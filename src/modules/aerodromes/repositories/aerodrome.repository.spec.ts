@@ -1,10 +1,26 @@
 import { PrismaService } from '@/prisma/prisma.service';
 
-import { buildAerodromeWithGroupFixture } from '../testing/aerodrome.entity.fixture';
+import {
+  buildAerodromeVisibleWithGroupFixture,
+  buildAerodromeWithGroupFixture,
+} from '../testing/aerodrome.entity.fixture';
 
 import { AerodromeRepository } from './aerodrome.repository';
 
 const includeGroupUf = { group: { select: { uf: true } } };
+
+const includeVisible = {
+  group: { select: { uf: true } },
+  geojson: {
+    where: { deletedAt: null },
+    select: {
+      status: true,
+      kind: true,
+      mapFileType: true,
+      geoJson: true,
+    },
+  },
+};
 
 describe('AerodromeRepository', () => {
   let repository: AerodromeRepository;
@@ -79,19 +95,19 @@ describe('AerodromeRepository', () => {
     });
   });
 
-  it('findAllVisible: só isView=true + soft-delete, sem paginação', async () => {
+  it('findAllVisible: só isView=true + soft-delete, inclui GeoJSON ativo', async () => {
     findMany.mockResolvedValue([]);
 
     await repository.findAllVisible();
     expect(findMany).toHaveBeenCalledWith({
       where: { isView: true, deletedAt: null },
       orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
-      include: includeGroupUf,
+      include: includeVisible,
     });
   });
 
-  it('findVisibleByIcao: ICAO + isView + soft-delete', async () => {
-    const found = buildAerodromeWithGroupFixture({
+  it('findVisibleByIcao: ICAO + isView + soft-delete, inclui GeoJSON ativo', async () => {
+    const found = buildAerodromeVisibleWithGroupFixture({
       icao: 'SJ4E',
       isView: true,
     });
@@ -100,7 +116,7 @@ describe('AerodromeRepository', () => {
     await expect(repository.findVisibleByIcao('SJ4E')).resolves.toBe(found);
     expect(findFirst).toHaveBeenCalledWith({
       where: { icao: 'SJ4E', isView: true, deletedAt: null },
-      include: includeGroupUf,
+      include: includeVisible,
     });
   });
 
