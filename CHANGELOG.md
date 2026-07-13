@@ -1,3 +1,10 @@
+# [2.6.0-beta.55](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.54...v2.6.0-beta.55) (2026-07-13)
+
+
+### Features
+
+* **aerodromes:** aninha GeoJSON em /visible* e remove /geojsons/visible ([#549](https://github.com/atzaero/aerobi-api/issues/549)) ([31d3435](https://github.com/atzaero/aerobi-api/commit/31d3435002fb3e84f7c0dc1da179253f37a76986))
+
 # [2.6.0-beta.54](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.53...v2.6.0-beta.54) (2026-07-12)
 
 
