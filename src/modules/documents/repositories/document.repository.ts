@@ -1,7 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 import { isSerializationConflict } from '@/common/utils/prisma-error.util';
-import { Prisma, type Document } from '@/generated/prisma/client';
+import {
+  Prisma,
+  type Document,
+  type DocumentType,
+} from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 
 import type {
@@ -157,5 +161,23 @@ export class DocumentRepository implements IDocumentRepository {
     return aerodrome
       ? { groupId: aerodrome.groupId, uf: aerodrome.group.uf }
       : null;
+  }
+
+  /**
+   * `distinct: ['type']` + `orderBy createdAt desc` retorna o primeiro registro
+   * de cada tipo na ordem — ou seja, o ativo mais recente por tipo. No máximo um
+   * documento por tipo pedido. O tie-breaker `id desc` torna a escolha
+   * determinística quando dois ativos do mesmo tipo empatam em `createdAt`
+   * (possível via `POST /documents` genérico, que não aplica a regra "1 ativo").
+   */
+  findLatestActiveByAerodromeAndTypes(
+    aerodromeId: string,
+    types: DocumentType[],
+  ): Promise<Document[]> {
+    return this.prisma.document.findMany({
+      where: { aerodromeId, type: { in: types }, ...activeWhere },
+      distinct: ['type'],
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    });
   }
 }

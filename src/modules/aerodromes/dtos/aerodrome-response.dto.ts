@@ -4,9 +4,11 @@ import { Uf } from '@/generated/prisma/client';
 
 /**
  * Resposta da API para um aeródromo. `uf` é derivada do grupo (não é coluna).
- * Os campos legados de URL/formatação (`imgUrl`/`kmlUrl`/ordinances/`*Formatted`/
- * `fileType`) continuam expostos por compatibilidade de leitura, mas não são
- * aceitos no create/update — por isso os exemplos os trazem como `null`.
+ * Os campos legados de URL/formatação (ordinances/`*Formatted`/`fileType`)
+ * continuam expostos por compatibilidade de leitura, mas não são aceitos no
+ * create/update — por isso os exemplos os trazem como `null`. `imgUrl`/`kmlUrl`
+ * são resolvidos on-read no `GET /aerodromes/:id` a partir dos documentos ativos
+ * (presigned; #550) — no `list`/`export` seguem o legado (`null`).
  */
 export class AerodromeResponseDTO {
   @ApiProperty({

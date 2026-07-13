@@ -17,8 +17,9 @@ import { documentAuditSnapshot } from '../utils/document-audit';
 /**
  * Soft-delete de um documento (`document:delete` é ADMIN-only; escopo por grupo
  * pelo `GroupScopeGuard` no `:id`). O objeto no storage é **preservado**
- * (reversível). Ator real (`deletedBy = actor.id`) + auditoria DELETE. A
- * sincronização de `*_url` do aeródromo é follow-up (não recomputa aqui).
+ * (reversível). Ator real (`deletedBy = actor.id`) + auditoria DELETE. As
+ * `*_url` do aeródromo são resolvidas on-read a partir dos documentos ativos
+ * (não há coluna desnormalizada a recomputar aqui; #550).
  */
 @Injectable()
 export class RemoveDocumentService {

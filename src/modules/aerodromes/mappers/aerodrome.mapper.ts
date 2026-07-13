@@ -11,7 +11,10 @@ import { AerodromePublicGeojsonMapper } from './aerodrome-public-geojson.mapper'
  * Projeta a entidade Prisma (com a UF do grupo carregada) no response da API.
  * A `uf` vem de `group.uf` (derivada, não é coluna do aeródromo); os campos
  * legados de URL/formatação continuam expostos para não regredir o contrato de
- * leitura, ainda que não sejam mais aceitos no create/update.
+ * leitura, ainda que não sejam mais aceitos no create/update. `imgUrl`/`kmlUrl`
+ * saem aqui das colunas legadas (sempre `null`); o `FindAerodromeByIdService`
+ * os sobrescreve com as presigned resolvidas on-read dos documentos ativos
+ * (#550) — `list`/`export` ficam com o legado, pois o web não os consome.
  */
 export class AerodromeMapper {
   static toApiRow(entity: AerodromeWithGroup): AerodromeResponseDTO {

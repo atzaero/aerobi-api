@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 
 import { AerobiApiKeyGuard } from '@/common/guards/aerobi-api-key.guard';
 import { AuthModule } from '@/modules/auth/auth.module';
+import { DocumentsModule } from '@/modules/documents/documents.module';
 import { UsersModule } from '@/modules/users/users.module';
 import { PrismaModule } from '@/prisma/prisma.module';
 
@@ -33,10 +34,11 @@ import { UpdateAerodromeObservationService } from './services/update-aerodrome-o
  * Importa `AuthModule` (guards JWT/permissões/escopo via `@UseGuards`) e
  * `UsersModule` (`UserRepository`, para o lookup do escopo de grupo do ator nos
  * services de list/create). `AerobiApiKeyGuard` cobre as rotas públicas
- * `/visible` (mapa/ficha).
+ * `/visible` (mapa/ficha). `DocumentsModule` expõe o `AerodromeFileUrlsService`
+ * para resolver `imgUrl`/`kmlUrl` on-read no detalhe (#550).
  */
 @Module({
-  imports: [PrismaModule, AuthModule, UsersModule],
+  imports: [PrismaModule, AuthModule, UsersModule, DocumentsModule],
   controllers: [
     CreateAerodromeController,
     UpdateAerodromeController,

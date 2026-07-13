@@ -17,6 +17,7 @@ import { UploadAerodromeFileController } from './controllers/upload-aerodrome-fi
 
 import { DocumentRepository } from './repositories/document.repository';
 
+import { AerodromeFileUrlsService } from './services/aerodrome-file-urls.service';
 import { CreateDocumentService } from './services/create-document.service';
 import { ExportDocumentsService } from './services/export-documents.service';
 import { FindDocumentByIdService } from './services/find-document-by-id.service';
@@ -58,6 +59,7 @@ import { UploadAerodromeFileService } from './services/upload-aerodrome-file.ser
   ],
   providers: [
     DocumentRepository,
+    AerodromeFileUrlsService,
     CreateDocumentService,
     ListDocumentsService,
     ExportDocumentsService,
@@ -66,5 +68,11 @@ import { UploadAerodromeFileService } from './services/upload-aerodrome-file.ser
     UpdateDocumentService,
     RemoveDocumentService,
   ],
+  /**
+   * Expõe `AerodromeFileUrlsService` para o `AerodromesModule` resolver
+   * `imgUrl`/`kmlUrl` on-read no `GET /aerodromes/:id` (#550), sem desnormalizar
+   * coluna nem acessar a tabela `documents` de fora deste módulo.
+   */
+  exports: [AerodromeFileUrlsService],
 })
 export class DocumentsModule {}

@@ -1,4 +1,9 @@
-import type { Prisma, Document, Uf } from '@/generated/prisma/client';
+import type {
+  Prisma,
+  Document,
+  DocumentType,
+  Uf,
+} from '@/generated/prisma/client';
 
 /** Aeródromo pai projetado para escopo/derivação de `uf` no create/upload. */
 export interface AerodromeScopeRef {
@@ -45,4 +50,14 @@ export interface IDocumentRepository {
 
   /** Aeródromo ativo (groupId + uf do grupo) para escopo/derivação. */
   findAerodromeForScope(aerodromeId: string): Promise<AerodromeScopeRef | null>;
+
+  /**
+   * Documento ativo (não soft-deletado) mais recente por tipo, do aeródromo,
+   * restrito aos `types` pedidos — no máximo um por tipo (`distinct`). Base da
+   * resolução on-read de `imgUrl`/`kmlUrl` no `GET /aerodromes/:id`.
+   */
+  findLatestActiveByAerodromeAndTypes(
+    aerodromeId: string,
+    types: DocumentType[],
+  ): Promise<Document[]>;
 }
