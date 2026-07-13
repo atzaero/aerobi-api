@@ -1,5 +1,5 @@
 import type { AerodromeRepository } from '../repositories/aerodrome.repository';
-import { buildAerodromeWithGroupFixture } from '../testing/aerodrome.entity.fixture';
+import { buildAerodromeVisibleWithGroupFixture } from '../testing/aerodrome.entity.fixture';
 
 import { ListVisibleAerodromesService } from './list-visible-aerodromes.service';
 
@@ -15,7 +15,7 @@ describe('ListVisibleAerodromesService', () => {
 
   it('projeta todos os visíveis no DTO público (com groupId, sem PII/auditoria)', async () => {
     findAllVisible.mockResolvedValue([
-      buildAerodromeWithGroupFixture({
+      buildAerodromeVisibleWithGroupFixture({
         isView: true,
         emergencyPhone: '+5511999999999',
         createdBy: 'actor-1',
@@ -31,6 +31,7 @@ describe('ListVisibleAerodromesService', () => {
       id: '11111111-1111-4111-8111-111111111111',
       groupId: '44444444-4444-4444-8444-444444444444',
       uf: 'PI',
+      geojson: null,
     });
     expect(out[0]).not.toHaveProperty('isView');
     expect(out[0]).not.toHaveProperty('emergencyPhone');

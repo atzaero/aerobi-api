@@ -41,23 +41,6 @@ export interface IGeojsonRepository {
   ): Promise<GeojsonWithAerodrome | null>;
 
   /**
-   * Lista pública do mapa: GeoJSON ativo + `status: READY` cujo aeródromo pai
-   * tem `isView=true` e não está soft-deletado. Sem paginação.
-   * Usado por `GET /geojsons/visible`.
-   */
-  findAllActiveVisible(): Promise<GeojsonWithAerodrome[]>;
-
-  /**
-   * GeoJSON ativo de um aeródromo **visível** (`isView=true`, pai não
-   * soft-deletado). Retorna **qualquer `status`** — o service valida READY e
-   * lança 422 se necessário (não colapsar em 404). Usado por
-   * `GET /geojsons/visible/:aerodromeId`.
-   */
-  findActiveVisibleByAerodromeId(
-    aerodromeId: string,
-  ): Promise<GeojsonWithAerodrome | null>;
-
-  /**
    * GeoJSON de um aeródromo em **qualquer estado** (inclusive soft-deletado) —
    * base do snapshot `before` e da decisão CREATE/UPDATE do upsert de geração.
    */

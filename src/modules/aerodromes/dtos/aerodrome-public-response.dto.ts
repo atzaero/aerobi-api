@@ -2,11 +2,14 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 import { Uf } from '@/generated/prisma/client';
 
+import { AerodromePublicGeojsonDTO } from './aerodrome-public-geojson.dto';
+
 /**
  * Resposta pública de aeródromo (mapa/ficha). Subset de `AerodromeResponseDTO`
  * sem auditoria, PII (`emergencyPhone`), URLs de documentos administrativos nem
  * `isView` (sempre `true` nestes endpoints). Mantém `groupId` — contrato da UI
- * do mapa/ficha no aerobi-web.
+ * do mapa/ficha no aerobi-web. Inclui `geojson` aninhado (layer operacional) ou
+ * `null` quando ausente/não READY.
  */
 export class AerodromePublicResponseDTO {
   @ApiProperty({
@@ -120,6 +123,14 @@ export class AerodromePublicResponseDTO {
 
   @ApiPropertyOptional({ nullable: true, type: String, example: null })
   videoUrl!: string | null;
+
+  @ApiProperty({
+    type: AerodromePublicGeojsonDTO,
+    nullable: true,
+    description:
+      'Layer GeoJSON operacional (READY + parseável + `mapFileType` definido). Sempre presente na chave; `null` se ausente ou inválido.',
+  })
+  geojson!: AerodromePublicGeojsonDTO | null;
 
   @ApiProperty({
     type: String,

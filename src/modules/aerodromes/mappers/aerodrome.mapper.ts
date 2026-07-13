@@ -1,6 +1,11 @@
 import { AerodromePublicResponseDTO } from '../dtos/aerodrome-public-response.dto';
 import { AerodromeResponseDTO } from '../dtos/aerodrome-response.dto';
-import type { AerodromeWithGroup } from '../repositories/aerodrome.repository.interface';
+import type {
+  AerodromeVisibleWithGroup,
+  AerodromeWithGroup,
+} from '../repositories/aerodrome.repository.interface';
+
+import { AerodromePublicGeojsonMapper } from './aerodrome-public-geojson.mapper';
 
 /**
  * Projeta a entidade Prisma (com a UF do grupo carregada) no response da API.
@@ -64,9 +69,10 @@ export class AerodromeMapper {
   /**
    * Projeção pública (mapa/ficha): omite auditoria, `emergencyPhone`, URLs de
    * documentos administrativos e `isView` (sempre true nestes endpoints).
+   * Aninha o GeoJSON operacional (subset de render) ou `null`.
    */
   static toPublicApiRow(
-    entity: AerodromeWithGroup,
+    entity: AerodromeVisibleWithGroup,
   ): AerodromePublicResponseDTO {
     const row = new AerodromePublicResponseDTO();
     row.id = entity.id;
@@ -100,13 +106,14 @@ export class AerodromeMapper {
     row.weatherUrl = entity.weatherUrl;
     row.windUrl = entity.windUrl;
     row.videoUrl = entity.videoUrl;
+    row.geojson = AerodromePublicGeojsonMapper.toPublic(entity.geojson);
     row.createdAt = entity.createdAt.toISOString();
     row.updatedAt = entity.updatedAt.toISOString();
     return row;
   }
 
   static toPublicApiRows(
-    entities: AerodromeWithGroup[],
+    entities: AerodromeVisibleWithGroup[],
   ): AerodromePublicResponseDTO[] {
     return entities.map((e) => AerodromeMapper.toPublicApiRow(e));
   }
