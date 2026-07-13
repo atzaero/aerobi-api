@@ -1,3 +1,10 @@
+# [2.6.0-beta.56](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.55...v2.6.0-beta.56) (2026-07-13)
+
+
+### Bug Fixes
+
+* **aerodromes:** resolve imgUrl/kmlUrl on-read a partir dos documentos ativos ([#550](https://github.com/atzaero/aerobi-api/issues/550)) ([606e38c](https://github.com/atzaero/aerobi-api/commit/606e38cb9f51ed2087b5971ce66291545798a084)), closes [#430](https://github.com/atzaero/aerobi-api/issues/430) [#366](https://github.com/atzaero/aerobi-api/issues/366)
+
 # [2.6.0-beta.55](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.54...v2.6.0-beta.55) (2026-07-13)
 
 
