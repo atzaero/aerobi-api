@@ -46,7 +46,9 @@ const INVALID_FILE_MESSAGE: Record<UploadAerodromeFileType, string> = {
  * `aerodrome:{mode}`. Valida mimetype/extensão restrita; sobe ao storage; cria o
  * doc; **soft-deleta o anterior ativo do mesmo tipo** (regra "1 ativo", na
  * ORDEM: cria antes de deletar, para o tipo nunca ficar sem ativo); dispara a
- * geração de GeoJSON best-effort para KML. Sincronização de `*_url` é follow-up.
+ * geração de GeoJSON best-effort para KML. `imgUrl`/`kmlUrl` do aeródromo são
+ * resolvidos on-read no `GET /aerodromes/:id` (a partir dos documentos ativos,
+ * #550), não desnormalizados aqui.
  */
 @Injectable()
 export class UploadAerodromeFileService {

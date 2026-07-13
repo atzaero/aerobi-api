@@ -31,8 +31,9 @@ const DEFAULT_MIME = 'application/octet-stream';
  * `POST /documents` genérico (8 tipos, qualquer mimetype). Valida o escopo do
  * aeródromo de destino, sobe o arquivo ao storage e persiste os metadados.
  * **Não** soft-deleta anteriores (múltiplos coexistem — paridade com o web); a
- * regra "1 ativo" é exclusiva do `upload-aerodrome-file`. Não sincroniza `*_url`
- * (follow-up). Ator real na auditoria.
+ * regra "1 ativo" é exclusiva do `upload-aerodrome-file`. Não desnormaliza
+ * `*_url` no aeródromo (a leitura resolve on-read a partir dos documentos
+ * ativos, #550). Ator real na auditoria.
  */
 @Injectable()
 export class CreateDocumentService {
