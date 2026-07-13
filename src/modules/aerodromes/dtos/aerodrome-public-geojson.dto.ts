@@ -1,7 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 
+import type { GeojsonKind } from '@/generated/prisma/client';
+
 /** Valores de `kind` no contrato público (lowercase do enum Prisma). */
-export type AerodromePublicGeojsonKind = 'aerodrome_map';
+export type AerodromePublicGeojsonKind = Lowercase<GeojsonKind>;
 
 /**
  * Subset do GeoJSON operacional aninhado no aeródromo público — só o necessário
@@ -22,6 +24,7 @@ export class AerodromePublicGeojsonDTO {
   @ApiProperty({
     type: Object,
     additionalProperties: true,
+    example: { type: 'FeatureCollection', features: [] },
     description: 'Objeto GeoJSON RFC 7946 (FeatureCollection).',
   })
   geoJson!: Record<string, unknown>;

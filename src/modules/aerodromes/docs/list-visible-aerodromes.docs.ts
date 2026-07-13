@@ -14,7 +14,7 @@ export function ListVisibleAerodromesDocs() {
     ApiOperation({
       summary: 'Lista aeródromos visíveis (mapa)',
       description:
-        'Consulta pública autenticada com `X-API-Key`. Retorna **todos** os aeródromos ativos com `isView=true` (array completo, sem paginação) para popular o mapa, cada um com `geojson` aninhado (layer READY) ou `null`. Substitui as antigas `GET /geojsons/visible*` (#546): o cutover no aerobi-web deve ser atômico com este contrato. Payload pode ser grande (FeatureCollections) — preferir compressão HTTP. Sem JWT/RBAC.',
+        'Consulta pública autenticada com `X-API-Key`. Retorna **todos** os aeródromos ativos com `isView=true` (array completo, sem paginação) para popular o mapa, cada um com `geojson` aninhado (layer READY) ou `null`. Payload pode ser grande (FeatureCollections) — preferir compressão HTTP. Sem JWT/RBAC.',
     }),
     ApiOkResponse({
       description: 'Array completo de aeródromos visíveis.',

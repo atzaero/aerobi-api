@@ -1,6 +1,9 @@
 import { PrismaService } from '@/prisma/prisma.service';
 
-import { buildAerodromeWithGroupFixture } from '../testing/aerodrome.entity.fixture';
+import {
+  buildAerodromeVisibleWithGroupFixture,
+  buildAerodromeWithGroupFixture,
+} from '../testing/aerodrome.entity.fixture';
 
 import { AerodromeRepository } from './aerodrome.repository';
 
@@ -104,7 +107,7 @@ describe('AerodromeRepository', () => {
   });
 
   it('findVisibleByIcao: ICAO + isView + soft-delete, inclui GeoJSON ativo', async () => {
-    const found = buildAerodromeWithGroupFixture({
+    const found = buildAerodromeVisibleWithGroupFixture({
       icao: 'SJ4E',
       isView: true,
     });
