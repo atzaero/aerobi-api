@@ -1,72 +1,15 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { IntersectionType } from '@nestjs/swagger';
 
 import { BasePaginationQueryDTO } from '@/common/dtos/base-pagination-query.dto';
-import { IsYmdDate } from '@/common/validators/is-ymd-date.validator';
-import {
-  ConformityStatus,
-  MovementSource,
-  MovementType,
-} from '@/generated/prisma/enums';
+
+import { MovementFilterQueryDTO } from './movement-filter-query.dto';
 
 /**
- * Query de `GET /readings`. Herda `page`/`limit` e adiciona os mesmos filtros do
- * proxy AviaScan legado (registration, aerodrome, intervalo de datas) + status,
- * mais os filtros do card slim (tipo de operação e origem).
+ * Query de `GET /movements` (e do alias deprecado `GET /readings`): combina a
+ * paginação (`page`/`limit`) com os filtros de movimentos compartilhados
+ * (`MovementFilterQueryDTO`) — os mesmos usados pelo export CSV.
  */
-export class ListMovementsQueryDTO extends BasePaginationQueryDTO {
-  @ApiPropertyOptional({ example: 'PR-ZTT' })
-  @IsOptional()
-  @IsString()
-  registration?: string;
-
-  @ApiPropertyOptional({ example: 'SSCF' })
-  @IsOptional()
-  @IsString()
-  aerodrome?: string;
-
-  @ApiPropertyOptional({ description: 'Filtra leituras com este status.' })
-  @IsOptional()
-  @IsString()
-  reading_status?: string;
-
-  @ApiPropertyOptional({
-    enum: MovementType,
-    description: 'Filtra pelo tipo de operação (LANDING | TAKEOFF).',
-  })
-  @IsOptional()
-  @IsEnum(MovementType)
-  operation_type?: MovementType;
-
-  @ApiPropertyOptional({
-    enum: MovementSource,
-    description: 'Filtra pela origem do registro (AUTOMATIC | MANUAL).',
-  })
-  @IsOptional()
-  @IsEnum(MovementSource)
-  source?: MovementSource;
-
-  @ApiPropertyOptional({
-    enum: ConformityStatus,
-    description: 'Filtra pela conformidade do movimento.',
-  })
-  @IsOptional()
-  @IsEnum(ConformityStatus)
-  conformity_status?: ConformityStatus;
-
-  @ApiPropertyOptional({
-    example: '2026-05-01',
-    description: 'Data inicial (YYYY-MM-DD), inclusiva.',
-  })
-  @IsOptional()
-  @IsYmdDate()
-  start_date?: string;
-
-  @ApiPropertyOptional({
-    example: '2026-05-31',
-    description: 'Data final (YYYY-MM-DD), inclusiva.',
-  })
-  @IsOptional()
-  @IsYmdDate()
-  end_date?: string;
-}
+export class ListMovementsQueryDTO extends IntersectionType(
+  BasePaginationQueryDTO,
+  MovementFilterQueryDTO,
+) {}

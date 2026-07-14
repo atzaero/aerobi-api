@@ -8,6 +8,7 @@ import { StorageModule } from '@/modules/storage/storage.module';
 import { BatchCreateMovementController } from './controllers/batch-create-movement.controller';
 import { CreateManualMovementController } from './controllers/create-manual-movement.controller';
 import { CreateMovementController } from './controllers/create-movement.controller';
+import { ExportMovementsController } from './controllers/export-movements.controller';
 import { FindMovementByIdCanonicalController } from './controllers/find-movement-by-id-canonical.controller';
 import { FindMovementByIdController } from './controllers/find-movement-by-id.controller';
 import { ListMovementsCanonicalController } from './controllers/list-movements-canonical.controller';
@@ -19,6 +20,7 @@ import { MovementConformityListener } from './listeners/movement-conformity.list
 import { MovementRepository } from './repositories/movement.repository';
 import { BatchCreateMovementService } from './services/batch-create-movement.service';
 import { CreateMovementService } from './services/create-movement.service';
+import { ExportMovementsService } from './services/export-movements.service';
 import { FindMovementByIdService } from './services/find-movement-by-id.service';
 import { ListMovementsService } from './services/list-movements.service';
 import { RemoveMovementService } from './services/remove-movement.service';
@@ -36,6 +38,7 @@ import { UpdateMovementService } from './services/update-movement.service';
     BatchCreateMovementController,
     CreateManualMovementController,
     ListMovementsCanonicalController,
+    ExportMovementsController,
     FindMovementByIdCanonicalController,
     RemoveMovementCanonicalController,
     UpdateMovementCanonicalController,
@@ -49,6 +52,7 @@ import { UpdateMovementService } from './services/update-movement.service';
     CreateMovementService,
     BatchCreateMovementService,
     ListMovementsService,
+    ExportMovementsService,
     FindMovementByIdService,
     RemoveMovementService,
     UpdateMovementService,

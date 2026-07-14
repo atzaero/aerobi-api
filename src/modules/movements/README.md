@@ -93,9 +93,20 @@ Todos sob `@UseGuards(AerobiApiKeyGuard)` (header `X-API-Key`).
 | Método | Rota | Descrição |
 |--------|------|-----------|
 | `GET` | `/movements` | Lista **paginada** (`{ data, meta }`), filtros opcionais. |
+| `GET` | `/movements/export` | Export **CSV** (mesmos filtros da lista, sem paginação). |
 | `GET` | `/movements/:movementId` | Busca por id. |
 | `PATCH` | `/movements/:movementId` | Corrige a **matrícula** (único campo editável). |
 | `DELETE` | `/movements/:movementId` | Soft delete. |
+
+> **Export CSV** (`ExportMovementsService`): varre todos os movimentos que casam
+> o filtro (mesmo `where` da lista, via `buildMovementsWhere`), sem paginação,
+> até `EXPORT_MAX_ROWS` (50k) — trunca e sinaliza via headers
+> `X-Export-Truncated`/`X-Export-Total`. O CSV projeta o **shape rico** direto da
+> entidade (colunas em `mappers/movement-export.columns.ts`, espelhando o CSV do
+> aerobi-web): inclui `readingStatus`, `comments` e `createdAt`, que a lista
+> enxuta **não** traz. `imageUrl` (presigned, expira) e `confidence` ficam de
+> fora. A rota `/export` é registrada **antes** de `/:movementId` no módulo
+> (Express 5) — invariante travada em `movements.module.spec.ts`.
 
 > **Edição da matrícula** (`UpdateMovementService`): caso de uso para corrigir
 > leituras OCR equivocadas (imagem nítida, matrícula errada). Aceita a matrícula
