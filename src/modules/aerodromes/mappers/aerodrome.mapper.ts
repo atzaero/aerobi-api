@@ -13,8 +13,10 @@ import { AerodromePublicGeojsonMapper } from './aerodrome-public-geojson.mapper'
  * legados de URL/formatação continuam expostos para não regredir o contrato de
  * leitura, ainda que não sejam mais aceitos no create/update. `imgUrl`/`kmlUrl`
  * saem aqui das colunas legadas (sempre `null`); o `FindAerodromeByIdService`
- * os sobrescreve com as presigned resolvidas on-read dos documentos ativos
- * (#550) — `list`/`export` ficam com o legado, pois o web não os consome.
+ * (`toApiRow`, #550) e o `FindVisibleAerodromeByIcaoService` (`toPublicApiRow`,
+ * #551) os sobrescrevem com as presigned resolvidas on-read dos documentos
+ * ativos — `list`/`export`/`visible` (lista) ficam com o legado, pois o web não
+ * os consome nessas superfícies.
  */
 export class AerodromeMapper {
   static toApiRow(entity: AerodromeWithGroup): AerodromeResponseDTO {
@@ -73,6 +75,8 @@ export class AerodromeMapper {
    * Projeção pública (mapa/ficha): omite auditoria, `emergencyPhone`, URLs de
    * documentos administrativos e `isView` (sempre true nestes endpoints).
    * Aninha o GeoJSON operacional (subset de render) ou `null`.
+   * `imgUrl`/`kmlUrl` saem das colunas legadas; o `FindVisibleAerodromeByIcaoService`
+   * os sobrescreve on-read (#551). A lista `visible` mantém o legado.
    */
   static toPublicApiRow(
     entity: AerodromeVisibleWithGroup,
