@@ -2,11 +2,13 @@ import { Injectable, Logger } from '@nestjs/common';
 
 import { EXPORT_MAX_ROWS, toCsv } from '@/common/utils/csv.util';
 import { getErrorMessage } from '@/common/utils/error.util';
+import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
 import { ExportMovementsQueryDTO } from '../dtos/export-movements-query.dto';
 import { movementExportColumns } from '../mappers/movement-export.columns';
 import { MovementRepository } from '../repositories/movement.repository';
-import { buildMovementsWhere } from '../utils/build-movements-where';
+import { buildMovementsScopedWhere } from '../utils/build-movements-where';
+import { MovementScopeService } from './movement-scope.service';
 
 /**
  * Resultado do export: o CSV mais os sinais de truncamento que o controller
@@ -29,12 +31,17 @@ export interface ExportMovementsResult {
 export class ExportMovementsService {
   private readonly logger = new Logger(ExportMovementsService.name);
 
-  constructor(private readonly repo: MovementRepository) {}
+  constructor(
+    private readonly repo: MovementRepository,
+    private readonly scopeService: MovementScopeService,
+  ) {}
 
   async execute(
     query: ExportMovementsQueryDTO,
+    actor: AuthenticatedUser,
   ): Promise<ExportMovementsResult> {
-    const where = buildMovementsWhere(query);
+    const scopedIcaos = await this.scopeService.resolveScopedIcaos(actor);
+    const where = buildMovementsScopedWhere(query, scopedIcaos);
 
     /**
      * Busca `EXPORT_MAX_ROWS + 1` (sem paginação: `skip = 0`) para detectar

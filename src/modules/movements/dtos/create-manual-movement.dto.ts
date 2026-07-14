@@ -17,11 +17,8 @@ import { MovementType } from '@/generated/prisma/enums';
  * (`POST /readings`): aqui o `operationType` é obrigatório (vem do formulário)
  * e não há `confidence`.
  *
- * Autorização: estas rotas ainda usam `AerobiApiKeyGuard` (header `X-API-Key`),
- * pois ainda não há JWT humano aplicado a este módulo (ver AGENTS.md — auth
- * humana "a migrar no futuro"). Por isso o "inserido por" do manual vem do
- * corpo (`createdBy`) por ora; quando a auth humana chegar a estas rotas, o
- * `createdBy` passará a ser derivado do usuário autenticado, não do body.
+ * Autorização: JWT humano (`JwtAuthGuard` + RBAC `movement:create`). O "inserido
+ * por" (`createdBy`) é derivado do usuário autenticado — não vem no corpo.
  */
 export class CreateManualMovementDTO {
   @ApiProperty({
@@ -46,8 +43,12 @@ export class CreateManualMovementDTO {
 
   @ApiProperty({
     example: 'SSCF',
-    description: 'Código ICAO do aeródromo (obrigatório no manual).',
+    description:
+      'Código ICAO do aeródromo (obrigatório no manual; normalizado em maiúsculas).',
   })
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().toUpperCase() : (value as string),
+  )
   @IsString()
   @IsNotEmpty()
   @MaxLength(16)
@@ -66,14 +67,4 @@ export class CreateManualMovementDTO {
   @IsString()
   @MaxLength(10000)
   comments?: string;
-
-  @ApiPropertyOptional({
-    description:
-      'Identificador do usuário que inseriu o movimento (enviado pelo frontend). ' +
-      'Temporário: vem do corpo enquanto não há auth humana neste módulo (ver AGENTS.md).',
-  })
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  createdBy?: string;
 }

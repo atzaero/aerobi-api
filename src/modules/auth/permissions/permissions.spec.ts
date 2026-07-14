@@ -136,6 +136,14 @@ const EXPECTED: Record<
     list: [UserRole.ADMIN, UserRole.COORDINATOR],
     read: [UserRole.ADMIN, UserRole.COORDINATOR],
   },
+  movement: {
+    list: [UserRole.ADMIN, UserRole.COORDINATOR],
+    read: [UserRole.ADMIN, UserRole.COORDINATOR],
+    create: [UserRole.ADMIN, UserRole.COORDINATOR],
+    update: [UserRole.ADMIN, UserRole.COORDINATOR],
+    delete: [UserRole.ADMIN, UserRole.COORDINATOR],
+    export: [UserRole.ADMIN, UserRole.COORDINATOR],
+  },
   dashboard: {
     read: ALL_ROLES,
   },
@@ -144,7 +152,7 @@ const EXPECTED: Record<
 const ALL_SUBJECTS = Object.keys(EXPECTED) as AuthzSubject[];
 
 describe('PERMISSIONS matrix', () => {
-  it('cobre exatamente as 15 entidades esperadas', () => {
+  it('cobre exatamente as 16 entidades esperadas', () => {
     expect(Object.keys(PERMISSIONS).sort()).toEqual([...ALL_SUBJECTS].sort());
   });
 

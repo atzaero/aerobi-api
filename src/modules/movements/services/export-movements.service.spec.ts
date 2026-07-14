@@ -1,17 +1,27 @@
 import { EXPORT_MAX_ROWS } from '@/common/utils/csv.util';
+import { UserRole } from '@/generated/prisma/client';
+import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
 import type { MovementWithSnapshot } from '../mappers/movement.mapper';
 import type { MovementRepository } from '../repositories/movement.repository';
+import type { MovementScopeService } from './movement-scope.service';
 
 import { ExportMovementsService } from './export-movements.service';
 
 const HEADER =
   '﻿Matrícula,Aeródromo,Data/hora da leitura,Tipo de operação,Origem,Conformidade,Status,Comentários,Criado em';
 
+const actor: AuthenticatedUser = {
+  id: 'u-1',
+  email: 'a@e',
+  role: UserRole.ADMIN,
+};
+
 describe('ExportMovementsService', () => {
   let service: ExportMovementsService;
   let findMany: jest.Mock;
   let count: jest.Mock;
+  let resolveScopedIcaos: jest.Mock;
 
   const entity = (
     over: Partial<MovementWithSnapshot> = {},
@@ -34,14 +44,19 @@ describe('ExportMovementsService', () => {
   beforeEach(() => {
     findMany = jest.fn();
     count = jest.fn();
+    /** Por padrão ADMIN (sem restrição de escopo); testes específicos sobrescrevem. */
+    resolveScopedIcaos = jest.fn().mockResolvedValue(null);
     const repo = { findMany, count } as unknown as MovementRepository;
-    service = new ExportMovementsService(repo);
+    const scopeService = {
+      resolveScopedIcaos,
+    } as unknown as MovementScopeService;
+    service = new ExportMovementsService(repo, scopeService);
   });
 
   it('busca MAX+1 sem paginação; CSV com cabeçalho pt-BR + linha (shape rico), sem truncar nem contar', async () => {
     findMany.mockResolvedValue([entity()]);
 
-    const { csv, truncated, total } = await service.execute({});
+    const { csv, truncated, total } = await service.execute({}, actor);
 
     expect(findMany).toHaveBeenCalledWith({}, 0, EXPORT_MAX_ROWS + 1);
     expect(count).not.toHaveBeenCalled();
@@ -56,6 +71,19 @@ describe('ExportMovementsService', () => {
     );
   });
 
+  it('aplica o escopo por ICAO ao where (coordinator restrito ao grupo)', async () => {
+    resolveScopedIcaos.mockResolvedValue(['SSCF']);
+    let captured: Record<string, unknown> = {};
+    findMany.mockImplementation((where: Record<string, unknown>) => {
+      captured = where;
+      return Promise.resolve([]);
+    });
+
+    await service.execute({}, actor);
+
+    expect(captured).toEqual({ AND: [{}, { aerodrome: { in: ['SSCF'] } }] });
+  });
+
   it('trunca em EXPORT_MAX_ROWS e sinaliza truncated + total real (count best-effort)', async () => {
     const warn = jest.spyOn(service['logger'], 'warn').mockImplementation();
     const one = entity();
@@ -64,7 +92,7 @@ describe('ExportMovementsService', () => {
     );
     count.mockResolvedValue(73_000);
 
-    const { csv, truncated, total } = await service.execute({});
+    const { csv, truncated, total } = await service.execute({}, actor);
 
     expect(csv.split('\r\n')).toHaveLength(1 + EXPORT_MAX_ROWS);
     expect(truncated).toBe(true);
@@ -80,7 +108,7 @@ describe('ExportMovementsService', () => {
     );
     count.mockRejectedValue(new Error('db timeout'));
 
-    const { truncated, total } = await service.execute({});
+    const { truncated, total } = await service.execute({}, actor);
 
     expect(truncated).toBe(true);
     expect(total).toBe(EXPORT_MAX_ROWS);
@@ -93,7 +121,7 @@ describe('ExportMovementsService', () => {
       return Promise.resolve([]);
     });
 
-    await service.execute({ registration: 'PR-ZTT' });
+    await service.execute({ registration: 'PR-ZTT' }, actor);
 
     expect(captured.registration).toBe('PRZTT');
   });
@@ -101,7 +129,7 @@ describe('ExportMovementsService', () => {
   it('cabeçalho presente mesmo sem linhas', async () => {
     findMany.mockResolvedValue([]);
 
-    const { csv, total, truncated } = await service.execute({});
+    const { csv, total, truncated } = await service.execute({}, actor);
 
     expect(total).toBe(0);
     expect(truncated).toBe(false);

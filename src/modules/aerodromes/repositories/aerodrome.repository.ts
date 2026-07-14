@@ -156,4 +156,12 @@ export class AerodromeRepository implements IAerodromeRepository {
     });
     return rows.map((r) => r.id);
   }
+
+  async findActiveIcaosByGroup(groupId: string): Promise<string[]> {
+    const rows = await this.prisma.aerodrome.findMany({
+      where: { groupId, ...activeWhere },
+      select: { icao: true },
+    });
+    return rows.map((r) => r.icao);
+  }
 }

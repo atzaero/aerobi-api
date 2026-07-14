@@ -1,17 +1,26 @@
+import { UserRole } from '@/generated/prisma/client';
 import type { MovementAircraftSnapshot } from '@/generated/prisma/client';
-
+import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 import type { StorageService } from '@/modules/storage/services/storage.service';
 
 import type { MovementWithSnapshot } from '../mappers/movement.mapper';
 import type { MovementRepository } from '../repositories/movement.repository';
+import type { MovementScopeService } from './movement-scope.service';
 
 import { ListMovementsService } from './list-movements.service';
+
+const actor: AuthenticatedUser = {
+  id: 'u-1',
+  email: 'a@e',
+  role: UserRole.ADMIN,
+};
 
 describe('ListMovementsService', () => {
   let service: ListMovementsService;
   let findMany: jest.Mock;
   let count: jest.Mock;
   let getPresignedUrl: jest.Mock;
+  let resolveScopedIcaos: jest.Mock;
 
   const snapshot = (
     over: Partial<MovementAircraftSnapshot> = {},
@@ -67,9 +76,14 @@ describe('ListMovementsService', () => {
     findMany = jest.fn();
     count = jest.fn();
     getPresignedUrl = jest.fn();
+    /** Por padrão ADMIN (sem restrição de escopo); testes específicos sobrescrevem. */
+    resolveScopedIcaos = jest.fn().mockResolvedValue(null);
     const repo = { findMany, count } as unknown as MovementRepository;
     const storage = { getPresignedUrl } as unknown as StorageService;
-    service = new ListMovementsService(repo, storage);
+    const scopeService = {
+      resolveScopedIcaos,
+    } as unknown as MovementScopeService;
+    service = new ListMovementsService(repo, storage, scopeService);
   });
 
   it('paginação padrão, envelope meta, item enxuto e presigned por item', async () => {
@@ -77,7 +91,7 @@ describe('ListMovementsService', () => {
     count.mockResolvedValue(1);
     getPresignedUrl.mockResolvedValue('https://signed/a');
 
-    const res = await service.execute({});
+    const res = await service.execute({}, actor);
 
     expect(findMany).toHaveBeenCalledWith({}, 0, 10);
     expect(res.meta).toEqual({
@@ -105,7 +119,7 @@ describe('ListMovementsService', () => {
     count.mockResolvedValue(1);
     getPresignedUrl.mockResolvedValue('https://signed/a');
 
-    const res = await service.execute({});
+    const res = await service.execute({}, actor);
 
     expect(res.data[0]).not.toHaveProperty('aircraftSnapshot');
     expect(res.data[0]).not.toHaveProperty('readingStatus');
@@ -135,16 +149,19 @@ describe('ListMovementsService', () => {
       return Promise.resolve([]);
     });
 
-    await service.execute({
-      registration: 'PR-ZTT',
-      aerodrome: 'SSCF',
-      reading_status: 'APPROVED',
-      operation_type: 'TAKEOFF',
-      source: 'MANUAL',
-      conformity_status: 'NON_CONFORMANT',
-      start_date: '2026-05-01',
-      end_date: '2026-05-31',
-    });
+    await service.execute(
+      {
+        registration: 'PR-ZTT',
+        aerodrome: 'SSCF',
+        reading_status: 'APPROVED',
+        operation_type: 'TAKEOFF',
+        source: 'MANUAL',
+        conformity_status: 'NON_CONFORMANT',
+        start_date: '2026-05-01',
+        end_date: '2026-05-31',
+      },
+      actor,
+    );
 
     /** Filtro normalizado para a forma canônica do banco (entrada "PR-ZTT"). */
     expect(captured.registration).toBe('PRZTT');
@@ -161,7 +178,8 @@ describe('ListMovementsService', () => {
     );
   });
 
-  it('não aplica operation_type/source no where quando ausentes', async () => {
+  it('aplica o escopo por ICAO ao where (coordinator restrito ao grupo)', async () => {
+    resolveScopedIcaos.mockResolvedValue(['SSCF', 'SBSP']);
     let captured: Record<string, unknown> = {};
     findMany.mockImplementation((where: Record<string, unknown>) => {
       captured = where;
@@ -169,18 +187,32 @@ describe('ListMovementsService', () => {
     });
     count.mockResolvedValue(0);
 
-    await service.execute({});
+    await service.execute({}, actor);
 
-    expect(captured).not.toHaveProperty('operationType');
-    expect(captured).not.toHaveProperty('source');
-    expect(captured).not.toHaveProperty('conformityStatus');
+    expect(captured).toEqual({
+      AND: [{}, { aerodrome: { in: ['SSCF', 'SBSP'] } }],
+    });
+  });
+
+  it('coordinator sem grupo: fail-closed (aerodrome IN [])', async () => {
+    resolveScopedIcaos.mockResolvedValue([]);
+    let captured: Record<string, unknown> = {};
+    findMany.mockImplementation((where: Record<string, unknown>) => {
+      captured = where;
+      return Promise.resolve([]);
+    });
+    count.mockResolvedValue(0);
+
+    await service.execute({}, actor);
+
+    expect(captured).toEqual({ AND: [{}, { aerodrome: { in: [] } }] });
   });
 
   it('imageUrl null quando o item não tem imageKey', async () => {
     findMany.mockResolvedValue([entity({ imageKey: null })]);
     count.mockResolvedValue(1);
 
-    const res = await service.execute({});
+    const res = await service.execute({}, actor);
 
     expect(getPresignedUrl).not.toHaveBeenCalled();
     expect(res.data[0].imageUrl).toBeNull();

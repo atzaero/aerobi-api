@@ -48,6 +48,7 @@ export type AuthzSubject =
   | 'contact'
   | 'rab'
   | 'aviascan_reading'
+  | 'movement'
   | 'dashboard';
 
 /**
@@ -234,6 +235,23 @@ export const PERMISSIONS: Record<
   aviascan_reading: {
     list: [UserRole.ADMIN, UserRole.COORDINATOR],
     read: [UserRole.ADMIN, UserRole.COORDINATOR],
+  },
+  // Movimentos (pousos/decolagens) geridos pelo usuário no painel. Espelha
+  // **célula a célula** a matriz `movement` do `aerobi-web` (admin/coordinator
+  // em list/read/create/update/delete). `export` é action própria da API (para
+  // `GET /movements/export`), alinhada ao `list` — o web reusa a permissão de
+  // list para exportar. O escopo por registro (coordinator restrito ao próprio
+  // grupo) é resolvido server-side pelo conjunto de ICAOs do grupo do ator
+  // (issue #559), não nesta matriz. A **ingestão automática** (`POST /readings`
+  // + `/readings/batch`, aviascan-cv) NÃO passa por aqui — permanece sob
+  // `AerobiApiKeyGuard` (integração externa).
+  movement: {
+    list: [UserRole.ADMIN, UserRole.COORDINATOR],
+    read: [UserRole.ADMIN, UserRole.COORDINATOR],
+    create: [UserRole.ADMIN, UserRole.COORDINATOR],
+    update: [UserRole.ADMIN, UserRole.COORDINATOR],
+    delete: [UserRole.ADMIN, UserRole.COORDINATOR],
+    export: [UserRole.ADMIN, UserRole.COORDINATOR],
   },
   // Dashboard por papel: todo papel autenticado lê a sua própria dashboard. O
   // recorte de dados e o escopo por registro são resolvidos server-side. Só

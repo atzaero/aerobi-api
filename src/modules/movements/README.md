@@ -73,7 +73,16 @@ visível no momento da consulta). Decisão registrada na epic #229.
 
 ## Endpoints
 
-Todos sob `@UseGuards(AerobiApiKeyGuard)` (header `X-API-Key`).
+Dois regimes de autenticação (issue #559):
+
+- **Ingestão automática** (`POST /readings` + `/readings/batch`, aviascan-cv):
+  `@UseGuards(AerobiApiKeyGuard)` (header `X-API-Key`) — integração externa, não
+  usa a auth humana.
+- **Gestão** (`/movements*`): `@UseGuards(JwtAuthGuard, PermissionsGuard)` +
+  `@RequirePermission('movement', …)` (JWT humano). RBAC **admin/coordinator**
+  (espelha `aerobi-web/src/lib/permissions.ts`); o coordinator é restrito ao
+  próprio grupo pelo **escopo por ICAO** (`MovementScopeService`), já que
+  `Movement.aerodrome` é o ICAO (string, nullable), não uma FK a `aerodromes`.
 
 ### Ingestão automática (aviascan-cv) — `/readings`
 
@@ -86,9 +95,9 @@ Todos sob `@UseGuards(AerobiApiKeyGuard)` (header `X-API-Key`).
 
 | Método | Rota | Descrição |
 |--------|------|-----------|
-| `POST` | `/movements` | Criação **manual** pela interface (multipart). `operationType` obrigatório no corpo; `createdBy` opcional. |
+| `POST` | `/movements` | Criação **manual** pela interface (multipart, JWT). `operationType` obrigatório; `createdBy` deriva do usuário autenticado; coordinator só cria para aeródromos do próprio grupo. |
 
-### Consulta canônica — `/movements`
+### Consulta e gestão canônica — `/movements` (JWT)
 
 | Método | Rota | Descrição |
 |--------|------|-----------|
@@ -99,8 +108,8 @@ Todos sob `@UseGuards(AerobiApiKeyGuard)` (header `X-API-Key`).
 | `DELETE` | `/movements/:movementId` | Soft delete. |
 
 > **Export CSV** (`ExportMovementsService`): varre todos os movimentos que casam
-> o filtro (mesmo `where` da lista, via `buildMovementsWhere`), sem paginação,
-> até `EXPORT_MAX_ROWS` (50k) — trunca e sinaliza via headers
+> o filtro (mesmo `where`/escopo da lista, via `buildMovementsScopedWhere`), sem
+> paginação, até `EXPORT_MAX_ROWS` (50k) — trunca e sinaliza via headers
 > `X-Export-Truncated`/`X-Export-Total`. O CSV projeta o **shape rico** direto da
 > entidade (colunas em `mappers/movement-export.columns.ts`, espelhando o CSV do
 > aerobi-web): inclui `readingStatus`, `comments` e `createdAt`, que a lista
@@ -117,18 +126,14 @@ Todos sob `@UseGuards(AerobiApiKeyGuard)` (header `X-API-Key`).
 > (a regra toggle de 48h só vale na ingestão). Sem alias legado em `/readings` —
 > edição é funcionalidade nova; o cliente legado apenas cria.
 
-### Consulta legada (DEPRECADO) — `/readings`
+### Rotas `/readings` de consulta — **aposentadas** (issue #559)
 
-| Método | Rota | Estado |
-|--------|------|--------|
-| `GET` | `/readings` | **DEPRECADO** — alias de `GET /movements`. |
-| `GET` | `/readings/:readingId` | **DEPRECADO** — alias de `GET /movements/:id`. |
-| `DELETE` | `/readings/:readingId` | **DEPRECADO** — alias de `DELETE /movements/:id`. |
-
-> As três rotas de **consulta** `/readings` continuam funcionais como alias do
-> mesmo serviço (`@deprecated` no Swagger). As rotas de **ingestão** `POST /readings`
-> e `POST /readings/batch` **não** são deprecadas — são o canal de entrada do
-> aviascan-cv. Não confundir consulta (deprecada) com ingestão (mantida).
+As antigas rotas de consulta `GET /readings`, `GET /readings/:id` e
+`DELETE /readings/:id` (aliases deprecados de `/movements`) foram **removidas**
+na migração para JWT: mantê-las sob `X-API-Key` sem escopo seria uma brecha, e o
+`aerobi-web` já consome `/movements`. Assim, o path `/readings` fica **exclusivo
+da ingestão externa** (`POST /readings` + `/readings/batch`, X-API-Key); toda
+consulta/gestão vive em `/movements` (JWT).
 
 ### Contrato de entrada `/readings` (compat Python)
 
