@@ -35,7 +35,8 @@ import { UpdateAerodromeObservationService } from './services/update-aerodrome-o
  * `UsersModule` (`UserRepository`, para o lookup do escopo de grupo do ator nos
  * services de list/create). `AerobiApiKeyGuard` cobre as rotas públicas
  * `/visible` (mapa/ficha). `DocumentsModule` expõe o `AerodromeFileUrlsService`
- * para resolver `imgUrl`/`kmlUrl` on-read no detalhe (#550).
+ * para resolver `imgUrl`/`kmlUrl` on-read no detalhe (#550) e na ficha pública
+ * `GET /aerodromes/visible/:icao` (#551).
  */
 @Module({
   imports: [PrismaModule, AuthModule, UsersModule, DocumentsModule],
