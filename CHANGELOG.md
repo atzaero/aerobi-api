@@ -1,3 +1,10 @@
+# [2.6.0-beta.57](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.56...v2.6.0-beta.57) (2026-07-14)
+
+
+### Bug Fixes
+
+* **aerodromes:** resolve imgUrl/kmlUrl na ficha pública visible/:icao ([#553](https://github.com/atzaero/aerobi-api/issues/553)) ([1a08110](https://github.com/atzaero/aerobi-api/commit/1a08110a22ce2f78fb376af4f99a771013c11102)), closes [#550](https://github.com/atzaero/aerobi-api/issues/550)
+
 # [2.6.0-beta.56](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.55...v2.6.0-beta.56) (2026-07-13)
 
 
