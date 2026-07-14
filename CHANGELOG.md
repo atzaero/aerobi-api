@@ -1,3 +1,10 @@
+# [2.6.0-beta.58](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.57...v2.6.0-beta.58) (2026-07-14)
+
+
+### Features
+
+* **movements:** endpoint de export CSV (GET /movements/export) ([4f8b69d](https://github.com/atzaero/aerobi-api/commit/4f8b69d52ddab7eef760c814eaf2c0c2c4b19d03)), closes [541/#1094](https://github.com/atzaero/aerobi-api/issues/1094) [#554](https://github.com/atzaero/aerobi-api/issues/554)
+
 # [2.6.0-beta.57](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.56...v2.6.0-beta.57) (2026-07-14)
 
 
