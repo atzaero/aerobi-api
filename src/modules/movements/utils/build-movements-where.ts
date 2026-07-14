@@ -66,3 +66,20 @@ export function buildMovementsWhere(
 
   return where;
 }
+
+/**
+ * `where` da lista/export **com escopo por grupo** aplicado sobre o conjunto de
+ * ICAOs visíveis ao ator (resolvido em `MovementScopeService`):
+ *  - `scopedIcaos === null` → sem restrição de aeródromo (ADMIN);
+ *  - `scopedIcaos` (array) → restringe a `aerodrome IN (icaos)` — combinado com
+ *    um eventual filtro `aerodrome` específico via `AND`. Array vazio (coordinator
+ *    sem grupo) resolve para `{ in: [] }`, que não casa nada (**fail-closed**).
+ */
+export function buildMovementsScopedWhere(
+  filters: MovementWhereFilters,
+  scopedIcaos: string[] | null,
+): Prisma.MovementWhereInput {
+  const where = buildMovementsWhere(filters);
+  if (scopedIcaos === null) return where;
+  return { AND: [where, { aerodrome: { in: scopedIcaos } }] };
+}

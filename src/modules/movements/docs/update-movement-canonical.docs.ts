@@ -1,11 +1,13 @@
 import { applyDecorators } from '@nestjs/common';
 import {
+  ApiBearerAuth,
   ApiBody,
+  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
-  ApiSecurity,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
 import { MovementResponseDTO } from '../dtos/movement-response.dto';
@@ -13,7 +15,7 @@ import { UpdateMovementDTO } from '../dtos/update-movement.dto';
 
 export function UpdateMovementCanonicalDocs() {
   return applyDecorators(
-    ApiSecurity('api_key'),
+    ApiBearerAuth(),
     ApiOperation({
       summary: 'Corrige a matrícula (registration) de um movimento.',
       description:
@@ -27,6 +29,10 @@ export function UpdateMovementCanonicalDocs() {
     }),
     ApiBody({ type: UpdateMovementDTO }),
     ApiOkResponse({ type: MovementResponseDTO }),
-    ApiNotFoundResponse({ description: 'Movimento não encontrado.' }),
+    ApiUnauthorizedResponse({ description: 'Token ausente ou inválido.' }),
+    ApiForbiddenResponse({ description: 'Sem permissão `movement:update`.' }),
+    ApiNotFoundResponse({
+      description: 'Movimento não encontrado ou fora do escopo do ator.',
+    }),
   );
 }

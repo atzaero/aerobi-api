@@ -6,6 +6,7 @@ import { ConformityStatus } from '@/generated/prisma/enums';
 import { ErrorCode } from '@/common/enums/error-code.enum';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
 import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
+import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 import { RabRowRepository } from '@/modules/rab/repositories/rab-row.repository';
 import { normalizeMarcas } from '@/modules/rab/utils/normalize-marcas';
 import { StorageService } from '@/modules/storage/services/storage.service';
@@ -20,15 +21,16 @@ import { buildAircraftSnapshotCreateInput } from '../mappers/aircraft-snapshot.p
 import { MovementMapper } from '../mappers/movement.mapper';
 import { MovementRepository } from '../repositories/movement.repository';
 import { isConformityApplicable } from '../utils/conformity-status.util';
+import { MovementScopeService } from './movement-scope.service';
 
 /**
- * Entrada do {@link UpdateMovementService.execute}: o id do movimento, a
- * matrícula tolerante (será normalizada) e o autor da edição (auditoria).
+ * Entrada do {@link UpdateMovementService.execute}: o id do movimento e a
+ * matrícula tolerante (será normalizada). O autor da edição (auditoria) e o
+ * escopo derivam do ator autenticado, passado à parte.
  */
 export interface UpdateMovementInput {
   id: string;
   registration: string;
-  updatedBy: string;
 }
 
 /**
@@ -46,9 +48,13 @@ export class UpdateMovementService {
     private readonly errorMessageService: ErrorMessageService,
     private readonly rabRowRepo: RabRowRepository,
     private readonly eventEmitter: EventEmitter2,
+    private readonly scopeService: MovementScopeService,
   ) {}
 
-  async execute(input: UpdateMovementInput): Promise<MovementResponseDTO> {
+  async execute(
+    input: UpdateMovementInput,
+    actor: AuthenticatedUser,
+  ): Promise<MovementResponseDTO> {
     const existing = await this.repo.findById(input.id);
     if (!existing) {
       throw new CustomHttpException(
@@ -60,6 +66,7 @@ export class UpdateMovementService {
         ErrorCode.RESOURCE_NOT_FOUND,
       );
     }
+    await this.scopeService.assertMovementInScope(existing, input.id, actor);
 
     /**
      * Normaliza a matrícula para a forma canônica (sem hífen/espaços,
@@ -102,7 +109,7 @@ export class UpdateMovementService {
       input.id,
       registration,
       snapshot,
-      input.updatedBy,
+      actor.id,
       shouldReevaluate ? ConformityStatus.PENDING : undefined,
     );
 

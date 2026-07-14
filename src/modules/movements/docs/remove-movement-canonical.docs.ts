@@ -1,18 +1,24 @@
 import { applyDecorators } from '@nestjs/common';
 import {
+  ApiBearerAuth,
+  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
-  ApiSecurity,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
 import { MovementResponseDTO } from '../dtos/movement-response.dto';
 
 export function RemoveMovementCanonicalDocs() {
   return applyDecorators(
-    ApiSecurity('api_key'),
+    ApiBearerAuth(),
     ApiOperation({ summary: 'Remove (soft delete) um movimento por id.' }),
     ApiOkResponse({ type: MovementResponseDTO }),
-    ApiNotFoundResponse({ description: 'Movimento não encontrado.' }),
+    ApiUnauthorizedResponse({ description: 'Token ausente ou inválido.' }),
+    ApiForbiddenResponse({ description: 'Sem permissão `movement:delete`.' }),
+    ApiNotFoundResponse({
+      description: 'Movimento não encontrado ou fora do escopo do ator.',
+    }),
   );
 }

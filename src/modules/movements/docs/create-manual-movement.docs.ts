@@ -1,10 +1,12 @@
 import { applyDecorators } from '@nestjs/common';
 import {
+  ApiBearerAuth,
   ApiBody,
   ApiConsumes,
   ApiCreatedResponse,
+  ApiForbiddenResponse,
   ApiOperation,
-  ApiSecurity,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
 import { MovementType } from '@/generated/prisma/enums';
@@ -13,13 +15,14 @@ import { CreateMovementResponseDTO } from '../dtos/create-movement-response.dto'
 
 export function CreateManualMovementDocs() {
   return applyDecorators(
-    ApiSecurity('api_key'),
+    ApiBearerAuth(),
     ApiOperation({
       summary: 'Registra um movimento manualmente (interface humana).',
       description:
         'Criação MANUAL pela interface: o operador informa `operationType` (pouso/decolagem) ' +
         'e o aeródromo. multipart/form-data com imagem opcional no campo `image`. ' +
-        'Ainda protegido por X-API-Key; `createdBy` vem do corpo até a auth humana chegar.',
+        'JWT + `movement:create`; `createdBy` deriva do usuário autenticado e o ' +
+        'coordinator só cria para aeródromos do próprio grupo.',
     }),
     ApiConsumes('multipart/form-data'),
     ApiBody({
@@ -45,11 +48,12 @@ export function CreateManualMovementDocs() {
             example: MovementType.LANDING,
           },
           comments: { type: 'string' },
-          createdBy: { type: 'string' },
           image: { type: 'string', format: 'binary' },
         },
       },
     }),
     ApiCreatedResponse({ type: CreateMovementResponseDTO }),
+    ApiUnauthorizedResponse({ description: 'Token ausente ou inválido.' }),
+    ApiForbiddenResponse({ description: 'Sem permissão `movement:create`.' }),
   );
 }
