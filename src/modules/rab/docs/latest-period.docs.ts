@@ -1,16 +1,24 @@
 import { applyDecorators } from '@nestjs/common';
-import { ApiOperation, ApiSecurity } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiForbiddenResponse,
+  ApiOperation,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 
 /**
- * Ver `AerobiApiKeyGuard`: em produção (ou dev com auth forçada) exige `X-API-Key`.
+ * Swagger para `GET /rab/latest-period` — JWT + RBAC `rab:read`.
  */
 export function LatestPeriodDocs() {
   return applyDecorators(
-    ApiSecurity('api_key'),
+    ApiBearerAuth(),
     ApiOperation({
       summary: 'Último período YYYY-MM listado no índice ANAC (sem gravar)',
       description:
-        '**Autenticação:** `X-API-Key` = `AEROBI_API_KEY` (exceto bypass em `development`; ver guard).',
+        '**Autenticação:** JWT (Bearer) com permissão `rab:read` ' +
+        '(admin/coordinator/operator).',
     }),
+    ApiUnauthorizedResponse({ description: 'Token ausente ou inválido.' }),
+    ApiForbiddenResponse({ description: 'Sem permissão `rab:read`.' }),
   );
 }

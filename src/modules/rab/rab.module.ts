@@ -2,7 +2,7 @@ import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
-import { AerobiApiKeyGuard } from '@/common/guards/aerobi-api-key.guard';
+import { AuthModule } from '@/modules/auth/auth.module';
 
 import { LatestPeriodController } from './controllers/latest-period.controller';
 import { RowsController } from './controllers/rows.controller';
@@ -18,6 +18,7 @@ import { RabSyncStateService } from './services/rab-sync-state.service';
 
 @Module({
   imports: [
+    AuthModule,
     HttpModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -41,7 +42,6 @@ import { RabSyncStateService } from './services/rab-sync-state.service';
     SyncController,
   ],
   providers: [
-    AerobiApiKeyGuard,
     AnacIndexService,
     RabCsvParserService,
     RabRowRepository,

@@ -1,10 +1,12 @@
 import { applyDecorators } from '@nestjs/common';
 import {
+  ApiBearerAuth,
   ApiExtraModels,
+  ApiForbiddenResponse,
   ApiOkResponse,
   ApiOperation,
   ApiQuery,
-  ApiSecurity,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
 import { PaginationMetadataUtil } from '@/common/utils/pagination.util';
@@ -13,11 +15,11 @@ import { RabRowResponseDTO } from '../dtos/rab-row-response.dto';
 import { RabRowsPaginatedResponseDTO } from '../dtos/rab-rows-paginated-response.dto';
 
 /**
- * Ver `AerobiApiKeyGuard`: em produção (ou dev com auth forçada) exige `X-API-Key`.
+ * Swagger para `GET /rab/rows` — JWT + RBAC `rab:read`.
  */
 export function RowsDocs() {
   return applyDecorators(
-    ApiSecurity('api_key'),
+    ApiBearerAuth(),
     ApiExtraModels(
       PaginationMetadataUtil,
       RabRowResponseDTO,
@@ -27,7 +29,8 @@ export function RowsDocs() {
       summary:
         'Consulta paginada de linhas RAB por período (dados abertos ANAC)',
       description:
-        '**Autenticação:** `X-API-Key` = `AEROBI_API_KEY` (exceto bypass em `development`; ver guard). ' +
+        '**Autenticação:** JWT (Bearer) com permissão `rab:read` ' +
+        '(admin/coordinator/operator). ' +
         'Resposta no formato `{ data, meta }` (padrão paginado; metadados em `meta`). ' +
         'Filtros opcionais usam correspondência parcial case-insensitive (`contains`).',
     }),
@@ -79,5 +82,7 @@ export function RowsDocs() {
       description: 'Lista paginada de linhas RAB',
       type: RabRowsPaginatedResponseDTO,
     }),
+    ApiUnauthorizedResponse({ description: 'Token ausente ou inválido.' }),
+    ApiForbiddenResponse({ description: 'Sem permissão `rab:read`.' }),
   );
 }

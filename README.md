@@ -73,13 +73,14 @@ docker compose -f docker-compose.prod.yml up -d
 
 ### Autenticação HTTP (API key única)
 
-- Rotas **`/rab/*`**, **`/private-aerodromes/*`**, **`/plugfield/*`** e **`/aisweb/*`** exigem header **`X-API-Key`** = **`AEROBI_API_KEY`**, exceto **`NODE_ENV=development`** sem `AEROBI_REQUIRE_AUTH` (bypass para DX). Com `AEROBI_REQUIRE_AUTH=true`, a chave é exigida também em development.
+- Rotas **`/private-aerodromes/*`**, **`/plugfield/*`** e **`/aisweb/*`** exigem header **`X-API-Key`** = **`AEROBI_API_KEY`**, exceto **`NODE_ENV=development`** sem `AEROBI_REQUIRE_AUTH` (bypass para DX). Com `AEROBI_REQUIRE_AUTH=true`, a chave é exigida também em development.
+- Rotas **`/rab/*`** usam **JWT** (não X-API-Key): `GET /rab/latest-period` e `GET /rab/rows` exigem permissão `rab:read` (admin/coordinator/operator); `POST /rab/sync` e `GET /rab/sync-state` exigem role `ADMIN`.
 - Em produção, `AEROBI_API_KEY` tem de estar definida; caso contrário essas rotas respondem 401.
 - No **aerobi-web** (Next), define **`AEROBI_API_KEY`** (ou o valor configurado no hosting) para enviar `X-API-Key` nas chamadas à API.
 
 ### Sincronização manual (RAB)
 
-- `POST /rab/sync` — corpo opcional `{ "period": "2026-03", "force": true }`.
+- `POST /rab/sync` — corpo opcional `{ "period": "2026-03", "force": true }`. Requer JWT com role `ADMIN`.
 
 Cron: variável `RAB_SYNC_CRON` (padrão `0 5 * * *`). Desative jobs com `RAB_SYNC_CRON_DISABLED=true`.
 
