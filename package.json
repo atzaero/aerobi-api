@@ -82,7 +82,7 @@
     "@eslint/js": "^9.18.0",
     "@nestjs/cli": "^11.0.23",
     "@nestjs/schematics": "^11.0.0",
-    "@nestjs/testing": "^11.1.9",
+    "@nestjs/testing": "^11.1.28",
     "@types/bcryptjs": "^2.4.6",
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
