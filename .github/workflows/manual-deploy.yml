@@ -1,0 +1,96 @@
+name: Manual Deploy
+
+# Deploy MANUAL de uma versão JÁ PUBLICADA (tag vX.Y.Z existente), sem passar
+# pelo semantic-release. Cobre dois casos que o release.yml não resolve sozinho:
+#   - recuperar um release cujo pipeline travou/foi cancelado após publicar a tag
+#     (semantic-release não republica → gate `new_release_published` pula o deploy);
+#   - re-deploy pontual de uma versão para produção ou staging.
+#
+# Fluxo: build/push da imagem GHCR a partir da tag → deploy.yml reutilizável
+# (mesma composite/secrets do fluxo automático). A imagem é reconstruída a partir
+# da tag (idempotente); o `.env` é gerado dos secrets do GitHub Environment.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Versão/tag já publicada a deployar (sem "v"). Ex: 2.6.0'
+        required: true
+        type: string
+      environment:
+        description: Ambiente alvo
+        required: true
+        type: choice
+        options:
+          - production
+          - staging
+        default: production
+
+# Serializa por ambiente e não colide com o group do release.yml. Não mata um
+# deploy em andamento (evita estado parcial na VPS).
+concurrency:
+  group: manual-deploy-${{ inputs.environment }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  docker:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout (tag)
+        uses: actions/checkout@v6
+        with:
+          ref: v${{ inputs.version }}
+          fetch-depth: 0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          # `latest` só quando o alvo é produção; staging recebe a tag móvel `beta`.
+          tags: |
+            type=raw,value=${{ inputs.version }}
+            type=raw,value=latest,enable=${{ inputs.environment == 'production' }}
+            type=raw,value=beta,enable=${{ inputs.environment == 'staging' }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy ${{ inputs.environment }}
+    needs: docker
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: ${{ inputs.environment }}
+      compose_file: ${{ inputs.environment == 'production' && 'docker-compose.prod.yml' || 'docker-compose.staging.yml' }}
+      env_file: ${{ inputs.environment == 'production' && '.env' || '.env.staging' }}
+      node_env: ${{ inputs.environment }}
+      image_tag: ${{ inputs.version }}
+      url: ${{ inputs.environment == 'production' && 'https://api.aerobi.com.br' || 'https://api.staging.aerobi.com.br' }}
+      project_name: ${{ inputs.environment == 'production' && '' || 'aerobi-api-staging' }}
+      db_name_guard: ${{ inputs.environment == 'production' && '' || 'aerobi_staging' }}
+    secrets: inherit
