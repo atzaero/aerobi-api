@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@/generated/prisma/client';
+import { Prisma, type RabRow } from '@/generated/prisma/client';
 import { createId } from '@paralleldrive/cuid2';
 
 import { PrismaService } from '@/prisma/prisma.service';
@@ -100,6 +100,22 @@ export class RabRowRepository implements IRabRowRepository {
         ${CONFLICT_UPDATE}
       `;
     }
+  }
+
+  /**
+   * Retorna a `rab_row` mais recente (maior `period`) para uma matrícula. Usado
+   * pelo snapshot de aeronave no momento da criação do movimento.
+   *
+   * Espera `marcas` já na **forma canônica** do banco (sem hífen, ex.: "PTKOB").
+   * A normalização do input é responsabilidade da camada de service (ver
+   * `normalizeMarcas`); aqui só comparamos case-insensitive. O no-match é
+   * tratado graciosamente (retorna `null`) e o movimento não falha.
+   */
+  findLatestByMarcas(marcas: string): Promise<RabRow | null> {
+    return this.prisma.rabRow.findFirst({
+      where: { marcas: { equals: marcas, mode: 'insensitive' } },
+      orderBy: { period: 'desc' },
+    });
   }
 
   findMany(where: Prisma.RabRowWhereInput, skip: number, take: number) {

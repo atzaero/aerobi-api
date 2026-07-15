@@ -1,16 +1,24 @@
 import { applyDecorators } from '@nestjs/common';
-import { ApiOperation, ApiSecurity } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiForbiddenResponse,
+  ApiOperation,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 
 /**
- * Ver `AerobiApiKeyGuard`: em produção (ou dev com auth forçada) exige `X-API-Key`.
+ * Swagger para `GET /rab/sync-state` — operação administrativa: JWT (Bearer) +
+ * role `ADMIN`.
  */
 export function SyncStateDocs() {
   return applyDecorators(
-    ApiSecurity('api_key'),
+    ApiBearerAuth(),
     ApiOperation({
       summary: 'Estados de sincronização por período',
       description:
-        '**Autenticação:** `X-API-Key` = `AEROBI_API_KEY` (exceto bypass em `development`; ver guard).',
+        '**Autenticação:** JWT (Bearer) com role `ADMIN` — operação administrativa.',
     }),
+    ApiUnauthorizedResponse({ description: 'Token ausente ou inválido.' }),
+    ApiForbiddenResponse({ description: 'Requer role `ADMIN`.' }),
   );
 }

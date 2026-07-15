@@ -25,27 +25,36 @@
 
 API **Aerobi** — NestJS + PostgreSQL (Prisma), sincronização do [RAB histórico ANAC](https://sistemas.anac.gov.br/dadosabertos/Aeronaves/RAB/Historico_RAB/) (CSV), cron diário e rotas para o frontend.
 
-### Rodar com Docker (Postgres + API)
+### Pré-requisito: infra local compartilhada
+
+Os serviços de dado (Postgres, MinIO, Evolution GO) vêm do projeto **[`atzaero/aerobi-local-infra`](https://github.com/atzaero/aerobi-local-infra)** (rede docker `aerobi-local`; portas host `5433`/`9002`/`9003`/`4000`, escolhidas para não colidir com outras infra locais). Suba-a **antes** da API:
+
+```bash
+git clone git@github.com:atzaero/aerobi-local-infra && cd aerobi-local-infra
+cp .env.example .env && make up
+```
+
+### Rodar a API com Docker (watch)
 
 ```bash
 cp .env.example .env
-# Ajuste POSTGRES_* e DATABASE_URL se necessário
 docker compose -f docker-compose.dev.yml up --build
 ```
 
-Na primeira vez o script roda `prisma migrate deploy` e sobe o Nest em `--watch`. API: `http://localhost:3333`, Swagger: `http://localhost:3333/api/docs`.
+A API anexa-se à rede `aerobi-local` e fala com os serviços pelos hostnames internos. Na primeira vez o script roda `prisma migrate deploy` e sobe o Nest em `--watch`. API: `http://localhost:3333`, Swagger: `http://localhost:3333/api/docs`.
 
-### Postgres + API local (imagem de produção, sem watch)
+### API local com a imagem de produção (sem watch)
 
 ```bash
 docker compose -f docker-compose.local.yml up --build
 ```
 
-### Migrações e Postgres local (sem Docker na API)
+### Nest no host (sem Docker na API)
+
+Com a infra local no ar, o Postgres está em `localhost:5433`:
 
 ```bash
-docker compose -f docker-compose.local.yml up -d postgres
-export DATABASE_URL=postgresql://aerobi:aerobi@localhost:5432/aerobi?schema=public
+export DATABASE_URL=postgresql://aerobi:aerobi@localhost:5433/aerobi?schema=public
 npx prisma migrate deploy
 npm run start:dev
 ```
@@ -64,13 +73,14 @@ docker compose -f docker-compose.prod.yml up -d
 
 ### Autenticação HTTP (API key única)
 
-- Rotas **`/rab/*`**, **`/private-aerodromes/*`**, **`/plugfield/*`** e **`/aisweb/*`** exigem header **`X-API-Key`** = **`AEROBI_API_KEY`**, exceto **`NODE_ENV=development`** sem `AEROBI_REQUIRE_AUTH` (bypass para DX). Com `AEROBI_REQUIRE_AUTH=true`, a chave é exigida também em development.
+- Rotas **`/private-aerodromes/*`**, **`/plugfield/*`** e **`/aisweb/*`** exigem header **`X-API-Key`** = **`AEROBI_API_KEY`**, exceto **`NODE_ENV=development`** sem `AEROBI_REQUIRE_AUTH` (bypass para DX). Com `AEROBI_REQUIRE_AUTH=true`, a chave é exigida também em development.
+- Rotas **`/rab/*`** usam **JWT** (não X-API-Key): `GET /rab/latest-period` e `GET /rab/rows` exigem permissão `rab:read` (admin/coordinator/operator); `POST /rab/sync` e `GET /rab/sync-state` exigem role `ADMIN`.
 - Em produção, `AEROBI_API_KEY` tem de estar definida; caso contrário essas rotas respondem 401.
 - No **aerobi-web** (Next), define **`AEROBI_API_KEY`** (ou o valor configurado no hosting) para enviar `X-API-Key` nas chamadas à API.
 
 ### Sincronização manual (RAB)
 
-- `POST /rab/sync` — corpo opcional `{ "period": "2026-03", "force": true }`.
+- `POST /rab/sync` — corpo opcional `{ "period": "2026-03", "force": true }`. Requer JWT com role `ADMIN`.
 
 Cron: variável `RAB_SYNC_CRON` (padrão `0 5 * * *`). Desative jobs com `RAB_SYNC_CRON_DISABLED=true`.
 
@@ -91,6 +101,24 @@ Rotas que consultam serviços AISWEB/DECEA (NOTAM, ROTAER, SOL, Infotemp). O **c
 
 - **`AISWEB_API_KEY`** e **`AISWEB_API_PASS`** — enviadas à AISWEB (obrigatórias para chamadas outbound).
 - **`AISWEB_HTTP_TIMEOUT_MS`** — opcional (ver `.env.example`).
+
+### Câmeras + proxy HLS (`/aerodromes/:icao/cameras`, `/streams/*`)
+
+Módulo **`streams`** (épica #317): listagem de câmeras por aeródromo e **proxy HLS** (passthrough de bytes, sem transcoding) do mediamtx do Raspi via tailnet. Desenho **Firestore-first** — o cadastro de câmeras vive no **Firestore** (gerido pelo frontend), **sem** tabela no Postgres nem CRUD neste backend. O **cliente** usa a mesma **`X-API-Key`** = **`AEROBI_API_KEY`** (a visualização é pública; a chave protege a rota server-to-server, detida pelo BFF Next.js).
+
+- `GET /aerodromes/:icao/cameras` — lista as câmeras ativas do aeródromo (lê o Firestore).
+- `GET /streams/:cameraId/index.m3u8` e `GET /streams/:cameraId/:segment` — proxy da playlist e dos segmentos HLS.
+
+A config da câmera é resolvida no Firestore **com cache** em memória (não consulta a cada segmento). Variáveis opcionais: **`STREAMS_CAMERA_CACHE_TTL_MS`** (default `60000`), **`STREAMS_PROXY_TIMEOUT_MS`** (default `10000`), **`STREAMS_MEDIAMTX_HLS_PORT`** (default `8888`). Detalhes, diagrama e dicas de debug: [`src/modules/streams/README.md`](src/modules/streams/README.md).
+
+#### Camera Streams — proxy HLS v2 (`/camera-streams/*`, `#473`)
+
+Módulo **`camera-streams`** é o **sucessor** do `streams`: mesmas listagem e proxy HLS, mas lê os metadados de câmera do **Postgres** (módulo `cameras`), não do Firestore. Roda **em paralelo** ao legado (estratégia strangler-fig; o frontend migra no seu ritmo, remoção do legado na #474). Rotas **públicas** (sem `X-API-Key`), com `:cameraId` = **UUID** do Postgres:
+
+- `GET /aerodromes/:icao/camera-streams` — lista as câmeras ativas do aeródromo (lê o Postgres).
+- `GET /camera-streams/:cameraId/index.m3u8` e `GET /camera-streams/:cameraId/:segment` — proxy da playlist e dos segmentos HLS.
+
+Variáveis opcionais: **`CAMERA_STREAMS_CACHE_TTL_MS`** (default `60000`), **`CAMERA_STREAMS_PROXY_TIMEOUT_MS`** (default `10000`), **`CAMERA_STREAMS_MEDIAMTX_HLS_PORT`** (default `8888`). Detalhes: [`src/modules/camera-streams/README.md`](src/modules/camera-streams/README.md).
 
 ## Project setup
 

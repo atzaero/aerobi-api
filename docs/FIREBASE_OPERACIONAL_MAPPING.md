@@ -22,23 +22,23 @@ A **fonte de verdade** do esquema relacional é [`schema.prisma`](../prisma/sche
 
 | Firestore | Modelo Prisma | Tabela SQL |
 |-----------|-----------------|------------|
-| `states/{uf}/groups/{groupId}` | `AerodromeGroup` | `aerodrome_groups` |
-| `states/.../aerodromes/{id}` | `OperationalAerodrome` | `operational_aerodromes` |
+| `states/{uf}/groups/{groupId}` | `Group` | `groups` |
+| `states/.../aerodromes/{id}` | `Aerodrome` | `aerodromes` |
 | `.../awaitemails` + `.../answeredemails` | `LandingRequest` | `landing_requests` |
 | `.../technicalVisit` | `TechnicalVisit` | `technical_visits` |
 | `landings` (raiz) | `PilotLanding` | `pilot_landings` |
-| `.../aerodromes/.../feedbacks` | `AerodromeFeedback` | `aerodrome_feedbacks` |
-| `geojsons` (raiz) | `AerodromeGeojson` | `aerodrome_geojsons` |
+| `.../aerodromes/.../feedbacks` | `Feedback` | `feedbacks` |
+| `geojsons` (raiz) | `Geojson` | `geojsons` |
 
 Não modelado como tabela operacional: `stateList/list`, `PI`, `admID`, coleção `users` (proposta futura).
 
 ## Decisões de colunas (alvo Postgres)
 
-- **UF** apenas em `AerodromeGroup.uf`. Demais entidades obtêm UF via join (`operational_aerodromes.group_id` → `aerodrome_groups`).
-- **`LandingRequest`:** sem `uf`, `icao`, `answer`; só `status` (`PENDING` / `APPROVED` / `REJECTED`). ICAO via `operational_aerodrome_id`.
+- **UF** apenas em `Group.uf`. Demais entidades obtêm UF via join (`aerodromes.group_id` → `groups`).
+- **`LandingRequest`:** sem `uf`, `icao`, `answer`; só `status` (`PENDING` / `APPROVED` / `REJECTED`). ICAO via `aerodrome_id`.
 - **`reviewed_by` / `reviewed_at`:** no alvo, **uid** em coluna (`reviewed_by`), não JSON com nome/e-mail/role. O legado pode trazer objeto em `responseby`; na importação extrair o uid (ex. `responseby.uid`). Nome e perfil vêm da futura tabela `users` — mesma linha de `visit_by` em `TechnicalVisit`.
-- **`AerodromeFeedback`:** sem `icao`; rate limit único em `(session_hash, operational_aerodrome_id, feedback_date)`. Ver também `feedback_date` vs `created_at` em [`OPERACIONAL_ANALISE_REDUNDANCIA.md`](./OPERACIONAL_ANALISE_REDUNDANCIA.md).
-- **`AerodromeGeojson`:** sem `legacy_state_id` / `legacy_icao`; `geo_json` opcional (`jsonb`) para linhas `ERROR`.
+- **`Feedback`:** sem `icao`; rate limit único em `(session_hash, aerodrome_id, feedback_date)`. Ver também `feedback_date` vs `created_at` em [`OPERACIONAL_ANALISE_REDUNDANCIA.md`](./OPERACIONAL_ANALISE_REDUNDANCIA.md).
+- **`Geojson`:** sem `legacy_state_id` / `legacy_icao`; `geo_json` opcional (`jsonb`) para linhas `ERROR`.
 - **`PilotLanding`:** `landing_at` (`timestamptz`), não `landing_date` string.
 - **Auditoria “quem criou”:** coluna `created_by`, campo Prisma `createdBy`.
 - **`TechnicalVisit`:** sem cópia de ICAO/CIAD/pista nem `aerodrome_name`/`city`; visitante = `visit_by` (uid) → futura tabela `users` — não `visitor_name`. Legado: `VISITORNAME` no Firestore até a API gravar uid.
@@ -51,7 +51,7 @@ Não modelado como tabela operacional: `stateList/list`, `PI`, `admID`, coleçã
 | `answer` (boolean) | derivar `status` na migração |
 | `requestDate` | `request_date` |
 | `date` (landings) | parse → `landing_at` |
-| `sessionHash` + `icao` + `date` (feedback) | `session_hash` + `operational_aerodrome_id` + `feedback_date` (`date` YYYY-MM-DD no Firestore = dia civil do rate limit; `created_at` = instante de gravação no Postgres) |
+| `sessionHash` + `icao` + `date` (feedback) | `session_hash` + `aerodrome_id` + `feedback_date` (`date` YYYY-MM-DD no Firestore = dia civil do rate limit; `created_at` = instante de gravação no Postgres) |
 | `VISITORNAME` (legado) | `visit_by` (uid; import pode null até backfill / app gravar uid) |
 | `MODIFIERUSERS` (objetos `{ email, … }`) | `modifier_users` `TEXT[]` (uid se houver, senão e-mail, ordem preservada) |
 

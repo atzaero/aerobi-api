@@ -1,0 +1,72 @@
+name: Conectar à tailnet (Headscale)
+description: >-
+  Conecta o runner à tailnet via Headscale e resolve o host de deploy em
+  DEPLOY_HOST ($GITHUB_ENV). Com isso o SSH sai pela interface tailscale0 e NÃO
+  toca a porta 22 pública nem o fail2ban (aerobi-ansible#129). Degrada gracioso
+  ao IP público quando a authkey falta, a tailnet não converge (retry 3x) ou o
+  peering/DERP não fecha (prova TCP em 100.64.0.1:22). Nunca pendura nem aborta.
+
+inputs:
+  headscale-authkey:
+    description: >-
+      Preauthkey reutilizável NÃO-efêmera do Headscale (tag:ci). Vazio → usa o IP
+      público. Não-efêmera de propósito: nó efêmero + logout dispara deadlock no
+      control-plane do Headscale 0.28.0 (poll.go:339). Ver atzaero/aerobi#961.
+    required: false
+    default: ''
+  public-host:
+    description: IP/host público de fallback (secrets.REMOTE_HOST).
+    required: true
+  login-server:
+    description: URL do servidor Headscale.
+    required: false
+    default: https://headscale.aerobi.com.br
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        TS_AUTHKEY: ${{ inputs.headscale-authkey }}
+        PUBLIC_HOST: ${{ inputs.public-host }}
+        LOGIN_SERVER: ${{ inputs.login-server }}
+      run: |
+        set -e
+        if [ -z "$TS_AUTHKEY" ]; then
+          echo "DEPLOY_HOST=$PUBLIC_HOST" >> "$GITHUB_ENV"
+          echo "::warning::HEADSCALE_AUTHKEY ausente — deploy via IP público (sujeito ao fail2ban, aerobi-ansible#129). Cadastre o secret para usar a tailnet."
+          exit 0
+        fi
+        curl -fsSL https://tailscale.com/install.sh | sh
+        # Retry com backoff cobre blips do headscale; `--timeout` aborta o `up`
+        # em vez de pendurar esperando login interativo (issues #225/#263).
+        ts_ok=0
+        for attempt in 1 2 3; do
+          if sudo tailscale up \
+            --login-server="$LOGIN_SERVER" \
+            --authkey="$TS_AUTHKEY" \
+            --hostname="gh-${GITHUB_REPOSITORY##*/}-${GITHUB_RUN_ID}" \
+            --accept-dns=false \
+            --timeout=120s; then
+            ts_ok=1
+            break
+          fi
+          echo "::warning::Tentativa $attempt/3 de conectar à tailnet falhou; novo retry em $((attempt * 15))s."
+          sleep $((attempt * 15))
+        done
+        if [ "$ts_ok" != "1" ]; then
+          echo "::warning::tailnet não conectou após 3 tentativas (HEADSCALE_AUTHKEY expirada/inválida ou headscale inacessível/travado) — fallback ao IP público ($PUBLIC_HOST). Renove a preauthkey NÃO-efêmera (docker exec headscale headscale preauthkeys create --user <ID> --reusable --expiration 90d --tags tag:ci — SEM --ephemeral, ver atzaero/aerobi#961) e atualize o secret. Se a authkey estiver válida, o headscale pode estar em deadlock: docker restart headscale (issues #225/#263/#961)."
+          echo "DEPLOY_HOST=$PUBLIC_HOST" >> "$GITHUB_ENV"
+          exit 0
+        fi
+        sudo tailscale status || true
+        # `up` só garante o control plane; o peering runner↔VPS depende de
+        # DERP/NAT traversal. Prova TCP em 100.64.0.1:22 e, se inalcançável, cai
+        # pro IP público (aerobi-ansible#135) em vez de pendurar/timeout no SSH.
+        if timeout 15 bash -c 'cat < /dev/null > /dev/tcp/100.64.0.1/22' 2>/dev/null; then
+          echo "DEPLOY_HOST=100.64.0.1" >> "$GITHUB_ENV"
+          echo "Deploy via tailnet (100.64.0.1) — SSH não toca a 22 pública."
+        else
+          echo "::warning::tailnet ativa mas 100.64.0.1:22 inalcançável (peering/DERP) — fallback ao IP público ($PUBLIC_HOST). Ver aerobi-ansible#135."
+          echo "DEPLOY_HOST=$PUBLIC_HOST" >> "$GITHUB_ENV"
+        fi

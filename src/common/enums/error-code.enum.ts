@@ -48,4 +48,104 @@ export enum ErrorCode {
 
   /** Token já utilizado (one-shot tokens, ex. verificação de email). */
   TOKEN_ALREADY_USED = 'TOKEN_ALREADY_USED',
+
+  // ---------------------------------------------------------------------------
+  // Autenticação / usuários (módulo `auth` + `users`)
+  // ---------------------------------------------------------------------------
+
+  /** Usuário não encontrado pelo identificador informado. */
+  USER_NOT_FOUND = 'USER_NOT_FOUND',
+
+  /** Email já registrado por outro usuário (constraint única). */
+  EMAIL_ALREADY_REGISTERED = 'EMAIL_ALREADY_REGISTERED',
+
+  /** Credenciais inválidas no login (email/senha não conferem). */
+  INVALID_CREDENTIALS = 'INVALID_CREDENTIALS',
+
+  /** Conta existe mas o email ainda não foi verificado. */
+  ACCOUNT_NOT_VERIFIED = 'ACCOUNT_NOT_VERIFIED',
+
+  /** Conta convidada mas ainda sem senha (convite não aceito). */
+  ACCOUNT_NOT_ACTIVATED = 'ACCOUNT_NOT_ACTIVATED',
+
+  /** Conta soft-deletada. */
+  ACCOUNT_DELETED = 'ACCOUNT_DELETED',
+
+  /** Refresh token malformado / não encontrado. */
+  REFRESH_TOKEN_INVALID = 'REFRESH_TOKEN_INVALID',
+
+  /** Refresh token expirado. */
+  REFRESH_TOKEN_EXPIRED = 'REFRESH_TOKEN_EXPIRED',
+
+  /** Refresh token já revogado. */
+  REFRESH_TOKEN_REVOKED = 'REFRESH_TOKEN_REVOKED',
+
+  /** Reuso de refresh token detectado — toda a família foi revogada. */
+  REFRESH_TOKEN_REUSE_DETECTED = 'REFRESH_TOKEN_REUSE_DETECTED',
+
+  /** Token de convite inválido ou não encontrado. */
+  INVITE_TOKEN_INVALID = 'INVITE_TOKEN_INVALID',
+
+  /** Token de convite expirado. */
+  INVITE_TOKEN_EXPIRED = 'INVITE_TOKEN_EXPIRED',
+
+  /** Convite já foi aceito anteriormente. */
+  INVITE_ALREADY_ACCEPTED = 'INVITE_ALREADY_ACCEPTED',
+
+  /** Token de redefinição de senha inválido. */
+  PASSWORD_RESET_TOKEN_INVALID = 'PASSWORD_RESET_TOKEN_INVALID',
+
+  /** Senha fornecida não atende à política mínima de força. */
+  WEAK_PASSWORD = 'WEAK_PASSWORD',
+
+  /** Usuário não é dono do recurso e não tem role suficiente. */
+  OWNERSHIP_VIOLATION = 'OWNERSHIP_VIOLATION',
+
+  /** Tentativa de alteração de role por usuário sem permissão. */
+  ROLE_CHANGE_FORBIDDEN = 'ROLE_CHANGE_FORBIDDEN',
+
+  // ---------------------------------------------------------------------------
+  // Storage / object storage (módulo `storage` — MinIO/S3)
+  // ---------------------------------------------------------------------------
+
+  /** Falha ao enviar arquivo para o object storage (MinIO/S3). */
+  STORAGE_UPLOAD_FAILED = 'STORAGE_UPLOAD_FAILED',
+
+  /** Falha ao remover arquivo do object storage. */
+  STORAGE_DELETE_FAILED = 'STORAGE_DELETE_FAILED',
+
+  /** Falha ao gerar presigned URL do object storage. */
+  STORAGE_GET_PRESIGNED_URL_FAILED = 'STORAGE_GET_PRESIGNED_URL_FAILED',
+
+  /** Falha ao baixar objeto do object storage. */
+  STORAGE_DOWNLOAD_FAILED = 'STORAGE_DOWNLOAD_FAILED',
+
+  // ---------------------------------------------------------------------------
+  // Feedbacks de aeródromo (módulo `feedbacks`)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Limite diário de avaliação atingido: já existe um feedback para a mesma
+   * sessão anônima e aeródromo no dia (violação do `@@unique([sessionHash,
+   * aerodromeId, feedbackDate])`). Mapeado para 409.
+   */
+  FEEDBACK_DAILY_LIMIT_REACHED = 'FEEDBACK_DAILY_LIMIT_REACHED',
+
+  // ---------------------------------------------------------------------------
+  // GeoJSON operacional (módulo `geojsons`)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * GeoJSON do aeródromo existe mas não está pronto para consumo (`status ≠
+   * READY` — geração falhou/pendente). Espelha `INVALID_STATE` do web; mapeado
+   * para 422.
+   */
+  GEOJSON_NOT_READY = 'GEOJSON_NOT_READY',
+
+  /**
+   * GeoJSON marcado como READY mas o conteúdo persistido está ausente/inválido
+   * (não é um objeto GeoJSON legível). Espelha `READ_FAILED` do web; mapeado
+   * para 502.
+   */
+  GEOJSON_READ_FAILED = 'GEOJSON_READ_FAILED',
 }

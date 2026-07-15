@@ -1,40 +1,56 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
-import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
 import { ErrorMessageService } from '@/common/error-messages/error-message.service';
-import { ErrorCode } from '@/common/enums/error-code.enum';
+import { resourceNotFound } from '@/common/utils/resource-not-found.util';
+import { AuditAction } from '@/generated/prisma/client';
+import { AuditRecorderService } from '@/modules/audit/services/audit-recorder.service';
+import type { RecordAuditContext } from '@/modules/audit/services/audit-recorder.service';
+import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
+import { UserRepository } from '@/modules/users/repositories/user.repository';
 
 import { TechnicalVisitResponseDTO } from '../dtos/technical-visit-response.dto';
-import { TechnicalVisitMapper } from '../mappers/technical-visit.mapper';
 import { TechnicalVisitRepository } from '../repositories/technical-visit.repository';
-
-export type RemoveTechnicalVisitServiceInput = {
-  id: string;
-  deletedBy: string;
-};
+import { technicalVisitAuditSnapshot } from '../utils/technical-visit-audit';
+import { toTechnicalVisitApiRow } from '../utils/technical-visit-response';
 
 @Injectable()
 export class RemoveTechnicalVisitService {
   constructor(
     private readonly repo: TechnicalVisitRepository,
+    private readonly userRepository: UserRepository,
     private readonly errorMessageService: ErrorMessageService,
+    private readonly auditRecorder: AuditRecorderService,
   ) {}
 
   async execute(
-    input: RemoveTechnicalVisitServiceInput,
+    id: string,
+    actor: AuthenticatedUser,
+    auditContext: RecordAuditContext = {},
   ): Promise<TechnicalVisitResponseDTO> {
-    const existing = await this.repo.findById(input.id);
+    const existing = await this.repo.findByIdWithAerodrome(id);
     if (!existing) {
-      throw new CustomHttpException(
-        this.errorMessageService.getMessage(ErrorCode.RESOURCE_NOT_FOUND, {
-          RESOURCE: 'Visita técnica',
-          ID: input.id,
-        }),
-        HttpStatus.NOT_FOUND,
-        ErrorCode.RESOURCE_NOT_FOUND,
-      );
+      throw resourceNotFound(this.errorMessageService, 'Visita técnica', id);
     }
-    const deleted = await this.repo.softDelete(input.id, input.deletedBy);
-    return TechnicalVisitMapper.toApiRow(deleted);
+
+    const before = technicalVisitAuditSnapshot(existing);
+    const deleted = await this.repo.softDelete(id, actor.id);
+
+    await this.auditRecorder.record(
+      {
+        action: AuditAction.DELETE,
+        entityType: 'technical_visit',
+        entityId: id,
+        before,
+      },
+      auditContext,
+    );
+
+    return toTechnicalVisitApiRow(this.userRepository, {
+      ...existing,
+      deletedAt: deleted.deletedAt,
+      deletedBy: deleted.deletedBy,
+      updatedAt: deleted.updatedAt,
+      updatedBy: deleted.updatedBy,
+    });
   }
 }

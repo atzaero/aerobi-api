@@ -1,0 +1,178 @@
+import {
+  CanActivate,
+  ExecutionContext,
+  HttpStatus,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { isUUID } from 'class-validator';
+
+import { ErrorCode } from '@/common/enums/error-code.enum';
+import { ErrorMessageService } from '@/common/error-messages/error-message.service';
+import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
+import { UserRole } from '@/generated/prisma/client';
+import { PrismaService } from '@/prisma/prisma.service';
+
+import {
+  GROUP_SCOPE_KEY,
+  GROUP_SCOPE_PARAM_KEY,
+} from '../constants/auth.constants';
+import type { AuthenticatedUser } from '../interfaces/authenticated-user.interface';
+import {
+  groupScopeResolvers,
+  type GroupResolver,
+} from './group-scope.resolvers';
+import { GroupScopeSubject } from './group-scope.subject';
+
+/**
+ * Segunda camada de autorização: **escopo por grupo**. Garante que o recurso
+ * alvo pertence ao mesmo `groupId` do usuário. O ID do recurso é resolvido em
+ * `params` → `query` → `body` (nesta ordem), conforme o nome em
+ * `@RequiresGroupScope(subject, paramName)`.
+ *
+ * Ordem na cadeia: `JwtAuthGuard → RolesGuard → GroupScopeGuard`.
+ *
+ * - Sem `@RequiresGroupScope` no handler → passa.
+ * - `request.user` ausente → 401 (fallback caso o `JwtAuthGuard` falte).
+ * - `user.role === ADMIN` → passa (bypass global, sem grupo).
+ * - `params.id` ausente/não-UUID → 422 (não consulta o DB com lixo).
+ * - Ator removido (lookup ativo devolve `null`, token ainda válido) → 401.
+ * - Recurso inexistente, fora do escopo do ator, ou ator sem grupo provisionado
+ *   → 404 (indistinguíveis: o status não vaza a existência de recursos de outro
+ *   grupo — #387). O motivo real fica só no log `debug`.
+ *
+ * O `groupId` do usuário é lido **do banco** (não do JWT), de modo que
+ * uma troca de grupo tenha efeito imediato sem esperar o token expirar.
+ */
+@Injectable()
+export class GroupScopeGuard implements CanActivate {
+  private readonly logger = new Logger(GroupScopeGuard.name);
+  private readonly resolvers: Record<GroupScopeSubject, GroupResolver> =
+    groupScopeResolvers;
+
+  constructor(
+    private readonly reflector: Reflector,
+    private readonly prisma: PrismaService,
+    private readonly errorMessageService: ErrorMessageService,
+  ) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const subject = this.reflector.getAllAndOverride<
+      GroupScopeSubject | undefined
+    >(GROUP_SCOPE_KEY, [context.getHandler(), context.getClass()]);
+
+    if (!subject) {
+      return true;
+    }
+
+    const request = context.switchToHttp().getRequest<{
+      user?: AuthenticatedUser;
+      params?: Record<string, string | undefined>;
+      query?: Record<string, string | undefined>;
+      body?: Record<string, string | undefined>;
+    }>();
+    const user = request.user;
+
+    if (!user) {
+      throw new CustomHttpException(
+        this.errorMessageService.getMessage(ErrorCode.UNAUTHORIZED),
+        HttpStatus.UNAUTHORIZED,
+        ErrorCode.UNAUTHORIZED,
+      );
+    }
+
+    if (user.role === UserRole.ADMIN) {
+      return true;
+    }
+
+    const paramName =
+      this.reflector.getAllAndOverride<string>(GROUP_SCOPE_PARAM_KEY, [
+        context.getHandler(),
+        context.getClass(),
+      ]) ?? 'id';
+
+    const resourceId =
+      request.params?.[paramName] ??
+      request.query?.[paramName] ??
+      request.body?.[paramName];
+
+    if (!resourceId || !isUUID(resourceId)) {
+      throw new CustomHttpException(
+        this.errorMessageService.getMessage(ErrorCode.VALIDATION_FAILED, {
+          DETAILS: `${paramName} deve ser um UUID válido`,
+        }),
+        HttpStatus.UNPROCESSABLE_ENTITY,
+        ErrorCode.VALIDATION_FAILED,
+      );
+    }
+
+    const resolver = this.resolvers[subject];
+
+    if (!resolver) {
+      // Subject declarado no decorator mas sem resolver registrado — erro de
+      // programação, não do cliente.
+      this.logger.error(`No group resolver registered for subject=${subject}`);
+      throw new CustomHttpException(
+        this.errorMessageService.getMessage(ErrorCode.INTERNAL_ERROR),
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        ErrorCode.INTERNAL_ERROR,
+      );
+    }
+
+    /**
+     * Lê o usuário ativo do banco **antes** de tocar no recurso (a `JwtStrategy`
+     * confia no payload e não revalida contra o DB; o `groupId` vem
+     * daqui para refletir troca de grupo sem esperar o token expirar).
+     */
+    const dbUser = await this.prisma.user.findFirst({
+      where: { id: user.id, deletedAt: null },
+      select: { groupId: true },
+    });
+
+    /**
+     * Conta removida (token ainda válido, registro inexistente/soft-deletado):
+     * **401 `ACCOUNT_DELETED`** — força re-login em vez de mascarar como 404.
+     * Espelha o `resolveActorGroupScope` das listagens (#385) e tem precedência
+     * sobre o estado do recurso.
+     */
+    if (dbUser === null) {
+      throw new CustomHttpException(
+        this.errorMessageService.getMessage(ErrorCode.ACCOUNT_DELETED),
+        HttpStatus.UNAUTHORIZED,
+        ErrorCode.ACCOUNT_DELETED,
+      );
+    }
+
+    const userGroupId = dbUser.groupId ?? null;
+    const resourceGroupId = await resolver(this.prisma, resourceId);
+
+    /**
+     * Acesso negado é **404 uniforme** (#387): recurso inexistente, recurso de
+     * outro grupo e ator sem grupo provisionado são indistinguíveis para o
+     * cliente — o status não pode virar oracle de existência de recursos fora do
+     * escopo. O motivo real fica só no log `debug`.
+     */
+    if (
+      resourceGroupId === null ||
+      userGroupId === null ||
+      userGroupId !== resourceGroupId
+    ) {
+      this.logger.debug(
+        `Acesso negado (404) — userId=${user.id} userGroup=${userGroupId} ` +
+          `resource=${subject}:${resourceId} resourceGroup=${resourceGroupId} ` +
+          `exists=${resourceGroupId !== null}`,
+      );
+      throw new CustomHttpException(
+        this.errorMessageService.getMessage(ErrorCode.RESOURCE_NOT_FOUND, {
+          RESOURCE: subject,
+          ID: resourceId,
+        }),
+        HttpStatus.NOT_FOUND,
+        ErrorCode.RESOURCE_NOT_FOUND,
+      );
+    }
+
+    return true;
+  }
+}

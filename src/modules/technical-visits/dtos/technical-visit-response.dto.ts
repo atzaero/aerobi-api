@@ -1,15 +1,96 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-/** Resposta alinhada ao model TechnicalVisit */
+import { Uf } from '@/generated/prisma/client';
+
+import { TechnicalVisitModifierResponseDTO } from './technical-visit-modifier-response.dto';
+import {
+  TECHNICAL_VISIT_EXAMPLE_AERODROME_ID,
+  TECHNICAL_VISIT_EXAMPLE_AERODROME_NAME,
+  TECHNICAL_VISIT_EXAMPLE_ALTITUDE,
+  TECHNICAL_VISIT_EXAMPLE_CIAD,
+  TECHNICAL_VISIT_EXAMPLE_CITY,
+  TECHNICAL_VISIT_EXAMPLE_DESIGNATION,
+  TECHNICAL_VISIT_EXAMPLE_ICAO,
+  TECHNICAL_VISIT_EXAMPLE_LENGTH,
+  TECHNICAL_VISIT_EXAMPLE_RESISTANCE,
+  TECHNICAL_VISIT_EXAMPLE_SURFACE,
+  TECHNICAL_VISIT_EXAMPLE_UF,
+  TECHNICAL_VISIT_EXAMPLE_VISIT_ID,
+  TECHNICAL_VISIT_EXAMPLE_WIDTH,
+} from '../docs/technical-visit.examples';
+
+/** Resposta alinhada ao model TechnicalVisit + join aeródromo e modificadores. */
 export class TechnicalVisitResponseDTO {
-  @ApiProperty({ format: 'uuid' })
+  @ApiProperty({ format: 'uuid', example: TECHNICAL_VISIT_EXAMPLE_VISIT_ID })
   id!: string;
 
-  @ApiProperty({ format: 'uuid' })
-  operationalAerodromeId!: string;
+  @ApiProperty({
+    format: 'uuid',
+    example: TECHNICAL_VISIT_EXAMPLE_AERODROME_ID,
+  })
+  aerodromeId!: string;
 
-  @ApiProperty({ type: [String], description: 'Editores/modificadores' })
+  @ApiPropertyOptional({
+    enum: Object.values(Uf),
+    type: String,
+    example: TECHNICAL_VISIT_EXAMPLE_UF,
+    description: 'UF derivada do grupo do aeródromo (join)',
+  })
+  uf!: Uf | null;
+
+  @ApiProperty({ example: TECHNICAL_VISIT_EXAMPLE_ICAO })
+  icao!: string;
+
+  @ApiProperty({ example: TECHNICAL_VISIT_EXAMPLE_AERODROME_NAME })
+  aerodromeName!: string;
+
+  @ApiProperty({ example: 'João Silva' })
+  visitorName!: string;
+
+  @ApiProperty({ example: TECHNICAL_VISIT_EXAMPLE_CITY })
+  city!: string;
+
+  @ApiPropertyOptional({ type: String, example: TECHNICAL_VISIT_EXAMPLE_CIAD })
+  ciad!: string | null;
+
+  @ApiPropertyOptional({
+    type: String,
+    example: TECHNICAL_VISIT_EXAMPLE_DESIGNATION,
+  })
+  designation!: string | null;
+
+  @ApiPropertyOptional({
+    type: String,
+    example: TECHNICAL_VISIT_EXAMPLE_LENGTH,
+  })
+  length!: string | null;
+
+  @ApiPropertyOptional({ type: String, example: TECHNICAL_VISIT_EXAMPLE_WIDTH })
+  width!: string | null;
+
+  @ApiPropertyOptional({
+    type: String,
+    example: TECHNICAL_VISIT_EXAMPLE_RESISTANCE,
+  })
+  resistance!: string | null;
+
+  @ApiPropertyOptional({
+    type: String,
+    example: TECHNICAL_VISIT_EXAMPLE_SURFACE,
+  })
+  surface!: string | null;
+
+  @ApiPropertyOptional({
+    type: String,
+    example: TECHNICAL_VISIT_EXAMPLE_ALTITUDE,
+  })
+  altitude!: string | null;
+
+  @ApiProperty({ type: [String], description: 'Uids dos editores (ordem)' })
   modifierUsers!: string[];
+
+  @ApiProperty({ type: [TechnicalVisitModifierResponseDTO] })
+  modifiers!: TechnicalVisitModifierResponseDTO[];
 
   @ApiPropertyOptional({ nullable: true, type: String })
   gatesPadlocksObservation!: string | null;

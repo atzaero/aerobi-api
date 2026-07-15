@@ -7,6 +7,7 @@ import { ConfigService } from '@nestjs/config';
 
 import { HealthResponseDto } from '../dtos/health-response.dto';
 
+import { getErrorMessage } from '@/common/utils/error.util';
 import { PrismaService } from '@/prisma/prisma.service';
 
 @Injectable()
@@ -40,7 +41,7 @@ export class HealthService {
     try {
       await this.prisma.$queryRaw`SELECT 1`;
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
+      const message = getErrorMessage(error);
       this.logger.error(`Database health check failed: ${message}`);
 
       throw new ServiceUnavailableException({

@@ -1,15 +1,23 @@
 name: CI
 
 on:
-  push:
-    branches: [develop]
+  workflow_dispatch:
+  # CI roda apenas em pull_request (o gate confiável) — push em develop dispara só
+  # o release/deploy (ver AGENTS.md "Estratégia de economia de minutos do Actions";
+  # paridade com aerobi/ci.yml). paths-ignore evita queimar minutos em mudanças que
+  # não afetam build/test.
   pull_request:
     branches: [main, develop]
+    paths-ignore:
+      - '.claude/**'
+      - '.mcp.json'
+      - 'docs/**'
 
-# Nova execução na mesma ref cancela a anterior (menos fila e ruído em PRs).
+# Cancela runs supersedidos do mesmo PR quando chega um commit novo (economia de
+# minutos). Restrito a pull_request: um workflow_dispatch manual NÃO é cancelado.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -20,11 +28,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version-file: '.nvmrc'
           cache: npm
 
       # Production deps only (--omit=dev): avoids dev-only transitive issues (e.g. npm CLI via semantic-release).
@@ -38,11 +46,11 @@ jobs:
     timeout-minutes: 20
     needs: security
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version-file: '.nvmrc'
           cache: npm
 
       - run: npm ci
@@ -83,11 +91,11 @@ jobs:
       DATABASE_URL: postgresql://aerobi:aerobi@localhost:5432/aerobi?schema=public
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version-file: '.nvmrc'
           cache: npm
 
       - run: npm ci

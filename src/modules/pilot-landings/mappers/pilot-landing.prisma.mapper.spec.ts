@@ -17,18 +17,18 @@ describe('pilot-landing prisma mapper', () => {
   });
 
   describe('buildPilotLandingCreateInput', () => {
-    it('omits operational aerodrome quando id ausente', () => {
+    it('omits aerodrome quando id ausente', () => {
       const dto = baseCreateDto();
       const input = buildPilotLandingCreateInput(dto);
-      expect(input.operationalAerodrome).toBeUndefined();
+      expect(input.aerodrome).toBeUndefined();
       expect(input.registration).toBe('PT-XYZ');
     });
 
-    it('liga operationalAerodrome quando uuid presente', () => {
+    it('liga aerodrome quando uuid presente', () => {
       const aid = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
-      const dto = { ...baseCreateDto(), operationalAerodromeId: aid };
+      const dto = { ...baseCreateDto(), aerodromeId: aid };
       const input = buildPilotLandingCreateInput(dto);
-      expect(input.operationalAerodrome).toEqual({ connect: { id: aid } });
+      expect(input.aerodrome).toEqual({ connect: { id: aid } });
     });
 
     it('normaliza createdBy undefined quando omitido no DTO', () => {
@@ -48,20 +48,20 @@ describe('pilot-landing prisma mapper', () => {
       expect(patchPilotLandingToPrisma({})).toEqual({});
     });
 
-    it('desliga FK quando disconnectOperationalAerodrome=true (prioridade sobre connect)', () => {
+    it('desliga FK quando disconnectAerodrome=true (prioridade sobre connect)', () => {
       const dto = {
-        disconnectOperationalAerodrome: true,
-        operationalAerodromeId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        disconnectAerodrome: true,
+        aerodromeId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
       } as UpdatePilotLandingDTO;
-      expect(patchPilotLandingToPrisma(dto).operationalAerodrome).toEqual({
+      expect(patchPilotLandingToPrisma(dto).aerodrome).toEqual({
         disconnect: true,
       });
     });
 
-    it('liga aeródromo quando operationalAerodromeId definido sem disconnect', () => {
+    it('liga aeródromo quando aerodromeId definido sem disconnect', () => {
       const aid = 'b2c3d4e5-f6a7-8901-bcde-f23456789012';
-      const dto = { operationalAerodromeId: aid };
-      expect(patchPilotLandingToPrisma(dto).operationalAerodrome).toEqual({
+      const dto = { aerodromeId: aid };
+      expect(patchPilotLandingToPrisma(dto).aerodrome).toEqual({
         connect: { id: aid },
       });
     });

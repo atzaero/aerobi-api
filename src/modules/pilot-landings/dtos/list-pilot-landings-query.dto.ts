@@ -6,12 +6,12 @@ import { BasePaginationQueryDTO } from '@/common/dtos/base-pagination-query.dto'
 /** Query params para GET /pilot-landings */
 export class ListPilotLandingsQueryDTO extends BasePaginationQueryDTO {
   @ApiPropertyOptional({
-    description: 'Filtrar pelo aeródromo operacional',
+    description: 'Filtrar pelo aeródromo',
     format: 'uuid',
   })
   @IsOptional()
   @IsUUID('4')
-  operationalAerodromeId?: string;
+  aerodromeId?: string;
 
   @ApiPropertyOptional({
     description: 'Filtra por matrícula (substring, case insensitive)',

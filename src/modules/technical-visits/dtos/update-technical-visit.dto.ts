@@ -1,7 +1,8 @@
-import { OmitType, PartialType } from '@nestjs/swagger';
+import { PartialType } from '@nestjs/swagger';
 
-import { CreateTechnicalVisitDTO } from './create-technical-visit.dto';
+import { TechnicalVisitFormFieldsDTO } from './technical-visit-form-fields.dto';
 
+/** Apenas campos do formulário — `aerodromeId` é imutável após criação (#369). */
 export class UpdateTechnicalVisitDTO extends PartialType(
-  OmitType(CreateTechnicalVisitDTO, ['createdBy'] as const),
+  TechnicalVisitFormFieldsDTO,
 ) {}

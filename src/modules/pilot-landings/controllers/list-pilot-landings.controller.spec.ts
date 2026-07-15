@@ -18,7 +18,7 @@ describe('ListPilotLandingsController', () => {
     const query = {
       page: 1,
       limit: 20,
-      operationalAerodromeId: '22222222-2222-4222-8222-222222222222',
+      aerodromeId: '22222222-2222-4222-8222-222222222222',
     };
     const paginated = new PilotLandingsPaginatedResponseDTO([], 1, 20, 0);
     execute.mockResolvedValue(paginated);

@@ -6,10 +6,10 @@ export class PilotLandingResponseDTO {
   id!: string;
 
   @ApiPropertyOptional({
-    description: 'Aeródromo operacional associado',
+    description: 'Aeródromo associado',
     format: 'uuid',
   })
-  operationalAerodromeId?: string | null;
+  aerodromeId?: string | null;
 
   @ApiProperty({ description: 'Matrícula da aeronave' })
   registration!: string;

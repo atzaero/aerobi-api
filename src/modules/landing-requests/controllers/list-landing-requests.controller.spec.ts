@@ -1,11 +1,19 @@
-import { LandingRequestsPaginatedResponseDTO } from '../dtos/landing-requests-paginated-response.dto';
-import type { ListLandingRequestsService } from '../services/list-landing-requests.service';
+import { UserRole } from '@/generated/prisma/client';
+import type { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.interface';
 
+import type { ListLandingRequestsQueryDTO } from '../dtos/list-landing-requests-query.dto';
+import type { ListLandingRequestsService } from '../services/list-landing-requests.service';
 import { ListLandingRequestsController } from './list-landing-requests.controller';
 
 describe('ListLandingRequestsController', () => {
   let controller: ListLandingRequestsController;
   let execute: jest.Mock;
+
+  const actor: AuthenticatedUser = {
+    id: 'a',
+    email: 'a@x',
+    role: UserRole.ADMIN,
+  };
 
   beforeEach(() => {
     execute = jest.fn();
@@ -14,11 +22,11 @@ describe('ListLandingRequestsController', () => {
     } as unknown as ListLandingRequestsService);
   });
 
-  it('delega query ao service', async () => {
-    const q = { page: 1, limit: 5 };
-    const paginated = new LandingRequestsPaginatedResponseDTO([], 1, 5, 0);
-    execute.mockResolvedValue(paginated);
-    await expect(controller.handle(q)).resolves.toBe(paginated);
-    expect(execute).toHaveBeenCalledWith(q);
+  it('delega a query e o ator ao service', async () => {
+    const query = { page: 1 } as ListLandingRequestsQueryDTO;
+    const result = { data: [] };
+    execute.mockResolvedValue(result);
+    await expect(controller.handle(query, actor)).resolves.toBe(result);
+    expect(execute).toHaveBeenCalledWith(query, actor);
   });
 });

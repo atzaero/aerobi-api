@@ -1,18 +1,38 @@
 FROM node:22-bookworm-slim
 
-# Prisma: node:*-slim images omit OpenSSL; install for correct engine detection.
-# https://www.prisma.io/docs/guides/docker
+# HMR (`run-script-webpack-plugin`) e o watcher invocam `ps` para gestão dos
+# processos — a imagem slim não inclui (`spawn ps ENOENT`), daí `procps`.
+# `ca-certificates` mantém-se para TLS às APIs externas (ANAC/AISWEB/Plugfield).
+# Prisma 7 + @prisma/adapter-pg não usa engine binário, logo OpenSSL deixa de ser
+# necessário no base slim.
 RUN apt-get update -y \
-  && apt-get install -y --no-install-recommends openssl ca-certificates \
+  && apt-get install -y --no-install-recommends procps ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
+# Pré-criar /usr/src/app + subpastas que serão anonymous volumes (node_modules, dist).
+# Sem isso, o Docker cria o mountpoint como root:root e o container (USER node)
+# falha com EACCES ao escrever no dist (webpack/HMR) ou ao instalar deps.
+RUN mkdir -p /usr/src/app/node_modules /usr/src/app/dist \
+  && chown -R node:node /usr/src/app
+
 WORKDIR /usr/src/app
-COPY package*.json ./
-# postinstall runs prisma generate — schema + config must exist before npm install
-COPY prisma ./prisma/
-COPY prisma.config.ts ./
-RUN npm install
-COPY . .
+USER node
+
+# Garante devDependencies no `npm ci` mesmo se o ambiente externo herdar
+# NODE_ENV=production (npm aplica --omit=dev implícito nesse caso).
+ENV NODE_ENV=development
+
+# postinstall executa `prisma generate` (output em src/generated/prisma);
+# schema + prisma.config.ts precisam estar presentes antes do `npm ci`.
+COPY --chown=node:node package*.json ./
+COPY --chown=node:node prisma ./prisma/
+COPY --chown=node:node prisma.config.ts ./
+
+RUN npm ci
+
+COPY --chown=node:node . .
+
 RUN chmod +x scripts/start-dev.sh
+
 EXPOSE 3333
 CMD ["./scripts/start-dev.sh"]

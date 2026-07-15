@@ -1,13 +1,29 @@
-import type { TechnicalVisit } from '@/generated/prisma/client';
-
+import type { TechnicalVisitModifierResponseDTO } from '../dtos/technical-visit-modifier-response.dto';
 import { TechnicalVisitResponseDTO } from '../dtos/technical-visit-response.dto';
+import type { TechnicalVisitWithAerodrome } from '../types/technical-visit-with-aerodrome.type';
 
 export class TechnicalVisitMapper {
-  static toApiRow(entity: TechnicalVisit): TechnicalVisitResponseDTO {
+  static toApiRow(
+    entity: TechnicalVisitWithAerodrome,
+    modifiers: TechnicalVisitModifierResponseDTO[],
+  ): TechnicalVisitResponseDTO {
     const row = new TechnicalVisitResponseDTO();
     row.id = entity.id;
-    row.operationalAerodromeId = entity.operationalAerodromeId;
+    row.aerodromeId = entity.aerodromeId;
+    row.uf = entity.aerodrome.group.uf ?? null;
+    row.icao = entity.aerodrome.icao;
+    row.aerodromeName = entity.aerodrome.name;
+    row.visitorName = entity.visitorName;
+    row.city = entity.city;
+    row.ciad = entity.ciad;
+    row.designation = entity.designation;
+    row.length = entity.length;
+    row.width = entity.width;
+    row.resistance = entity.resistance;
+    row.surface = entity.surface;
+    row.altitude = entity.altitude;
     row.modifierUsers = [...entity.modifierUsers];
+    row.modifiers = modifiers;
     row.gatesPadlocksObservation = entity.gatesPadlocksObservation;
     row.hasGatesPadlocks = entity.hasGatesPadlocks;
     row.fenceObservation = entity.fenceObservation;
@@ -42,9 +58,5 @@ export class TechnicalVisitMapper {
     row.deletedAt = entity.deletedAt ? entity.deletedAt.toISOString() : null;
     row.deletedBy = entity.deletedBy;
     return row;
-  }
-
-  static toApiRows(entities: TechnicalVisit[]): TechnicalVisitResponseDTO[] {
-    return entities.map((e) => TechnicalVisitMapper.toApiRow(e));
   }
 }

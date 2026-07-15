@@ -1,8 +1,8 @@
-# Fluxo completo Git (branch → commit → review → PR)
+# Fluxo completo Git (branch → commit → review → PR → babysit)
 
-Orquestra **em sequência** os quatro fluxos já documentados nos comandos
-atômicos. Para cada etapa aplicável ao estado atual (`git status`, branch,
-diff), **abra o arquivo canon correspondente e siga o workflow completo ali**
+Orquestra **em sequência** os fluxos já documentados nos comandos atômicos.
+Para cada etapa aplicável ao estado atual (`git status`, branch, diff),
+**abra o arquivo canon correspondente e siga o workflow completo ali**
 antes de avançar.
 
 Contexto da stack e operação: [`README.md`](../../README.md)
@@ -14,7 +14,7 @@ Contexto da stack e operação: [`README.md`](../../README.md)
 1. Inspecionar o estado: branch atual (`git branch --show-current`), working
    tree staged/unstaged, remoto.
 2. Executar apenas os passos **relevantes** — se o usuário já está em branch
-   correta e só quer fechar PR, pode enfatizar 2 → 3 → 4.
+   correta e só quer fechar PR, pode enfatizar 2 → 3 → 4 → 5.
 3. Em cada passo, **não resumir de memória** o que está nos arquivos canon:
    use-os como checklist e citar seções quando reportar ao usuário.
 
@@ -88,12 +88,29 @@ Contexto da stack e operação: [`README.md`](../../README.md)
 
 ---
 
+## 5) Babysit do PR (acompanhar CI)
+
+**Canon:** [`babysit-pr.md`](./babysit-pr.md) — e a skill
+[`../skills/babysit-pr/SKILL.md`](../skills/babysit-pr/SKILL.md).
+
+- Após abrir/atualizar o PR, acompanhar o **GitHub Actions** até verde:
+  monitorar (`gh pr checks <N> --repo atzaero/aerobi-api --watch`), ler logs de
+  jobs falhados (`gh run view <RUN_ID> --log-failed`), classificar a falha
+  (branch vs. infra/flake) e corrigir o que for do branch, empurrando de novo
+  em loop — priorizando feedback de review sobre rerun cego de workflow.
+- CI tem três jobs encadeados: **Security** → **Quality** (Prisma validate,
+  `lint:check`, `format:check`, build) → **Test** (Postgres 18 + `prisma migrate
+  deploy` + Jest). Ataque o job mais a montante primeiro.
+- Parar quando: CI verde, ou bloqueio que exige decisão humana.
+
+---
+
 ## Ordem "típica" (guia)
 
-| Momento do trabalho       | Passos costumam ser…     |
-| ------------------------- | ------------------------ |
-| Início de feature         | 1 → (código) → 2 → 3 → 4 |
-| Só fechar após codar      | 2 → 3 → 4                |
-| Ramo já certo, só revisar | 3 → (ajustes) → 2 → 4    |
+| Momento do trabalho       | Passos costumam ser…         |
+| ------------------------- | ---------------------------- |
+| Início de feature         | 1 → (código) → 2 → 3 → 4 → 5 |
+| Só fechar após codar      | 2 → 3 → 4 → 5                |
+| Ramo já certo, só revisar | 3 → (ajustes) → 2 → 4 → 5    |
 
 Ajuste conforme o pedido na mensagem que invocou este fluxo.

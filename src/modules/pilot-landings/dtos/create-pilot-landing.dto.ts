@@ -13,12 +13,12 @@ import {
 /** Body para POST /pilot-landings */
 export class CreatePilotLandingDTO {
   @ApiPropertyOptional({
-    description: 'Aeródromo operacional associado (opcional)',
+    description: 'Aeródromo associado (opcional)',
     format: 'uuid',
   })
   @IsOptional()
   @IsUUID('4')
-  operationalAerodromeId?: string;
+  aerodromeId?: string;
 
   @ApiProperty({ description: 'Matrícula da aeronave', example: 'PT-ABC' })
   @IsString()

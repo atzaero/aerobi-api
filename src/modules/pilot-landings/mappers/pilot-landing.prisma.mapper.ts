@@ -16,9 +16,9 @@ export function buildPilotLandingCreateInput(
     landingAt: dto.landingAt,
     createdBy: dto.createdBy ?? undefined,
   };
-  if (dto.operationalAerodromeId) {
-    data.operationalAerodrome = {
-      connect: { id: dto.operationalAerodromeId },
+  if (dto.aerodromeId) {
+    data.aerodrome = {
+      connect: { id: dto.aerodromeId },
     };
   }
   return data;
@@ -37,11 +37,11 @@ export function patchPilotLandingToPrisma(
   if (dto.imagesPath !== undefined) data.imagesPath = dto.imagesPath;
   if (dto.landingAt !== undefined) data.landingAt = dto.landingAt;
 
-  if (dto.disconnectOperationalAerodrome) {
-    data.operationalAerodrome = { disconnect: true };
-  } else if (dto.operationalAerodromeId !== undefined) {
-    data.operationalAerodrome = {
-      connect: { id: dto.operationalAerodromeId },
+  if (dto.disconnectAerodrome) {
+    data.aerodrome = { disconnect: true };
+  } else if (dto.aerodromeId !== undefined) {
+    data.aerodrome = {
+      connect: { id: dto.aerodromeId },
     };
   }
 

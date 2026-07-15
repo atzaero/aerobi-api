@@ -1,0 +1,207 @@
+name: Deploy (reusable)
+
+# Workflow reutilizável (workflow_call) de deploy via SSH, parametrizado por
+# ambiente. Usado por release.yml para produção e staging — MESMA imagem GHCR,
+# só mudam os inputs e os secrets/variables do GitHub Environment.
+#
+# A porta de host e o diretório-alvo vêm do GitHub Environment (vars.HOST_PORT /
+# vars.REMOTE_TARGET), cujos valores espelham a FONTE DA VERDADE do Ansible
+# (aerobi-ansible/inventory/prod/group_vars/all/ports.yml).
+#
+# Secrets de conexão SSH (REMOTE_*, SSH_PRIVATE_KEY, GH_TOKEN) são repo-level
+# (mesma VPS); os de aplicação (DATABASE_URL, AEROBI_API_KEY, ...) vêm do
+# Environment via `secrets: inherit`.
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: GitHub Environment (production | staging)
+        required: true
+        type: string
+      compose_file:
+        description: docker-compose a usar no servidor
+        required: true
+        type: string
+      env_file:
+        description: nome do arquivo de env gerado/transferido (.env | .env.staging)
+        required: true
+        type: string
+      node_env:
+        description: valor de NODE_ENV
+        required: true
+        type: string
+      image_tag:
+        description: versão/tag da imagem GHCR (sem prefixo v)
+        required: true
+        type: string
+      url:
+        description: URL pública do ambiente (link no GitHub Environment)
+        required: true
+        type: string
+      project_name:
+        description: 'docker compose -p <project> (vazio = projeto default, usado por produção)'
+        required: false
+        type: string
+        default: ''
+      db_name_guard:
+        description: 'se não-vazio, exige que DATABASE_URL aponte para este banco (trava anti-fallback)'
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  deploy:
+    name: Deploy ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    # Backstop: sem isto o job herda o default de 6h do GitHub e um step preso
+    # (ex.: `tailscale up` aguardando login com authkey expirada — issue #225)
+    # segura o runner por horas.
+    timeout-minutes: 20
+    environment:
+      name: ${{ inputs.environment }}
+      url: ${{ inputs.url }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: v${{ inputs.image_tag }}
+
+      # Trava anti-fallback (só quando db_name_guard é fornecido — ex.: staging).
+      # Como staging e produção compartilham nomes de secret, um secret NÃO
+      # configurado no Environment faz fallback para o repo-level (produção).
+      # Validação POSITIVA por chave (grep -q não imprime valor):
+      #   - DATABASE_URL deve apontar para o banco esperado (db_name_guard);
+      #   - chaves com marcador de ambiente no valor (CORS_ORIGINS, FRONTEND_URL)
+      #     devem conter o nome do ambiente (ex.: "staging").
+      # Cobre só chaves cujo valor tem marcador textual de ambiente — secrets
+      # opacos (AEROBI_API_KEY, JWT_*, MAIL_*, MINIO_*, FIREBASE_*) não são
+      # validáveis aqui; sua divergência é auditada na matriz de docs/DEPLOY_STAGING.md.
+      # Acumula todas as falhas antes de abortar (diagnóstico completo num run só).
+      - name: Guard — Environment configurado
+        if: inputs.db_name_guard != ''
+        env:
+          DB_GUARD: ${{ inputs.db_name_guard }}
+          # Marcador = nome do próprio ambiente (este guard só roda em staging).
+          ENV_MARKER: ${{ inputs.environment }}
+          DB_URL: ${{ secrets.DATABASE_URL }}
+          CORS: ${{ secrets.CORS_ORIGINS }}
+          FRONTEND: ${{ secrets.FRONTEND_URL }}
+          RT: ${{ vars.REMOTE_TARGET }}
+          HP: ${{ vars.HOST_PORT }}
+        run: |
+          fail=0
+          if [ -z "$RT" ] || [ -z "$HP" ]; then
+            echo "::error::vars.REMOTE_TARGET / vars.HOST_PORT ausentes no Environment '${{ inputs.environment }}'."
+            fail=1
+          fi
+          # DATABASE_URL: nome de banco específico (mais forte que o marcador genérico).
+          if ! printf '%s' "$DB_URL" | grep -qE "/${DB_GUARD}([?]|$)"; then
+            echo "::error::DATABASE_URL não aponta para o banco '${DB_GUARD}' — secret do Environment provavelmente não configurado (fallback para produção). Abortando."
+            fail=1
+          fi
+          # Chaves cujo valor TEM de conter o marcador do ambiente: ausência do
+          # marcador denuncia fallback silencioso para o valor repo-level (produção).
+          check_marker() {
+            if [ -z "$2" ] || ! printf '%s' "$2" | grep -q "$ENV_MARKER"; then
+              echo "::error::$1 não contém '${ENV_MARKER}' — secret do Environment provavelmente em fallback para produção (ou ausente). Abortando."
+              fail=1
+            fi
+          }
+          check_marker CORS_ORIGINS "$CORS"
+          check_marker FRONTEND_URL "$FRONTEND"
+          [ "$fail" -eq 0 ] || exit 1
+
+      # Conecta o runner à tailnet (Headscale) e resolve DEPLOY_HOST. Lógica
+      # extraída para a composite (retry 3x + prova TCP + fallback IP público),
+      # compartilhada byte-idêntica com atzaero/aerobi.
+      - name: Conectar à tailnet e resolver host de deploy
+        uses: ./.github/actions/tailnet-connect
+        with:
+          headscale-authkey: ${{ secrets.HEADSCALE_AUTHKEY }}
+          public-host: ${{ secrets.REMOTE_HOST }}
+
+      - name: Create SSH key
+        uses: ./.github/actions/ssh-setup
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          remote-host: ${{ env.DEPLOY_HOST }}
+          remote-port: ${{ secrets.REMOTE_PORT }}
+
+      - name: Check and Create Target Directory
+        env:
+          RT: ${{ vars.REMOTE_TARGET }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -p ${{ secrets.REMOTE_PORT }} ${{ secrets.REMOTE_USER }}@${{ env.DEPLOY_HOST }} "
+            if [ ! -d \"$RT\" ]; then
+              mkdir -p $RT && echo 'Directory created.';
+            else
+              echo 'Target directory exists.';
+            fi
+          "
+
+      - name: Create env file and transfer
+        env:
+          ENVF: ${{ inputs.env_file }}
+          NODE_ENV_IN: ${{ inputs.node_env }}
+          TAG_IN: ${{ inputs.image_tag }}
+          HOST_PORT_IN: ${{ vars.HOST_PORT }}
+          RT: ${{ vars.REMOTE_TARGET }}
+          # Todos os secrets (Environment + repo-level via inherit) como JSON.
+          # Lido por env (não interpolado no script) — evita injeção e vazamento.
+          SECRETS_JSON: ${{ toJSON(secrets) }}
+        run: |
+          set -e
+          : > "$ENVF"
+          # Valores geridos pelo workflow + conexão SSH: NÃO entram no .env da app.
+          DENY="GITHUB_TOKEN GH_TOKEN SSH_PRIVATE_KEY REMOTE_HOST REMOTE_PORT REMOTE_USER REMOTE_TARGET REGISTRY IMAGE_NAME TAG NODE_ENV PORT APP_PORT HOST_PORT"
+          {
+            echo "REGISTRY=ghcr.io"
+            echo "IMAGE_NAME=${{ github.repository }}"
+            echo "TAG=$TAG_IN"
+            echo "NODE_ENV=$NODE_ENV_IN"
+            # PORT = porta interna do container (3333). HOST_PORT = bind de host.
+            echo "PORT=3333"
+            echo "HOST_PORT=$HOST_PORT_IN"
+          } >> "$ENVF"
+          # Todo o resto dos secrets vira config da app AUTOMATICAMENTE — sem
+          # allowlist manual (não há como "esquecer" MAIL_*/JWT_*/AVIASCAN_* etc.).
+          # jq escreve direto no arquivo (não no stdout) → não vaza nos logs.
+          printf '%s' "$SECRETS_JSON" | jq -r --arg deny "$DENY" '
+            ($deny | split(" ")) as $d
+            | to_entries[]
+            | select(.key as $k | ($d | index($k)) | not)
+            | "\(.key)=\(.value)"
+          ' >> "$ENVF"
+          scp -i ~/.ssh/deploy_key -P ${{ secrets.REMOTE_PORT }} \
+            "${{ inputs.compose_file }}" "$ENVF" \
+            ${{ secrets.REMOTE_USER }}@${{ env.DEPLOY_HOST }}:$RT
+
+      # Login GHCR remoto + ensure network warpgate + compose pull/down/up.
+      # Extraído para a composite, compartilhada byte-idêntica com atzaero/aerobi.
+      - name: Deploy remoto (GHCR + docker compose)
+        uses: ./.github/actions/remote-deploy
+        with:
+          remote-user: ${{ secrets.REMOTE_USER }}
+          remote-host: ${{ env.DEPLOY_HOST }}
+          remote-port: ${{ secrets.REMOTE_PORT }}
+          remote-target: ${{ vars.REMOTE_TARGET }}
+          gh-token: ${{ secrets.GH_TOKEN }}
+          actor: ${{ github.actor }}
+          compose-file: ${{ inputs.compose_file }}
+          env-file: ${{ inputs.env_file }}
+          project-name: ${{ inputs.project_name }}
+          image-tag: ${{ inputs.image_tag }}
+          environment-label: ${{ inputs.environment }}
+
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -f ~/.ssh/deploy_key
+          # Sem `tailscale logout`: o logout só era necessário para nós efêmeros.
+          # A authkey tag:ci é NÃO-efêmera de propósito — com nó efêmero, o logout
+          # (ou a remoção automática por inatividade) deleta o nó e dispara um
+          # deadlock no control-plane do Headscale 0.28.0 (poll.go:339, "node not
+          # found"), congelando o registro de novos nós e quebrando o deploy
+          # seguinte. Os nós de CI ficam offline e são limpos pelo cron de
+          # inativos (aerobi-ansible#47). Ver atzaero/aerobi#961.

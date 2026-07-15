@@ -14,19 +14,19 @@ import {
 /** Body para PATCH /pilot-landings/:id — campos opcionais */
 export class UpdatePilotLandingDTO {
   @ApiPropertyOptional({
-    description: 'Se `true`, remove a associação ao aeródromo operacional',
+    description: 'Se `true`, remove a associação ao aeródromo',
   })
   @IsOptional()
   @IsBoolean()
-  disconnectOperationalAerodrome?: boolean;
+  disconnectAerodrome?: boolean;
 
   @ApiPropertyOptional({ format: 'uuid' })
   @ValidateIf(
     (_o: UpdatePilotLandingDTO, v) =>
-      typeof v === 'string' && !_o.disconnectOperationalAerodrome,
+      typeof v === 'string' && !_o.disconnectAerodrome,
   )
   @IsUUID('4')
-  operationalAerodromeId?: string;
+  aerodromeId?: string;
 
   @ApiPropertyOptional({ example: 'PT-ABC' })
   @IsOptional()

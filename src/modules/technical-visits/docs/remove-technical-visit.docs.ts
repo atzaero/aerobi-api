@@ -1,20 +1,16 @@
 import { applyDecorators } from '@nestjs/common';
-import {
-  ApiOkResponse,
-  ApiOperation,
-  ApiParam,
-  ApiSecurity,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOkResponse, ApiOperation } from '@nestjs/swagger';
 
 import { TechnicalVisitResponseDTO } from '../dtos/technical-visit-response.dto';
+import { TECHNICAL_VISIT_RESPONSE_EXAMPLE } from './technical-visit.examples';
 
 export function RemoveTechnicalVisitDocs() {
   return applyDecorators(
-    ApiSecurity('api_key'),
-    ApiOperation({
-      summary: 'Remove (soft delete) um(a) TechnicalVisit por id',
+    ApiBearerAuth(),
+    ApiOperation({ summary: 'Remove (soft delete) uma visita técnica' }),
+    ApiOkResponse({
+      type: TechnicalVisitResponseDTO,
+      schema: { example: TECHNICAL_VISIT_RESPONSE_EXAMPLE },
     }),
-    ApiParam({ name: 'technicalVisitId', description: 'Identificador' }),
-    ApiOkResponse({ type: TechnicalVisitResponseDTO }),
   );
 }

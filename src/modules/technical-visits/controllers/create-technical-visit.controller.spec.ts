@@ -1,8 +1,18 @@
+import { UserRole } from '@/generated/prisma/client';
+
+import { buildAuthenticatedUserFixture } from '@/modules/auth/testing/authenticated-user.fixtures';
+
 import { TechnicalVisitResponseDTO } from '../dtos/technical-visit-response.dto';
 import type { CreateTechnicalVisitDTO } from '../dtos/create-technical-visit.dto';
 import type { CreateTechnicalVisitService } from '../services/create-technical-visit.service';
 
 import { CreateTechnicalVisitController } from './create-technical-visit.controller';
+
+const actor = buildAuthenticatedUserFixture({
+  id: '33333333-3333-4333-8333-333333333333',
+  email: 'actor@test.com',
+  role: UserRole.ADMIN,
+});
 
 describe('CreateTechnicalVisitController', () => {
   let controller: CreateTechnicalVisitController;
@@ -17,12 +27,19 @@ describe('CreateTechnicalVisitController', () => {
 
   it('delega', async () => {
     const dto: CreateTechnicalVisitDTO = {
-      operationalAerodromeId: '22222222-2222-4222-8222-222222222222',
+      aerodromeId: '22222222-2222-4222-8222-222222222222',
+      visitorName: 'Vistoriador',
+      city: 'Goiânia',
       visitAt: new Date(),
     };
     const row = new TechnicalVisitResponseDTO();
     execute.mockResolvedValue(row);
-    await expect(controller.handle(dto)).resolves.toBe(row);
-    expect(execute).toHaveBeenCalledWith(dto);
+    const request = { headers: {} } as never;
+    await expect(controller.handle(dto, actor, request)).resolves.toBe(row);
+    expect(execute).toHaveBeenCalledWith(
+      dto,
+      actor,
+      expect.objectContaining({ actorId: actor.id }),
+    );
   });
 });

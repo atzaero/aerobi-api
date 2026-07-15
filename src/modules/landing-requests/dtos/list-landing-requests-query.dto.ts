@@ -1,18 +1,15 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsOptional, IsUUID } from 'class-validator';
-
-import { LandingRequestStatus } from '@/generated/prisma/client';
+import { IntersectionType } from '@nestjs/swagger';
 
 import { BasePaginationQueryDTO } from '@/common/dtos/base-pagination-query.dto';
 
-export class ListLandingRequestsQueryDTO extends BasePaginationQueryDTO {
-  @ApiPropertyOptional({ format: 'uuid' })
-  @IsOptional()
-  @IsUUID('4')
-  operationalAerodromeId?: string;
+import { LandingRequestFilterQueryDTO } from './landing-request-filter-query.dto';
 
-  @ApiPropertyOptional({ enum: LandingRequestStatus })
-  @IsOptional()
-  @IsEnum(LandingRequestStatus)
-  status?: LandingRequestStatus;
-}
+/**
+ * Query do `GET /landing-requests` (moderação interna): paginação +
+ * {@link LandingRequestFilterQueryDTO}. O escopo por grupo é aplicado no service
+ * (não é um filtro do cliente).
+ */
+export class ListLandingRequestsQueryDTO extends IntersectionType(
+  BasePaginationQueryDTO,
+  LandingRequestFilterQueryDTO,
+) {}

@@ -1,0 +1,300 @@
+import { ExecutionContext } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+
+import { ErrorCode } from '@/common/enums/error-code.enum';
+import { ErrorMessageService } from '@/common/error-messages/error-message.service';
+import { CustomHttpException } from '@/common/exceptions/custom-http.exception';
+import { UserRole } from '@/generated/prisma/client';
+import { PrismaService } from '@/prisma/prisma.service';
+
+import { GroupScopeGuard } from './group-scope.guard';
+import { GroupScopeSubject } from './group-scope.subject';
+import {
+  GROUP_SCOPE_KEY,
+  GROUP_SCOPE_PARAM_KEY,
+} from '../constants/auth.constants';
+
+const RESOURCE_ID = '11111111-1111-4111-8111-111111111111';
+const GROUP_A = '22222222-2222-4222-8222-222222222222';
+const GROUP_B = '33333333-3333-4333-8333-333333333333';
+
+type GuardUser = { id: string; email: string; role: UserRole };
+
+function buildContext(
+  user: GuardUser | undefined,
+  params: Record<string, string | undefined> = { id: RESOURCE_ID },
+  query: Record<string, string | undefined> = {},
+  body: Record<string, string | undefined> = {},
+): ExecutionContext {
+  return {
+    getHandler: () => undefined,
+    getClass: () => undefined,
+    switchToHttp: () => ({
+      getRequest: () => ({ user, params, query, body }),
+    }),
+  } as unknown as ExecutionContext;
+}
+
+function buildPrisma(): {
+  prisma: PrismaService;
+  group: { findFirst: jest.Mock };
+  aerodrome: { findFirst: jest.Mock };
+  landingRequest: { findFirst: jest.Mock };
+  maintenance: { findFirst: jest.Mock };
+  user: { findFirst: jest.Mock };
+} {
+  const group = { findFirst: jest.fn() };
+  const aerodrome = { findFirst: jest.fn() };
+  const landingRequest = { findFirst: jest.fn() };
+  const maintenance = { findFirst: jest.fn() };
+  const user = { findFirst: jest.fn() };
+
+  return {
+    prisma: {
+      group,
+      aerodrome,
+      landingRequest,
+      maintenance,
+      user,
+    } as unknown as PrismaService,
+    group,
+    aerodrome,
+    landingRequest,
+    maintenance,
+    user,
+  };
+}
+
+describe('GroupScopeGuard', () => {
+  let guard: GroupScopeGuard;
+  let reflector: Reflector;
+  let deps: ReturnType<typeof buildPrisma>;
+
+  const operator: GuardUser = {
+    id: 'user-1',
+    email: 'op@e',
+    role: UserRole.OPERATOR,
+  };
+  const admin: GuardUser = {
+    id: 'admin-1',
+    email: 'admin@e',
+    role: UserRole.ADMIN,
+  };
+
+  beforeEach(() => {
+    reflector = new Reflector();
+    deps = buildPrisma();
+    guard = new GroupScopeGuard(
+      reflector,
+      deps.prisma,
+      new ErrorMessageService(),
+    );
+  });
+
+  function mockSubject(
+    subject: GroupScopeSubject | undefined,
+    paramName = 'id',
+  ): void {
+    jest
+      .spyOn(reflector, 'getAllAndOverride')
+      .mockImplementation((key: string) => {
+        if (key === GROUP_SCOPE_KEY) return subject;
+        if (key === GROUP_SCOPE_PARAM_KEY) return paramName;
+        return undefined;
+      });
+  }
+
+  async function expectErrorCode(
+    promise: Promise<unknown>,
+    code: ErrorCode,
+  ): Promise<void> {
+    await expect(promise).rejects.toBeInstanceOf(CustomHttpException);
+    await promise.catch((e) => {
+      expect((e as CustomHttpException).getErrorCode()).toBe(code);
+    });
+  }
+
+  it('passa quando o handler não tem @RequiresGroupScope', async () => {
+    mockSubject(undefined);
+
+    await expect(guard.canActivate(buildContext(operator))).resolves.toBe(true);
+    expect(deps.aerodrome.findFirst).not.toHaveBeenCalled();
+  });
+
+  it('passa (bypass) quando o usuário é ADMIN, sem tocar no DB', async () => {
+    mockSubject(GroupScopeSubject.AERODROME);
+
+    await expect(guard.canActivate(buildContext(admin))).resolves.toBe(true);
+    expect(deps.aerodrome.findFirst).not.toHaveBeenCalled();
+    expect(deps.user.findFirst).not.toHaveBeenCalled();
+  });
+
+  it('passa quando o recurso pertence ao mesmo grupo do usuário', async () => {
+    mockSubject(GroupScopeSubject.AERODROME);
+    deps.aerodrome.findFirst.mockResolvedValue({
+      groupId: GROUP_A,
+    });
+    deps.user.findFirst.mockResolvedValue({ groupId: GROUP_A });
+
+    await expect(guard.canActivate(buildContext(operator))).resolves.toBe(true);
+    expect(deps.user.findFirst).toHaveBeenCalledWith({
+      where: { id: operator.id, deletedAt: null },
+      select: { groupId: true },
+    });
+    expect(deps.aerodrome.findFirst).toHaveBeenCalledWith({
+      where: { id: RESOURCE_ID, deletedAt: null },
+      select: { groupId: true },
+    });
+  });
+
+  it('resolve o próprio grupo quando o recurso É o grupo (Group)', async () => {
+    mockSubject(GroupScopeSubject.GROUP);
+    deps.group.findFirst.mockResolvedValue({ id: RESOURCE_ID });
+    /** O grupo do recurso é o próprio id; o coordinator deve pertencer a ele. */
+    deps.user.findFirst.mockResolvedValue({ groupId: RESOURCE_ID });
+
+    await expect(guard.canActivate(buildContext(operator))).resolves.toBe(true);
+    expect(deps.group.findFirst).toHaveBeenCalledWith({
+      where: { id: RESOURCE_ID, deletedAt: null },
+      select: { id: true },
+    });
+  });
+
+  it('lança RESOURCE_NOT_FOUND (404) quando o grupo-alvo não é o do coordinator (Group)', async () => {
+    mockSubject(GroupScopeSubject.GROUP);
+    deps.group.findFirst.mockResolvedValue({ id: RESOURCE_ID });
+    deps.user.findFirst.mockResolvedValue({ groupId: GROUP_B });
+
+    await expectErrorCode(
+      guard.canActivate(buildContext(operator)),
+      ErrorCode.RESOURCE_NOT_FOUND,
+    );
+  });
+
+  it('resolve o grupo de um recurso filho via FK (LandingRequest)', async () => {
+    mockSubject(GroupScopeSubject.LANDING_REQUEST);
+    deps.landingRequest.findFirst.mockResolvedValue({
+      aerodrome: { groupId: GROUP_A },
+    });
+    deps.user.findFirst.mockResolvedValue({ groupId: GROUP_A });
+
+    await expect(guard.canActivate(buildContext(operator))).resolves.toBe(true);
+    expect(deps.landingRequest.findFirst).toHaveBeenCalled();
+  });
+
+  it('lança RESOURCE_NOT_FOUND (404) quando o recurso é de outro grupo (não vaza existência)', async () => {
+    mockSubject(GroupScopeSubject.AERODROME);
+    deps.aerodrome.findFirst.mockResolvedValue({
+      groupId: GROUP_A,
+    });
+    deps.user.findFirst.mockResolvedValue({ groupId: GROUP_B });
+
+    await expectErrorCode(
+      guard.canActivate(buildContext(operator)),
+      ErrorCode.RESOURCE_NOT_FOUND,
+    );
+  });
+
+  it('lança RESOURCE_NOT_FOUND (404) quando o usuário não tem grupo (groupId null)', async () => {
+    mockSubject(GroupScopeSubject.AERODROME);
+    deps.aerodrome.findFirst.mockResolvedValue({
+      groupId: GROUP_A,
+    });
+    deps.user.findFirst.mockResolvedValue({ groupId: null });
+
+    await expectErrorCode(
+      guard.canActivate(buildContext(operator)),
+      ErrorCode.RESOURCE_NOT_FOUND,
+    );
+  });
+
+  it('lança ACCOUNT_DELETED (401) quando o usuário foi soft-deletado (lookup retorna null)', async () => {
+    mockSubject(GroupScopeSubject.AERODROME);
+    deps.aerodrome.findFirst.mockResolvedValue({
+      groupId: GROUP_A,
+    });
+    /** JwtStrategy confia no token; o lookup ativo (deletedAt: null) devolve null. */
+    deps.user.findFirst.mockResolvedValue(null);
+
+    const promise = guard.canActivate(buildContext(operator));
+    await expect(promise).rejects.toBeInstanceOf(CustomHttpException);
+    await promise.catch((e) => {
+      expect((e as CustomHttpException).getErrorCode()).toBe(
+        ErrorCode.ACCOUNT_DELETED,
+      );
+      expect((e as CustomHttpException).getStatus()).toBe(401);
+    });
+  });
+
+  it('lança RESOURCE_NOT_FOUND quando o recurso não existe (mesmo 404 do fora-de-escopo)', async () => {
+    mockSubject(GroupScopeSubject.AERODROME);
+    deps.user.findFirst.mockResolvedValue({ groupId: GROUP_A });
+    deps.aerodrome.findFirst.mockResolvedValue(null);
+
+    await expectErrorCode(
+      guard.canActivate(buildContext(operator)),
+      ErrorCode.RESOURCE_NOT_FOUND,
+    );
+  });
+
+  it('lança UNAUTHORIZED quando request.user está ausente', async () => {
+    mockSubject(GroupScopeSubject.AERODROME);
+
+    await expectErrorCode(
+      guard.canActivate(buildContext(undefined)),
+      ErrorCode.UNAUTHORIZED,
+    );
+  });
+
+  it('lança VALIDATION_FAILED quando params.id não é UUID', async () => {
+    mockSubject(GroupScopeSubject.AERODROME);
+
+    await expectErrorCode(
+      guard.canActivate(buildContext(operator, { id: 'not-a-uuid' })),
+      ErrorCode.VALIDATION_FAILED,
+    );
+    expect(deps.aerodrome.findFirst).not.toHaveBeenCalled();
+  });
+
+  it('lança VALIDATION_FAILED quando params.id está ausente', async () => {
+    mockSubject(GroupScopeSubject.AERODROME);
+
+    await expectErrorCode(
+      guard.canActivate(buildContext(operator, {})),
+      ErrorCode.VALIDATION_FAILED,
+    );
+  });
+
+  it('resolve maintenanceId da query quando ausente em params', async () => {
+    mockSubject(GroupScopeSubject.MAINTENANCE, 'maintenanceId');
+    deps.maintenance.findFirst.mockResolvedValue({
+      aerodrome: { groupId: GROUP_A },
+    });
+    deps.user.findFirst.mockResolvedValue({ groupId: GROUP_A });
+
+    await expect(
+      guard.canActivate(
+        buildContext(operator, {}, { maintenanceId: RESOURCE_ID }),
+      ),
+    ).resolves.toBe(true);
+
+    expect(deps.maintenance.findFirst).toHaveBeenCalledWith({
+      where: { id: RESOURCE_ID, deletedAt: null },
+      select: { aerodrome: { select: { groupId: true } } },
+    });
+  });
+
+  it('resolve maintenanceId do body quando ausente em params e query', async () => {
+    mockSubject(GroupScopeSubject.MAINTENANCE, 'maintenanceId');
+    deps.maintenance.findFirst.mockResolvedValue({
+      aerodrome: { groupId: GROUP_A },
+    });
+    deps.user.findFirst.mockResolvedValue({ groupId: GROUP_A });
+
+    await expect(
+      guard.canActivate(
+        buildContext(operator, {}, {}, { maintenanceId: RESOURCE_ID }),
+      ),
+    ).resolves.toBe(true);
+  });
+});

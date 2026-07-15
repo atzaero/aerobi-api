@@ -1,33 +1,25 @@
-name: Production Release
+name: Release & Deploy
 run-name: Release from ${{ github.ref_name }} by @${{ github.actor }}
 
-# Push em main → semantic-release (GH_TOKEN) → tag/release → build/push imagem GHCR → deploy.
-# Sequência garantida: release → docker → deploy (sem race condition).
+# Fluxo único para os dois ambientes (mesma imagem GHCR, só muda a env de runtime):
 #
-# Secrets GitHub necessários:
-#   GH_TOKEN — semantic-release + login GHCR no servidor
-#   SSH_PRIVATE_KEY, REMOTE_HOST, REMOTE_PORT, REMOTE_USER, REMOTE_TARGET
-#   DATABASE_URL, CORS_ORIGINS
+#   push develop → semantic-release prerelease (vX.Y.Z-beta.N) → deploy STAGING
+#   push main    → semantic-release estável     (vX.Y.Z)        → deploy PRODUÇÃO
 #
-# Autenticação API Aerobi (cliente → Aerobi, header X-API-Key):
-#   AEROBI_API_KEY — obrigatório em produção para rotas /rab, /private-aerodromes, /plugfield, /aisweb.
-#   AEROBI_REQUIRE_AUTH — opcional.
+# Sequência: release → docker (build/push GHCR) → deploy (job reutilizável
+# deploy.yml, parametrizado por ambiente). O roteamento staging vs produção é
+# decidido por `is_prerelease` (a versão gerada conter `-beta.N`).
 #
-# Proxy Plugfield (Aerobi → Plugfield, só no servidor):
-#   PLUGFIELD_API_KEY, PLUGFIELD_TOKEN
-#   PLUGFIELD_API_BASE_URL, PLUGFIELD_HTTP_TIMEOUT_MS — opcionais
-#
-# Proxy AISWEB / DECEA (Aerobi → AISWEB, só no servidor):
-#   AISWEB_API_KEY, AISWEB_API_PASS — necessários para rotas /aisweb/*
-#   AISWEB_HTTP_TIMEOUT_MS — opcional
-#
-# Agendamento RAB (opcional):
-#   RAB_SYNC_CRON, RAB_SYNC_CRON_DISABLED
+# Secrets/variables: conexão SSH é repo-level (mesma VPS); config de aplicação
+# vem do GitHub Environment ('production' / 'staging'). Detalhes e checklist:
+# docs/DEPLOY_STAGING.md.
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
+      - develop
 
 permissions:
   contents: write
@@ -35,9 +27,13 @@ permissions:
   pull-requests: write
   packages: write
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+# Serializa releases/deploys: pushes próximos em main/develop não correm em
+# paralelo (evita corrida no tag do semantic-release e no `compose up` da VPS).
+# cancel-in-progress: false — NÃO mata um deploy em andamento (evitaria estado
+# parcial na VPS); o run seguinte aguarda e deploya o código mais novo. (#222)
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   release:
@@ -46,17 +42,18 @@ jobs:
     outputs:
       new_release_published: ${{ steps.semantic.outputs.new_release_published }}
       new_release_version: ${{ steps.semantic.outputs.new_release_version }}
+      is_prerelease: ${{ steps.semantic.outputs.is_prerelease }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version-file: '.nvmrc'
           cache: npm
 
       - name: Install dependencies
@@ -67,14 +64,37 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
-          npx semantic-release 2>&1 | tee release-output.log
-          VERSION=$(grep -oP 'Published release \K[0-9]+\.[0-9]+\.[0-9]+' release-output.log || echo "")
+          set -o pipefail
+          # `if !` isola o comando do `set -e` do runner: um CRASH do
+          # semantic-release (token/rede/plugin) vira job VERMELHO com mensagem,
+          # em vez de mascarado como "sem release" (o `| tee` engolia o código de
+          # saída). No-release legítimo sai 0 e segue com VERSION vazio. (#166)
+          # semantic-release e plugins externos não ficam em devDependencies
+          # (arrastavam o pacote `npm` + undici vulnerável para o npm audit do
+          # projeto). São baixados efemeramente aqui — só o job de release
+          # precisa deles. changelog/git não vêm do core; github/npm/
+          # commit-analyzer/release-notes-generator sim.
+          if ! npx -p semantic-release -p @semantic-release/changelog -p @semantic-release/git semantic-release 2>&1 | tee release-output.log; then
+            echo "::error::semantic-release falhou — abortando para não mascarar o crash como 'nenhuma versao publicada'."
+            exit 1
+          fi
+          # Remove escapes ANSI antes de extrair (robusto a FORCE_COLOR/TTY) e
+          # captura a versão COMPLETA, incluindo sufixo de prerelease (-beta.N).
+          VERSION=$(sed -r 's/\x1b\[[0-9;]*[A-Za-z]//g' release-output.log \
+            | grep -oP 'Published release \K[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?' \
+            | head -n1 || echo "")
           if [ -n "$VERSION" ]; then
             echo "new_release_published=true" >> $GITHUB_OUTPUT
             echo "new_release_version=$VERSION" >> $GITHUB_OUTPUT
+            # Prerelease quando a versão contém hífen (ex: 1.5.0-beta.1).
+            case "$VERSION" in
+              *-*) echo "is_prerelease=true"  >> $GITHUB_OUTPUT ;;
+              *)   echo "is_prerelease=false" >> $GITHUB_OUTPUT ;;
+            esac
             echo "Nova versao publicada: $VERSION"
           else
             echo "new_release_published=false" >> $GITHUB_OUTPUT
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
             echo "Nenhuma versao publicada"
           fi
 
@@ -85,7 +105,7 @@ jobs:
     if: needs.release.outputs.new_release_published == 'true'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: v${{ needs.release.outputs.new_release_version }}
           fetch-depth: 0
@@ -96,7 +116,7 @@ jobs:
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
@@ -104,10 +124,13 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ghcr.io/${{ github.repository }}
+          # `latest` só em release estável; prerelease recebe a tag móvel `beta`
+          # (beta NUNCA sobrescreve `latest`, que é o que produção segue).
           tags: |
             type=raw,value=${{ needs.release.outputs.new_release_version }}
-            type=raw,value=latest
+            type=raw,value=latest,enable=${{ needs.release.outputs.is_prerelease == 'false' }}
+            type=raw,value=beta,enable=${{ needs.release.outputs.is_prerelease == 'true' }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -120,101 +143,33 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  deploy:
-    name: Deploy to Production
-    runs-on: ubuntu-latest
+  deploy-production:
+    name: Production
     needs: [release, docker]
-    if: needs.release.outputs.new_release_published == 'true'
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          ref: v${{ needs.release.outputs.new_release_version }}
+    if: needs.release.outputs.new_release_published == 'true' && needs.release.outputs.is_prerelease == 'false'
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: production
+      compose_file: docker-compose.prod.yml
+      env_file: .env
+      node_env: production
+      image_tag: ${{ needs.release.outputs.new_release_version }}
+      url: https://api.aerobi.com.br
+      # project_name vazio = projeto default (comportamento de produção inalterado)
+    secrets: inherit
 
-      - name: Create SSH key
-        run: |
-          mkdir -p ~/.ssh/
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ secrets.REMOTE_HOST }} >> ~/.ssh/known_hosts || true
-
-      - name: Check and Create Target Directory
-        run: |
-          ssh -i ~/.ssh/deploy_key -p ${{ secrets.REMOTE_PORT }} ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} "
-            if [ ! -d \"${{ secrets.REMOTE_TARGET }}\" ]; then
-              mkdir -p ${{ secrets.REMOTE_TARGET }} && echo 'Directory created.';
-            else
-              echo 'Target directory exists.';
-            fi
-          "
-
-      - name: Create .env and transfer files
-        run: |
-          set -e
-          : > .env
-          echo "REGISTRY=${{ env.REGISTRY }}" >> .env
-          echo "IMAGE_NAME=${{ env.IMAGE_NAME }}" >> .env
-          echo "TAG=${{ needs.release.outputs.new_release_version }}" >> .env
-          echo "NODE_ENV=production" >> .env
-          if [ -n "${{ secrets.APP_PORT }}" ]; then echo "PORT=${{ secrets.APP_PORT }}" >> .env; else echo "PORT=3333" >> .env; fi
-          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
-          echo "CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}" >> .env
-          if [ -n "${{ secrets.ANAC_RAB_INDEX_URL }}" ]; then echo "ANAC_RAB_INDEX_URL=${{ secrets.ANAC_RAB_INDEX_URL }}" >> .env; fi
-          if [ -n "${{ secrets.HTTP_USER_AGENT }}" ]; then echo "HTTP_USER_AGENT=${{ secrets.HTTP_USER_AGENT }}" >> .env; fi
-          if [ -n "${{ secrets.AEROBI_API_KEY }}" ]; then echo "AEROBI_API_KEY=${{ secrets.AEROBI_API_KEY }}" >> .env; fi
-          if [ -n "${{ secrets.AEROBI_REQUIRE_AUTH }}" ]; then echo "AEROBI_REQUIRE_AUTH=${{ secrets.AEROBI_REQUIRE_AUTH }}" >> .env; fi
-          if [ -n "${{ secrets.PLUGFIELD_API_KEY }}" ]; then echo "PLUGFIELD_API_KEY=${{ secrets.PLUGFIELD_API_KEY }}" >> .env; fi
-          if [ -n "${{ secrets.PLUGFIELD_TOKEN }}" ]; then echo "PLUGFIELD_TOKEN=${{ secrets.PLUGFIELD_TOKEN }}" >> .env; fi
-          if [ -n "${{ secrets.PLUGFIELD_API_BASE_URL }}" ]; then echo "PLUGFIELD_API_BASE_URL=${{ secrets.PLUGFIELD_API_BASE_URL }}" >> .env; fi
-          if [ -n "${{ secrets.PLUGFIELD_HTTP_TIMEOUT_MS }}" ]; then echo "PLUGFIELD_HTTP_TIMEOUT_MS=${{ secrets.PLUGFIELD_HTTP_TIMEOUT_MS }}" >> .env; fi
-          if [ -n "${{ secrets.AISWEB_API_KEY }}" ]; then echo "AISWEB_API_KEY=${{ secrets.AISWEB_API_KEY }}" >> .env; fi
-          if [ -n "${{ secrets.AISWEB_API_PASS }}" ]; then echo "AISWEB_API_PASS=${{ secrets.AISWEB_API_PASS }}" >> .env; fi
-          if [ -n "${{ secrets.AISWEB_HTTP_TIMEOUT_MS }}" ]; then echo "AISWEB_HTTP_TIMEOUT_MS=${{ secrets.AISWEB_HTTP_TIMEOUT_MS }}" >> .env; fi
-          if [ -n "${{ secrets.RAB_SYNC_CRON }}" ]; then echo "RAB_SYNC_CRON=${{ secrets.RAB_SYNC_CRON }}" >> .env; fi
-          if [ -n "${{ secrets.RAB_SYNC_CRON_DISABLED }}" ]; then echo "RAB_SYNC_CRON_DISABLED=${{ secrets.RAB_SYNC_CRON_DISABLED }}" >> .env; fi
-          scp -i ~/.ssh/deploy_key -P ${{ secrets.REMOTE_PORT }} \
-            docker-compose.prod.yml .env \
-            ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}:${{ secrets.REMOTE_TARGET }}
-
-      - name: Login to GitHub Container Registry on Remote Server
-        run: |
-          TOKEN="${{ secrets.GH_TOKEN }}"
-          if [ -z "$TOKEN" ]; then
-            echo "ERRO: GH_TOKEN nao disponivel"
-            exit 1
-          fi
-          echo "$TOKEN" | ssh -i ~/.ssh/deploy_key -p ${{ secrets.REMOTE_PORT }} ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} \
-            "docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin"
-
-      - name: Ensure Docker network warpgate exists
-        run: |
-          NETWORK_NAME="warpgate"
-          ssh -i ~/.ssh/deploy_key -p ${{ secrets.REMOTE_PORT }} ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} "
-            if ! docker network inspect \"$NETWORK_NAME\" >/dev/null 2>&1; then
-              docker network create \"$NETWORK_NAME\"
-            fi
-            docker network inspect \"$NETWORK_NAME\" >/dev/null
-          "
-
-      - name: Deploy to Server via SSH
-        run: |
-          ssh -i ~/.ssh/deploy_key -p ${{ secrets.REMOTE_PORT }} \
-            -o ServerAliveInterval=60 \
-            -o ServerAliveCountMax=3 \
-            -o ConnectTimeout=30 \
-            ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} "
-            cd ${{ secrets.REMOTE_TARGET }} && \
-            RETRY=0
-            while [ \$RETRY -lt 3 ]; do
-              if docker compose -f docker-compose.prod.yml --env-file .env pull --quiet; then break; fi
-              RETRY=\$((RETRY + 1))
-              sleep 10
-            done
-            docker compose -f docker-compose.prod.yml down --remove-orphans || true && \
-            docker compose -f docker-compose.prod.yml --env-file .env up -d --force-recreate && \
-            echo 'aerobi-api v${{ needs.release.outputs.new_release_version }} deployed'
-          "
-
-      - name: Cleanup
-        if: always()
-        run: rm -f ~/.ssh/deploy_key
+  deploy-staging:
+    name: Staging
+    needs: [release, docker]
+    if: needs.release.outputs.new_release_published == 'true' && needs.release.outputs.is_prerelease == 'true'
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: staging
+      compose_file: docker-compose.staging.yml
+      env_file: .env.staging
+      node_env: staging
+      image_tag: ${{ needs.release.outputs.new_release_version }}
+      url: https://api.staging.aerobi.com.br
+      project_name: aerobi-api-staging
+      db_name_guard: aerobi_staging
+    secrets: inherit

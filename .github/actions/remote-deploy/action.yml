@@ -1,0 +1,113 @@
+name: Deploy remoto (GHCR + docker compose)
+description: >-
+  No servidor remoto via SSH: login no GHCR, garante a rede docker `warpgate` e
+  sobe a stack com docker compose (pull com retry, down --remove-orphans, up
+  --force-recreate). Assume que a chave SSH já foi preparada (ssh-setup) e que o
+  compose-file + env-file já foram transferidos para remote-target.
+
+inputs:
+  remote-user:
+    description: Usuário SSH (secrets.REMOTE_USER).
+    required: true
+  remote-host:
+    description: Host de deploy resolvido (env.DEPLOY_HOST).
+    required: true
+  remote-port:
+    description: Porta SSH (secrets.REMOTE_PORT).
+    required: true
+  remote-target:
+    description: Diretório-alvo na VPS (vars.REMOTE_TARGET).
+    required: true
+  gh-token:
+    description: Token com acesso de leitura ao GHCR (secrets.GH_TOKEN).
+    required: true
+  actor:
+    description: Usuário do GHCR (github.actor).
+    required: true
+  registry:
+    description: Container registry.
+    required: false
+    default: ghcr.io
+  compose-file:
+    description: Arquivo docker-compose a usar no servidor.
+    required: true
+  env-file:
+    description: Arquivo .env transferido (.env | .env.staging).
+    required: true
+  project-name:
+    description: 'docker compose -p <projeto> (vazio = projeto default).'
+    required: false
+    default: ''
+  image-tag:
+    description: Versão/tag deployada (para o log de confirmação).
+    required: true
+  environment-label:
+    description: Rótulo do ambiente (production | staging) para o log.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Login no GHCR no servidor remoto
+      shell: bash
+      env:
+        TOKEN: ${{ inputs.gh-token }}
+        RUSER: ${{ inputs.remote-user }}
+        RHOST: ${{ inputs.remote-host }}
+        RPORT: ${{ inputs.remote-port }}
+        REGISTRY: ${{ inputs.registry }}
+        ACTOR: ${{ inputs.actor }}
+      run: |
+        if [ -z "$TOKEN" ]; then
+          echo "ERRO: gh-token nao disponivel"
+          exit 1
+        fi
+        echo "$TOKEN" | ssh -i ~/.ssh/deploy_key -p "$RPORT" "$RUSER@$RHOST" \
+          "docker login $REGISTRY -u $ACTOR --password-stdin"
+
+    - name: Garantir rede docker warpgate
+      shell: bash
+      env:
+        RUSER: ${{ inputs.remote-user }}
+        RHOST: ${{ inputs.remote-host }}
+        RPORT: ${{ inputs.remote-port }}
+      run: |
+        ssh -i ~/.ssh/deploy_key -p "$RPORT" "$RUSER@$RHOST" "
+          if ! docker network inspect warpgate >/dev/null 2>&1; then
+            docker network create warpgate
+          fi
+          docker network inspect warpgate >/dev/null
+        "
+
+    - name: Deploy via SSH
+      shell: bash
+      env:
+        RUSER: ${{ inputs.remote-user }}
+        RHOST: ${{ inputs.remote-host }}
+        RPORT: ${{ inputs.remote-port }}
+        RT: ${{ inputs.remote-target }}
+        COMPOSE_FILE: ${{ inputs.compose-file }}
+        ENVF: ${{ inputs.env-file }}
+        PROJECT: ${{ inputs.project-name }}
+        VERSION: ${{ inputs.image-tag }}
+        ENVLABEL: ${{ inputs.environment-label }}
+      run: |
+        PF=""
+        [ -n "$PROJECT" ] && PF="-p $PROJECT"
+        ssh -i ~/.ssh/deploy_key -p "$RPORT" \
+          -o ServerAliveInterval=60 \
+          -o ServerAliveCountMax=3 \
+          -o ConnectTimeout=30 \
+          "$RUSER@$RHOST" "
+          cd $RT && \
+          RETRY=0
+          while [ \$RETRY -lt 3 ]; do
+            if docker compose $PF -f $COMPOSE_FILE --env-file $ENVF pull --quiet; then break; fi
+            RETRY=\$((RETRY + 1))
+            sleep 10
+          done
+          if [ \$RETRY -ge 3 ]; then echo '::error::docker pull falhou apos 3 tentativas — abortando (evita subir imagem antiga em cache).'; exit 1; fi
+          docker compose $PF -f $COMPOSE_FILE down --remove-orphans || true && \
+          docker compose $PF -f $COMPOSE_FILE --env-file $ENVF up -d --force-recreate && \
+          echo '$ENVLABEL v$VERSION deployed'
+        "

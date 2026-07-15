@@ -5,6 +5,9 @@ version: 2
 updates:
   - package-ecosystem: npm
     directory: /
+    # Gitflow: dependências entram pelo branch de integração (develop) e
+    # promovem para main na release, em vez de irem direto à produção.
+    target-branch: develop
     schedule:
       interval: weekly
       day: monday
@@ -13,3 +16,9 @@ updates:
       - dependencies
     commit-message:
       prefix: chore(deps)
+    ignore:
+      # @types/node deve seguir o runtime (Node 22). Ignorar saltos de major
+      # (ex.: 25.x) que desalinham os tipos da versão suportada em CI/produção.
+      - dependency-name: '@types/node'
+        update-types:
+          - version-update:semver-major

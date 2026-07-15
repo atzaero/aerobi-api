@@ -3,6 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { MailerService } from '@nestjs-modules/mailer';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport';
 
+import { getErrorMessage } from '@/common/utils/error.util';
+
 import { EmailTemplate, templates } from './templates';
 import { logEtherealPreview } from './utils/ethereal-logger.util';
 
@@ -81,7 +83,7 @@ export class EmailService {
       );
       return true;
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : String(error);
+      const message = getErrorMessage(error);
       this.logger.error(
         `Failed to send email - to=${recipients} subject="${subject}": ${message}`,
       );

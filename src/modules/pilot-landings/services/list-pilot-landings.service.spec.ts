@@ -28,14 +28,14 @@ describe('ListPilotLandingsService', () => {
     expect(count).toHaveBeenCalledWith({});
   });
 
-  it('aplica filtro operationalAerodromeId', async () => {
+  it('aplica filtro aerodromeId', async () => {
     const aerodromeId = '22222222-2222-4222-8222-222222222222';
     findMany.mockResolvedValue([]);
     count.mockResolvedValue(0);
 
-    await service.execute({ operationalAerodromeId: aerodromeId });
+    await service.execute({ aerodromeId: aerodromeId });
 
-    const expectedWhere = { operationalAerodromeId: aerodromeId };
+    const expectedWhere = { aerodromeId: aerodromeId };
     expect(findMany).toHaveBeenCalledWith(expectedWhere, 0, 10);
     expect(count).toHaveBeenCalledWith(expectedWhere);
   });
@@ -62,12 +62,12 @@ describe('ListPilotLandingsService', () => {
     const out = await service.execute({
       page: 2,
       limit: 10,
-      operationalAerodromeId: aerodromeId,
+      aerodromeId: aerodromeId,
       registration: 'abc',
     });
 
     const expectedWhere = {
-      operationalAerodromeId: aerodromeId,
+      aerodromeId: aerodromeId,
       registration: { contains: 'abc', mode: 'insensitive' },
     };
     expect(findMany).toHaveBeenCalledWith(expectedWhere, 10, 10);

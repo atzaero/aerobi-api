@@ -2,6 +2,8 @@ import { Logger } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport';
 
+import { getErrorMessage } from '@/common/utils/error.util';
+
 /**
  * Loga o URL de preview do Ethereal quando disponível.
  *
@@ -18,7 +20,7 @@ export function logEtherealPreview(
       logger.log(`Ethereal preview URL: ${String(previewUrl)}`);
     }
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
+    const message = getErrorMessage(error);
     logger.debug(`Could not get Ethereal preview URL: ${message}`);
   }
 }

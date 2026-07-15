@@ -10,4 +10,10 @@ export interface IRabRowRepository {
     take: number,
   ): Promise<RabRow[]>;
   count(where: Prisma.RabRowWhereInput): Promise<number>;
+  /**
+   * `marcas` deve chegar na **forma canônica** do banco (sem hífen/espaços,
+   * maiúsculas — ver `normalizeMarcas`); a normalização do input é
+   * responsabilidade do chamador (camada de service).
+   */
+  findLatestByMarcas(marcas: string): Promise<RabRow | null>;
 }

@@ -1,9 +1,7 @@
-import { LandingRequestStatus } from '@/generated/prisma/client';
+import { buildMockRequest } from '@/common/testing/http-request.mock';
 
-import { CreateLandingRequestDTO } from '../dtos/create-landing-request.dto';
-import { LandingRequestResponseDTO } from '../dtos/landing-request-response.dto';
+import type { CreateLandingRequestDTO } from '../dtos/create-landing-request.dto';
 import type { CreateLandingRequestService } from '../services/create-landing-request.service';
-
 import { CreateLandingRequestController } from './create-landing-request.controller';
 
 describe('CreateLandingRequestController', () => {
@@ -11,21 +9,19 @@ describe('CreateLandingRequestController', () => {
   let execute: jest.Mock;
 
   beforeEach(() => {
-    execute = jest.fn();
+    execute = jest.fn().mockResolvedValue({ id: 'lr-1', uf: 'SP' });
     controller = new CreateLandingRequestController({
       execute,
     } as unknown as CreateLandingRequestService);
   });
 
-  it('delega ao service', async () => {
-    const dto: CreateLandingRequestDTO = {
-      operationalAerodromeId: '22222222-2222-4222-8222-222222222222',
-      status: LandingRequestStatus.PENDING,
-      requestDate: new Date(),
-    };
-    const row = new LandingRequestResponseDTO();
-    execute.mockResolvedValue(row);
-    await expect(controller.handle(dto)).resolves.toBe(row);
-    expect(execute).toHaveBeenCalledWith(dto);
+  it('delega o DTO e monta o contexto de auditoria com ator nulo (público)', async () => {
+    const dto = { aerodromeId: 'aero-1' } as CreateLandingRequestDTO;
+    const request = buildMockRequest({ ip: '1.2.3.4', userAgent: 'jest' });
+    await controller.handle(dto, request);
+    expect(execute).toHaveBeenCalledWith(
+      dto,
+      expect.objectContaining({ actorId: null, ipAddress: '1.2.3.4' }),
+    );
   });
 });
