@@ -39,6 +39,11 @@ jobs:
   release:
     name: Semantic Release
     runs-on: ubuntu-latest
+    # Backstop: sem isto o job herda o default de 6h do GitHub. Um hang do
+    # semantic-release após publicar (ex.: @semantic-release/github comentando
+    # em centenas de PRs/issues num release grande) seguraria o pipeline por
+    # horas e bloquearia docker/deploy (que dependem deste job).
+    timeout-minutes: 15
     outputs:
       new_release_published: ${{ steps.semantic.outputs.new_release_published }}
       new_release_version: ${{ steps.semantic.outputs.new_release_version }}
