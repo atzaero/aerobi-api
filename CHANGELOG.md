@@ -1,3 +1,10 @@
+# [2.6.0-beta.59](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.58...v2.6.0-beta.59) (2026-07-15)
+
+
+### Bug Fixes
+
+* **openapi:** tipar campos nullable do RabRowResponseDTO no Swagger ([0180f28](https://github.com/atzaero/aerobi-api/commit/0180f28bcf436c85b2686465530fac39f4dfdb1f)), closes [#566](https://github.com/atzaero/aerobi-api/issues/566)
+
 # [2.6.0-beta.58](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.57...v2.6.0-beta.58) (2026-07-14)
 
 
