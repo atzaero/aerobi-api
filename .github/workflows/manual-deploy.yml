@@ -91,6 +91,9 @@ jobs:
       node_env: ${{ inputs.environment }}
       image_tag: ${{ inputs.version }}
       url: ${{ inputs.environment == 'production' && 'https://api.aerobi.com.br' || 'https://api.staging.aerobi.com.br' }}
-      project_name: ${{ inputs.environment == 'production' && '' || 'aerobi-api-staging' }}
-      db_name_guard: ${{ inputs.environment == 'production' && '' || 'aerobi_staging' }}
+      # Condição em 'staging' (não 'production'): no ternário do Actions
+      # `cond && '' || X`, o ramo '' é falsy e cairia sempre em X. Mantendo o
+      # valor NÃO-vazio no ramo `&&`, produção resolve corretamente para ''.
+      project_name: ${{ inputs.environment == 'staging' && 'aerobi-api-staging' || '' }}
+      db_name_guard: ${{ inputs.environment == 'staging' && 'aerobi_staging' || '' }}
     secrets: inherit
