@@ -1,138 +1,82 @@
 /**
- * Dicionário de templates HTML para emails enviados pelo EmailService.
+ * Registry dos templates de email do Aerobi — 1 arquivo por template
+ * (`*.template.ts`), todos compostos com o layout/átomos de
+ * `src/common/email/components` (coesão visual por construção).
  *
- * Placeholders usam o formato `[VARIABLE]` e são substituídos pelas chaves
- * do objeto `variables` passado em `EmailService.send()`.
+ * Placeholders usam o formato `[VARIABLE]` e são substituídos pelas chaves do
+ * objeto `variables` passado em `EmailService.send()` (escapadas por padrão,
+ * salvo as listadas em `rawKeys` — ver `EmailTemplateDefinition`).
  */
+
+import {
+  ContactReceiptVariables,
+  contactReceiptTemplate,
+} from './contact-receipt.template';
+import {
+  EmailChangedVariables,
+  emailChangedTemplate,
+} from './email-changed.template';
+import { EmailTemplateDefinition } from './email-template.types';
+import {
+  GenericNotificationVariables,
+  genericNotificationTemplate,
+} from './generic-notification.template';
+import { InviteVariables, inviteTemplate } from './invite.template';
+import {
+  LandingNonConformityVariables,
+  landingNonConformityTemplate,
+} from './landing-non-conformity.template';
+import {
+  LandingRequestDecidedVariables,
+  landingRequestDecidedTemplate,
+} from './landing-request-decided.template';
+import {
+  LandingRequestReceiptVariables,
+  landingRequestReceiptTemplate,
+} from './landing-request-receipt.template';
+import {
+  LandingRequestStaffVariables,
+  landingRequestStaffTemplate,
+} from './landing-request-staff.template';
+import {
+  MaintenanceInvitationVariables,
+  maintenanceInvitationTemplate,
+} from './maintenance-invitation.template';
+import {
+  PasswordResetVariables,
+  passwordResetTemplate,
+} from './password-reset.template';
+
 export const templates = {
-  generic_notification: `
-    <h1>[TITLE]</h1>
-    <p>Olá [NAME],</p>
-    <p>[MESSAGE]</p>
-  `,
-  invite: `
-    <h1>Você foi convidado para a Aerobi</h1>
-    <p>Olá [NAME],</p>
-    <p>
-      [INVITED_BY] convidou você para a Aerobi com a permissão
-      <strong>[ROLE_LABEL]</strong>.
-    </p>
-    <p>
-      Para concluir seu cadastro, defina sua senha clicando no link abaixo —
-      ele expira em [EXPIRES_AT]:
-    </p>
-    <p><a href="[ACCEPT_URL]">Aceitar convite e definir senha</a></p>
-    <p>
-      Se você não esperava este email, pode ignorá-lo — o convite expirará
-      automaticamente.
-    </p>
-  `,
-  password_reset: `
-    <h1>Redefinição de senha</h1>
-    <p>Olá [NAME],</p>
-    <p>
-      Recebemos uma solicitação para redefinir sua senha na Aerobi. Para criar
-      uma nova senha, clique no link abaixo — ele expira em [EXPIRES_AT]:
-    </p>
-    <p><a href="[RESET_URL]">Redefinir minha senha</a></p>
-    <p>
-      Solicitação originada do IP [IP_ADDRESS]. Se não foi você, ignore este
-      email — sua senha atual continua válida.
-    </p>
-  `,
-  email_changed: `
-    <h1>Seu email de acesso foi alterado</h1>
-    <p>Olá [NAME],</p>
-    <p>
-      O email da sua conta Aerobi foi alterado de <strong>[OLD_EMAIL]</strong>
-      para <strong>[NEW_EMAIL]</strong> por um administrador.
-    </p>
-    <p>
-      Por segurança, todas as sessões ativas foram encerradas — faça login
-      novamente usando o novo email.
-    </p>
-    <p>
-      Se você não reconhece esta alteração, contate o administrador da sua
-      organização imediatamente.
-    </p>
-  `,
-  landing_non_conformity: `
-    <h1>Pouso sem solicitação de aterragem</h1>
-    <p>
-      Foi detectado um pouso da aeronave de matrícula
-      <strong>[REGISTRATION]</strong> no aeródromo <strong>[AERODROME]</strong>
-      em [OCCURRED_AT], sem uma solicitação de pouso correspondente registrada.
-    </p>
-    <p>
-      Verifique a operação e tome as providências de conformidade cabíveis.
-    </p>
-  `,
-  contact_receipt: `
-    <h1>Recebemos sua mensagem</h1>
-    <p>Olá [NAME],</p>
-    <p>
-      Sua mensagem foi registrada com sucesso. Guarde este e-mail como comprovante.
-    </p>
-    <p><strong>Nome:</strong> [NAME]</p>
-    <p><strong>E-mail:</strong> [EMAIL]</p>
-    <p><strong>Telefone:</strong> [PHONE]</p>
-    <p><strong>Tipo:</strong> [TYPE_LABEL]</p>
-    <p><strong>Mensagem:</strong> [MESSAGE]</p>
-    <p>
-      Nossa equipe analisará sua mensagem e entrará em contato quando necessário.
-    </p>
-  `,
-  landing_request_receipt: `
-    <h1>Comprovante — solicitação de pouso em [DESTINATION]</h1>
-    <p>Olá [REQUESTER_NAME],</p>
-    <p>
-      Recebemos sua solicitação de pouso. Guarde este e-mail como comprovante.
-      Os horários abaixo estão em UTC (Zulu).
-    </p>
-    [DETAILS]
-    <p>
-      Status atual: <strong>Pendente</strong>. Você será avisado por e-mail
-      quando o coordenador responder.
-    </p>
-  `,
-  landing_request_staff: `
-    <h1>Nova solicitação de pouso — [DESTINATION]</h1>
-    <p>
-      Uma nova solicitação de pouso foi registrada e aguarda análise. Os
-      horários abaixo estão em UTC (Zulu).
-    </p>
-    [DETAILS]
-    <p><a href="[PANEL_URL]">Ver no painel</a></p>
-  `,
-  landing_request_decided: `
-    <h1>[TITLE]</h1>
-    <p>Olá [REQUESTER_NAME],</p>
-    <p>
-      Sua solicitação de pouso em [DESTINATION] foi
-      <strong>[DECISION_LABEL]</strong>. Os horários abaixo estão em UTC (Zulu).
-    </p>
-    [DETAILS]
-    [OBSERVATION_BLOCK]
-    <p>Respondido por [RESPONDED_BY].</p>
-  `,
-  maintenance_invitation: `
-    <h1>Convite para enviar sugestões</h1>
-    <p>
-      Você foi convidado(a) a contribuir com sugestões para a manutenção de
-      <strong>[AERODROME_LABEL]</strong>. Acesse a página abaixo e informe o
-      código de segurança para enviar sua sugestão.
-    </p>
-    <p><a href="[LINK]">Enviar minha sugestão</a></p>
-    <p>
-      <strong>Aeródromo:</strong> [AERODROME_LABEL]<br />
-      <strong>Código de segurança:</strong>
-      <span style="font-family:'Courier New',monospace;letter-spacing:1px">[SECURITY_CODE]</span>
-    </p>
-    <p>
-      O código de segurança é pessoal e necessário para registrar sua sugestão.
-      Não compartilhe este e-mail.
-    </p>
-  `,
-} as const;
+  generic_notification: genericNotificationTemplate,
+  invite: inviteTemplate,
+  password_reset: passwordResetTemplate,
+  email_changed: emailChangedTemplate,
+  landing_non_conformity: landingNonConformityTemplate,
+  contact_receipt: contactReceiptTemplate,
+  landing_request_receipt: landingRequestReceiptTemplate,
+  landing_request_staff: landingRequestStaffTemplate,
+  landing_request_decided: landingRequestDecidedTemplate,
+  maintenance_invitation: maintenanceInvitationTemplate,
+} as const satisfies Record<string, EmailTemplateDefinition>;
 
 export type EmailTemplate = keyof typeof templates;
+
+/**
+ * Variáveis aceitas por cada template — consumido por
+ * `EmailService.send<T>()` para checar as chaves em compile-time.
+ */
+export interface TemplateVariables {
+  generic_notification: GenericNotificationVariables;
+  invite: InviteVariables;
+  password_reset: PasswordResetVariables;
+  email_changed: EmailChangedVariables;
+  landing_non_conformity: LandingNonConformityVariables;
+  contact_receipt: ContactReceiptVariables;
+  landing_request_receipt: LandingRequestReceiptVariables;
+  landing_request_staff: LandingRequestStaffVariables;
+  landing_request_decided: LandingRequestDecidedVariables;
+  maintenance_invitation: MaintenanceInvitationVariables;
+}
+
+export type { EmailTemplateDefinition } from './email-template.types';
