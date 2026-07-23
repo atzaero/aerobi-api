@@ -9,6 +9,12 @@ type SendMailArgs = {
   to: string | string[];
   subject: string;
   html: string;
+  attachments?: Array<{
+    filename: string;
+    cid: string;
+    contentType: string;
+    content: unknown;
+  }>;
 };
 
 function mockConfig(values: Record<string, string | undefined>): ConfigService {
@@ -145,6 +151,81 @@ describe('EmailService', () => {
     });
 
     expect(result).toBe(false);
+  });
+
+  it('escapes variable values by default (defense against HTML injection)', async () => {
+    const calls: SendMailArgs[] = [];
+    const service = new EmailService(
+      mockMailer((args) => {
+        calls.push(args);
+        return Promise.resolve({ messageId: 'id' });
+      }),
+      mockConfig({ NODE_ENV: 'production' }),
+    );
+
+    await service.send({
+      to: 'a@b.com',
+      subject: 's',
+      template: 'generic_notification',
+      variables: {
+        TITLE: 'Título',
+        NAME: '<b>Mario & "Luigi"</b>',
+        MESSAGE: 'ok',
+      },
+    });
+
+    const html = calls[0].html;
+    expect(html).toContain('&lt;b&gt;Mario &amp; &quot;Luigi&quot;&lt;/b&gt;');
+    expect(html).not.toContain('<b>Mario');
+  });
+
+  it('injects rawKeys without escaping (pre-built HTML blocks)', async () => {
+    const calls: SendMailArgs[] = [];
+    const service = new EmailService(
+      mockMailer((args) => {
+        calls.push(args);
+        return Promise.resolve({ messageId: 'id' });
+      }),
+      mockConfig({ NODE_ENV: 'production' }),
+    );
+
+    await service.send({
+      to: 'a@b.com',
+      subject: 's',
+      template: 'landing_request_receipt',
+      variables: {
+        DESTINATION: 'SBBI',
+        REQUESTER_NAME: 'Ana',
+        DETAILS: '<table><tr><td>detalhes</td></tr></table>',
+      },
+    });
+
+    const html = calls[0].html;
+    expect(html).toContain('<table><tr><td>detalhes</td></tr></table>');
+    expect(html).toContain('SBBI');
+  });
+
+  it('attaches the brand logo via CID', async () => {
+    const calls: SendMailArgs[] = [];
+    const service = new EmailService(
+      mockMailer((args) => {
+        calls.push(args);
+        return Promise.resolve({ messageId: 'id' });
+      }),
+      mockConfig({ NODE_ENV: 'production' }),
+    );
+
+    await service.send({
+      to: 'a@b.com',
+      subject: 's',
+      template: 'generic_notification',
+      variables: { TITLE: 't', NAME: 'n', MESSAGE: 'm' },
+    });
+
+    const attachments = calls[0].attachments ?? [];
+    expect(attachments).toHaveLength(1);
+    expect(attachments[0].cid).toBe('aerobi-logo');
+    expect(attachments[0].contentType).toBe('image/png');
   });
 
   it('uses explicit from when provided, overriding default', async () => {
