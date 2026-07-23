@@ -2,6 +2,7 @@ import { ConfigService } from '@nestjs/config';
 import { MailerService } from '@nestjs-modules/mailer';
 
 import { EmailService } from './email.service';
+import { TemplateVariables } from './templates';
 
 type SendMailArgs = {
   from: string;
@@ -106,7 +107,10 @@ describe('EmailService', () => {
       to: 'a@b.com',
       subject: 's',
       template: 'generic_notification',
-      variables: { TITLE: 'Somente titulo' },
+      /** Mapa deliberadamente incompleto — testa o warn de variável ausente. */
+      variables: {
+        TITLE: 'Somente titulo',
+      } as TemplateVariables['generic_notification'],
     });
 
     expect(result).toBe(true);
