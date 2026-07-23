@@ -1,4 +1,9 @@
+import {
+  emailAlert,
+  emailInfoTable,
+} from '@/common/email/components/email-components';
 import type { SendMailParams } from '@/common/email/email.service';
+import { escapeHtml } from '@/common/email/utils/escape-html.util';
 import type {
   LandingRequest,
   LandingRequestStatus,
@@ -6,32 +11,26 @@ import type {
 
 import { maskPilotCpf } from '../utils/landing-request-pii';
 
-/** Escapa os caracteres que quebram/injetam HTML nos valores dos e-mails. */
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
 /** Data em UTC (ISO 8601) ou travessão quando ausente. */
 function formatUtc(date: Date | null): string {
   return date ? date.toISOString() : '—';
 }
 
-/** Linha `<li>` só quando há valor (evita campos vazios no e-mail). */
-function row(label: string, value: string | null | undefined): string {
+/** Par rótulo/valor só quando há valor (evita campos vazios no e-mail). */
+function row(
+  label: string,
+  value: string | null | undefined,
+): { label: string; value: string } | null {
   if (value === null || value === undefined || value === '') {
-    return '';
+    return null;
   }
-  return `<li><strong>${escapeHtml(label)}:</strong> ${escapeHtml(value)}</li>`;
+  return { label, value: escapeHtml(value) };
 }
 
 /**
- * Bloco `<ul>` com os detalhes operacionais da solicitação. O CPF sai
- * **mascarado** (política de PII) mesmo no comprovante.
+ * Tabela com os detalhes operacionais da solicitação (`emailInfoTable`).
+ * Injetada via placeholder raw (`DETAILS`) — os valores são escapados aqui.
+ * O CPF sai **mascarado** (política de PII) mesmo no comprovante.
  */
 function detailsBlock(request: LandingRequest, destination: string): string {
   const aircraft = [request.aircraftModel, request.aircraftRegistration]
@@ -57,11 +56,11 @@ function detailsBlock(request: LandingRequest, destination: string): string {
     row('Contato', request.phoneContact),
     row('E-mail', request.email),
     row('Observações', request.observation),
-  ]
-    .filter((line) => line.length > 0)
-    .join('');
+  ].filter(
+    (entry): entry is { label: string; value: string } => entry !== null,
+  );
 
-  return `<ul>${rows}</ul>`;
+  return emailInfoTable(rows);
 }
 
 /**
@@ -77,8 +76,8 @@ export function buildLandingRequestReceiptEmail(
     subject: `Comprovante — solicitação de pouso em ${destination}`,
     template: 'landing_request_receipt',
     variables: {
-      DESTINATION: escapeHtml(destination),
-      REQUESTER_NAME: escapeHtml(request.requesterName ?? 'solicitante'),
+      DESTINATION: destination,
+      REQUESTER_NAME: request.requesterName ?? 'solicitante',
       DETAILS: detailsBlock(request, destination),
     },
   };
@@ -99,7 +98,7 @@ export function buildLandingRequestStaffEmail(
     subject: `Nova solicitação de pouso — ${destination}`,
     template: 'landing_request_staff',
     variables: {
-      DESTINATION: escapeHtml(destination),
+      DESTINATION: destination,
       DETAILS: detailsBlock(request, destination),
       PANEL_URL: panelUrl,
     },
@@ -122,7 +121,10 @@ export function buildLandingRequestDecidedEmail(
     ? `Solicitação de pouso aprovada — ${destination}`
     : `Solicitação de pouso não aprovada — ${destination}`;
   const observationBlock = observation
-    ? `<p><strong>Observação:</strong> ${escapeHtml(observation)}</p>`
+    ? emailAlert(
+        'info',
+        `<strong>Observação:</strong> ${escapeHtml(observation)}`,
+      )
     : '';
 
   return {
@@ -130,13 +132,13 @@ export function buildLandingRequestDecidedEmail(
     subject: title,
     template: 'landing_request_decided',
     variables: {
-      TITLE: escapeHtml(title),
-      DESTINATION: escapeHtml(destination),
+      TITLE: title,
+      DESTINATION: destination,
       DECISION_LABEL: decisionLabel,
-      REQUESTER_NAME: escapeHtml(request.requesterName ?? 'solicitante'),
+      REQUESTER_NAME: request.requesterName ?? 'solicitante',
       DETAILS: detailsBlock(request, destination),
       OBSERVATION_BLOCK: observationBlock,
-      RESPONDED_BY: escapeHtml(respondedByName),
+      RESPONDED_BY: respondedByName,
     },
   };
 }
