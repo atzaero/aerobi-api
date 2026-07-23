@@ -100,7 +100,7 @@ export class EmailService {
     template: EmailTemplate,
     variables: Record<string, string>,
   ): string {
-    const source = templates[template];
+    const source = templates[template].html;
     const placeholderRegex = /\[([A-Z0-9_]+)\]/g;
     const missing = new Set<string>();
 
