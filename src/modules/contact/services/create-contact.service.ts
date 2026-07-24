@@ -48,7 +48,7 @@ export class CreateContactService {
       buildContactCreateInput(dto, guards),
     );
 
-    let emailSent = false;
+    let emailSent: boolean;
     try {
       const results = await this.eventEmitter.emitAsync(
         CONTACT_CREATED_EVENT,

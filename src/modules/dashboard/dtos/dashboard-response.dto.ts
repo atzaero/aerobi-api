@@ -226,6 +226,4 @@ export class TechnicalDashboardDTO {
 
 /** União discriminada por `meta.role` devolvida por `GET /dashboard`. */
 export type DashboardResponseDTO =
-  | AdminDashboardDTO
-  | OperatorDashboardDTO
-  | TechnicalDashboardDTO;
+  AdminDashboardDTO | OperatorDashboardDTO | TechnicalDashboardDTO;

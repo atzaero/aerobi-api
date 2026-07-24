@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { OnEvent } from '@nestjs/event-emitter';
 
 import { EmailService } from '@/common/email/email.service';
+import { formatEmailDate } from '@/common/email/utils/format-email-date.util';
 import { getErrorMessage } from '@/common/utils/error.util';
 
 import {
@@ -96,7 +97,7 @@ export class NotificationListener {
         variables: {
           AERODROME: event.aerodrome,
           REGISTRATION: event.registration,
-          OCCURRED_AT: event.occurredAt.toISOString(),
+          OCCURRED_AT: formatEmailDate(event.occurredAt),
         },
       });
 

@@ -91,6 +91,14 @@ Object storage por entidade segue um **padrão único** — passo-a-passo em [`s
 - Montar a key **sempre** via `buildStorageKey` (`src/modules/storage/keys/`) — `entidade`/`docType` tipados (`StorageDomain`/`STORAGE_DOC_TYPES`; registre tipos novos lá). Config de bucket/region compartilhada em `src/modules/storage/storage.config.ts` (app + seeds). Provisionamento: `aerobi-ansible` (`roles/minio`) + `aerobi-local-infra`.
 - Moldes: `groups` (coleção 1-imagem-ativa via tabela `GroupImage` + `*_key` desnormalizado) e `movements` (1:1 na linha, id pré-gerado no service). Skill de orientação: [`.claude/skills/storage/`](.claude/skills/storage/).
 
+## Emails (templates e envio)
+
+Templates de email seguem um **padrão único** — fonte canônica em [`src/common/email/README.md`](src/common/email/README.md) (epic #577). O que não se deduz do código:
+
+- **1 arquivo por template** (`src/common/email/templates/*.template.ts`), sempre composto com `renderEmailLayout` + átomos (`emailParagraph`, `emailButton`, `emailInfoTable`, `emailAlert`, `emailCode`) — nunca HTML de documento à mão. Registrar no registry (`templates/index.ts`: `templates` + `TemplateVariables`) e no `EXPECTED_PLACEHOLDERS` de `templates.spec.ts`.
+- **Escape por padrão**: `EmailService.send` escapa todo valor de `variables` — call-sites **não** chamam `escapeHtml` em escalares (duplo-escape). HTML pré-montado só via `rawKeys` do template, com os valores dinâmicos escapados dentro do bloco.
+- **Logo por anexo CID** (`cid:aerobi-logo`), automática no service; `subject` é do call-site (listener/builder), não do template. Em dev o transporte é Ethereal (preview URL no log). Skill de orientação: [`.claude/skills/email-templates/`](.claude/skills/email-templates/SKILL.md).
+
 ## Auditoria (audit log)
 
 Trilha **append-only** das mutações do domínio — módulo `audit` (execução #367 da epic #353), fonte canônica em [`src/modules/audit/README.md`](src/modules/audit/README.md). O que não se deduz do código:

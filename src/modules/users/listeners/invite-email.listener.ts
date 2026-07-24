@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { OnEvent } from '@nestjs/event-emitter';
 
 import { EmailService } from '@/common/email/email.service';
+import { formatEmailDate } from '@/common/email/utils/format-email-date.util';
 import { getErrorMessage } from '@/common/utils/error.util';
 import { UserRole } from '@/generated/prisma/client';
 
@@ -49,7 +50,7 @@ export class InviteEmailListener {
           INVITED_BY: event.invitedByName ?? 'a equipe Aerobi',
           ROLE_LABEL: ROLE_LABEL[event.role],
           ACCEPT_URL: acceptUrl,
-          EXPIRES_AT: event.expiresAt.toISOString(),
+          EXPIRES_AT: formatEmailDate(event.expiresAt),
         },
       });
 
