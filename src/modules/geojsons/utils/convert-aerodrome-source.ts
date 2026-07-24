@@ -80,15 +80,7 @@ async function sourceToKmlText(
 /** Converte o texto KML em objeto GeoJSON via `@xmldom/xmldom` + `@tmcw/togeojson`. */
 function kmlToGeoJson(kmlText: string): Record<string, unknown> {
   const doc = new DOMParser().parseFromString(kmlText, 'text/xml');
-  /**
-   * @xmldom/xmldom 0.9 passou a tipar o próprio Document, estruturalmente
-   * incompatível com o Document (lib.dom) esperado pelo togeojson; em runtime
-   * a árvore continua compatível com o que o togeojson percorre.
-   */
-  return toGeoJSON.kml(doc as unknown as Document) as unknown as Record<
-    string,
-    unknown
-  >;
+  return toGeoJSON.kml(doc) as unknown as Record<string, unknown>;
 }
 
 /**
