@@ -9,6 +9,7 @@ type SendMailArgs = {
   to: string | string[];
   subject: string;
   html: string;
+  text?: string;
   attachments?: Array<{
     filename: string;
     cid: string;
@@ -203,6 +204,30 @@ describe('EmailService', () => {
     const html = calls[0].html;
     expect(html).toContain('<table><tr><td>detalhes</td></tr></table>');
     expect(html).toContain('SBBI');
+  });
+
+  it('sends a text/plain version derived from the rendered html', async () => {
+    const calls: SendMailArgs[] = [];
+    const service = new EmailService(
+      mockMailer((args) => {
+        calls.push(args);
+        return Promise.resolve({ messageId: 'id' });
+      }),
+      mockConfig({ NODE_ENV: 'production' }),
+    );
+
+    await service.send({
+      to: 'a@b.com',
+      subject: 's',
+      template: 'generic_notification',
+      variables: { TITLE: 'Título', NAME: 'Maria', MESSAGE: 'Olá & bem-vinda' },
+    });
+
+    const text = calls[0].text ?? '';
+    expect(text).toContain('Maria');
+    expect(text).toContain('Olá & bem-vinda');
+    expect(text).not.toContain('<');
+    expect(text).not.toContain('&amp;');
   });
 
   it('attaches the brand logo via CID', async () => {
