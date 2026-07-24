@@ -40,6 +40,8 @@ describe('landing-request email builders', () => {
       expect(params.variables?.DETAILS).toContain('<table');
       expect(params.variables?.DETAILS).toContain('Destino');
       expect(params.variables?.DETAILS).toContain('SBCT');
+      expect(params.variables?.DETAILS).toContain('20/07/2026 12:30 UTC');
+      expect(params.variables?.DETAILS).not.toContain('T12:30:00');
     });
 
     it('mascara o CPF do piloto e não expõe o CPF em claro', () => {
