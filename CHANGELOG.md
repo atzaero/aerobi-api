@@ -1,3 +1,10 @@
+# [2.7.0-beta.2](https://github.com/atzaero/aerobi-api/compare/v2.7.0-beta.1...v2.7.0-beta.2) (2026-07-24)
+
+
+### Bug Fixes
+
+* **geojsons:** compatibilizar tipos com @xmldom/xmldom 0.9 ([6c8e3f3](https://github.com/atzaero/aerobi-api/commit/6c8e3f30a7d33e9f686de4ec8dc585c2938f34f4))
+
 # [2.7.0-beta.1](https://github.com/atzaero/aerobi-api/compare/v2.6.0...v2.7.0-beta.1) (2026-07-24)
 
 
