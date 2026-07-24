@@ -1,3 +1,10 @@
+# [2.6.0-beta.60](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.59...v2.6.0-beta.60) (2026-07-23)
+
+
+### Bug Fixes
+
+* **deps:** zerar vulnerabilidades high do npm audit ([#584](https://github.com/atzaero/aerobi-api/issues/584)) ([a978373](https://github.com/atzaero/aerobi-api/commit/a9783738e34238c2f1ee20a21ea4d2c2d6bfa7ae))
+
 # [2.6.0-beta.59](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.58...v2.6.0-beta.59) (2026-07-15)
 
 
