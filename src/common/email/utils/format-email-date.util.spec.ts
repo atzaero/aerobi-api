@@ -17,4 +17,8 @@ describe('formatEmailDate', () => {
     expect(formatEmailDate(null)).toBe('—');
     expect(formatEmailDate(undefined)).toBe('—');
   });
+
+  it('retorna travessão para Date inválida', () => {
+    expect(formatEmailDate(new Date('não-é-data'))).toBe('—');
+  });
 });

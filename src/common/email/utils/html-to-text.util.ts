@@ -5,6 +5,8 @@
  * HTML controlado dos nossos templates (layout base + átomos):
  *
  * - descarta o `<head>` inteiro (title/style não pertencem ao corpo);
+ * - âncoras viram `Rótulo (url)` — sem isso, clientes text-only perderiam o
+ *   link de ação (convite, reset de senha, painel);
  * - fechamentos de bloco (`</p>`, `</h1>`, `</tr>`, `</table>`, `</div>`) e
  *   `<br>` viram quebras de linha; `</td>` vira espaço (pares rótulo/valor da
  *   info table ficam na mesma linha);
@@ -14,7 +16,12 @@
 export function htmlToText(html: string): string {
   const withoutHead = html.replace(/<head[\s\S]*?<\/head>/gi, '');
 
-  const withBreaks = withoutHead
+  const withLinks = withoutHead.replace(
+    /<a\b[^>]*\bhref="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi,
+    '$2 ($1)',
+  );
+
+  const withBreaks = withLinks
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<\/(p|h1|h2|h3|tr|table|div)>/gi, '\n')
     .replace(/<\/td>/gi, ' ');

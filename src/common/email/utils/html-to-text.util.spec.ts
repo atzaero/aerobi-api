@@ -12,6 +12,15 @@ describe('htmlToText', () => {
     expect(htmlToText('<p>a<br />b</p>')).toBe('a\nb');
   });
 
+  it('preserva a URL das âncoras como "Rótulo (url)"', () => {
+    const text = htmlToText(
+      '<p><a href="https://app.example/reset?token=a&amp;email=b" style="x">Redefinir minha senha</a></p>',
+    );
+    expect(text).toBe(
+      'Redefinir minha senha (https://app.example/reset?token=a&email=b)',
+    );
+  });
+
   it('decodifica as entidades de escapeHtml na ordem correta', () => {
     expect(
       htmlToText('<p>&amp;lt; &lt;b&gt; &quot;x&quot; &#39;y&#39;</p>'),

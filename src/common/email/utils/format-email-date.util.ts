@@ -5,7 +5,7 @@
  * UTC (Zulu)"; não converter para fuso local do destinatário.
  */
 export function formatEmailDate(date: Date | null | undefined): string {
-  if (!date) {
+  if (!date || Number.isNaN(date.getTime())) {
     return '—';
   }
   const day = String(date.getUTCDate()).padStart(2, '0');
