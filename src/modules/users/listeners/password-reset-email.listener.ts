@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { OnEvent } from '@nestjs/event-emitter';
 
 import { EmailService } from '@/common/email/email.service';
+import { formatEmailDate } from '@/common/email/utils/format-email-date.util';
 import { getErrorMessage } from '@/common/utils/error.util';
 
 import {
@@ -39,7 +40,7 @@ export class PasswordResetEmailListener {
         variables: {
           NAME: event.name,
           RESET_URL: resetUrl,
-          EXPIRES_AT: event.expiresAt.toISOString(),
+          EXPIRES_AT: formatEmailDate(event.expiresAt),
           IP_ADDRESS: event.ipAddress ?? 'desconhecido',
         },
       });

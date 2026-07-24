@@ -119,7 +119,7 @@ describe('NotificationListener', () => {
       variables: {
         AERODROME: 'SSCF',
         REGISTRATION: 'PR-ZTT',
-        OCCURRED_AT: event.occurredAt.toISOString(),
+        OCCURRED_AT: '08/06/2026 16:52 UTC',
       },
     });
     expect(markNotified).toHaveBeenCalledWith('oe-1', expect.any(Date));
