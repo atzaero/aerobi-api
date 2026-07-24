@@ -30,9 +30,7 @@ import { UserRole } from '@/generated/prisma/client';
  * `aerodromes` (e próximos módulos da migração Firebase→API).
  */
 export type UserGroupScope =
-  | { kind: 'all' }
-  | { kind: 'group'; groupId: string }
-  | { kind: 'none' };
+  { kind: 'all' } | { kind: 'group'; groupId: string } | { kind: 'none' };
 
 /**
  * Porta mínima de lookup do ator no DB. O `UserRepository` a satisfaz; manter a

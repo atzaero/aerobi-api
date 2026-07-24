@@ -38,10 +38,7 @@ export function taskFollowUpToApi(
 ): 'not_started' | 'in_progress' | 'completed' | 'paused' | null {
   if (followUp == null) return null;
   return followUp.toLowerCase() as
-    | 'not_started'
-    | 'in_progress'
-    | 'completed'
-    | 'paused';
+    'not_started' | 'in_progress' | 'completed' | 'paused';
 }
 
 export function taskFollowUpFromApi(
