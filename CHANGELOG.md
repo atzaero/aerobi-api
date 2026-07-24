@@ -1,3 +1,16 @@
+# [2.6.0-beta.62](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.61...v2.6.0-beta.62) (2026-07-24)
+
+
+### Bug Fixes
+
+* **email:** endereçar findings da revisão da epic [#592](https://github.com/atzaero/aerobi-api/issues/592) ([b21cd9f](https://github.com/atzaero/aerobi-api/commit/b21cd9f2a4ced63f5df1c553f965c860ce3261d2)), closes [#594](https://github.com/atzaero/aerobi-api/issues/594)
+
+
+### Features
+
+* **email:** datas legíveis nos emails (formatEmailDate, UTC preservado) ([251704f](https://github.com/atzaero/aerobi-api/commit/251704fff8019750e79a7b330fcd928eaa74db4b)), closes [#594](https://github.com/atzaero/aerobi-api/issues/594) [#592](https://github.com/atzaero/aerobi-api/issues/592)
+* **email:** versão text/plain derivada do HTML renderizado ([8181732](https://github.com/atzaero/aerobi-api/commit/818173224888e55b1ab724c26fba686a3ed889a8)), closes [#593](https://github.com/atzaero/aerobi-api/issues/593) [#592](https://github.com/atzaero/aerobi-api/issues/592)
+
 # [2.6.0-beta.61](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.60...v2.6.0-beta.61) (2026-07-24)
 
 
