@@ -27,6 +27,8 @@ src/common/email/
 └── utils/
     ├── escape-html.util.ts    # escapeHtml (5 entidades) — compartilhado com builders
     ├── email-logo.util.ts     # getLogoAttachments (CID, cache, degradação graciosa)
+    ├── format-email-date.util.ts # formatEmailDate — dd/mm/aaaa hh:mm UTC (— quando null)
+    ├── html-to-text.util.ts   # htmlToText — versão text/plain derivada do HTML renderizado
     └── ethereal-logger.util.ts# preview URL no log em dev
 ```
 
@@ -45,7 +47,9 @@ src/common/email/
 3. O HTML de cada template já é o **documento completo** (layout base + átomos),
    composto uma única vez em module-load — coesão visual por construção.
 4. `sendMail` anexa a logo da marca via `cid:aerobi-logo`
-   (`getLogoAttachments`) — se o PNG faltar, loga warn 1× e envia sem logo.
+   (`getLogoAttachments`) — se o PNG faltar, loga warn 1× e envia sem logo — e
+   inclui a versão `text/plain` derivada do HTML renderizado (`htmlToText`,
+   que preserva os links como `Rótulo (url)`).
 5. Em `NODE_ENV=development` o transporte é Ethereal e o preview URL sai no log
    (`logEtherealPreview`).
 
@@ -118,9 +122,12 @@ nos templates; se precisar de um tom novo, adicione ao `EMAIL_COLORS`/`ALERT_TON
 - **Don't**: não escapar valores escalares no call-site (duplo-escape); não
   passar HTML em chave que não esteja em `rawKeys` (chega escapado/inerte).
 - **Don't**: não referenciar a logo por URL externa nem data-URI — é anexo CID.
+- **Do**: datas exibidas em email passam por `formatEmailDate`
+  (`dd/mm/aaaa hh:mm UTC`, sempre UTC — padrão do domínio) — nunca
+  `toISOString()` cru nas `variables`.
 - **Gotchas**: o ano do rodapé é avaliado em module-load (muda em restart); o
   glob de assets do `nest-cli.json` cobre só `*.png` (generalizar se precisar de
-  outro formato); datas hoje chegam como ISO cru (`toISOString`) — follow-up #594.
+  outro formato).
 
 ## Variáveis de ambiente
 

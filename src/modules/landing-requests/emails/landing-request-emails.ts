@@ -4,17 +4,13 @@ import {
 } from '@/common/email/components/email-components';
 import type { SendMailParams } from '@/common/email/email.service';
 import { escapeHtml } from '@/common/email/utils/escape-html.util';
+import { formatEmailDate } from '@/common/email/utils/format-email-date.util';
 import type {
   LandingRequest,
   LandingRequestStatus,
 } from '@/generated/prisma/client';
 
 import { maskPilotCpf } from '../utils/landing-request-pii';
-
-/** Data em UTC (ISO 8601) ou travessão quando ausente. */
-function formatUtc(date: Date | null): string {
-  return date ? date.toISOString() : '—';
-}
 
 /** Par rótulo/valor só quando há valor (evita campos vazios no e-mail). */
 function row(
@@ -41,9 +37,9 @@ function detailsBlock(request: LandingRequest, destination: string): string {
     row('Destino', destination),
     row('Origem', request.departureAerodrome),
     row('Próximo destino', request.nextDestinationAerodrome),
-    row('Previsão de decolagem (UTC)', formatUtc(request.departureAt)),
-    row('Previsão de pouso (UTC)', formatUtc(request.landingAt)),
-    row('Previsão de saída (UTC)', formatUtc(request.exitAfterLandingAt)),
+    row('Previsão de decolagem (UTC)', formatEmailDate(request.departureAt)),
+    row('Previsão de pouso (UTC)', formatEmailDate(request.landingAt)),
+    row('Previsão de saída (UTC)', formatEmailDate(request.exitAfterLandingAt)),
     row('Piloto', request.pilotName),
     row('CPF do piloto', maskPilotCpf(request.pilotCpf)),
     row('Código ANAC', request.pilotCode),
