@@ -31,8 +31,7 @@ async function buildRabRowSchemaProps(): Promise<SchemaProps> {
       new DocumentBuilder().build(),
     );
     const schema = doc.components?.schemas?.['RabRowResponseDTO'] as
-      | { properties?: SchemaProps }
-      | undefined;
+      { properties?: SchemaProps } | undefined;
     return schema?.properties ?? {};
   } finally {
     await app.close();
