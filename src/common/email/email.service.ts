@@ -8,6 +8,7 @@ import { getErrorMessage } from '@/common/utils/error.util';
 import { EmailTemplate, TemplateVariables, templates } from './templates';
 import { getLogoAttachments } from './utils/email-logo.util';
 import { escapeHtml } from './utils/escape-html.util';
+import { htmlToText } from './utils/html-to-text.util';
 import { logEtherealPreview } from './utils/ethereal-logger.util';
 
 /**
@@ -61,7 +62,8 @@ export class EmailService {
    *   com escape HTML por padrão — só as chaves em `rawKeys` do template
    *   passam sem escape (HTML pré-montado pelo chamador). Variáveis ausentes
    *   no mapa geram warning mas não interrompem o envio.
-   * - A logo da marca vai como attachment CID (`getLogoAttachments`).
+   * - A logo da marca vai como attachment CID (`getLogoAttachments`); a versão
+   *   `text/plain` é derivada do HTML renderizado (`htmlToText`).
    * - Em `NODE_ENV=development`, loga o preview URL do Ethereal quando disponível.
    * - Erros do mailer são capturados, logados e resultam em `false`.
    *
@@ -89,6 +91,7 @@ export class EmailService {
         to,
         subject,
         html,
+        text: htmlToText(html),
         attachments: getLogoAttachments(this.logger),
       })) as SMTPTransport.SentMessageInfo;
 
