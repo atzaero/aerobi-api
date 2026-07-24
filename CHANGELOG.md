@@ -1,3 +1,11 @@
+# [2.6.0-beta.61](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.60...v2.6.0-beta.61) (2026-07-24)
+
+
+### Features
+
+* **email:** componentes base de email (layout, átomos, escape, logo CID) ([c26ae73](https://github.com/atzaero/aerobi-api/commit/c26ae736bea01a71630da6cc6a7ccd54d5a7910a)), closes [atzaero/aerobi#1204](https://github.com/atzaero/aerobi/issues/1204) [#579](https://github.com/atzaero/aerobi-api/issues/579) [#577](https://github.com/atzaero/aerobi-api/issues/577)
+* **email:** escape por padrão + attachments CID; migrar landing-requests ([42856ff](https://github.com/atzaero/aerobi-api/commit/42856ff71b8d244bf558648d3e10a3cde1ee7da8)), closes [#581](https://github.com/atzaero/aerobi-api/issues/581) [#577](https://github.com/atzaero/aerobi-api/issues/577)
+
 # [2.6.0-beta.60](https://github.com/atzaero/aerobi-api/compare/v2.6.0-beta.59...v2.6.0-beta.60) (2026-07-23)
 
 
