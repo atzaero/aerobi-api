@@ -1,5 +1,8 @@
 # Dependabot — atualiza dependências npm com PRs pequenos e auditáveis.
 # Complementa `npm run security:check` no CI (não substitui revisão humana).
+# Patch/minor entram agrupados e com auto-merge após CI verde (workflow
+# dependabot-auto-merge.yml + required checks do develop); majors ficam em
+# PRs individuais para revisão humana.
 
 version: 2
 updates:
@@ -16,6 +19,19 @@ updates:
       - dependencies
     commit-message:
       prefix: chore(deps)
+    # Espera de 7 dias após cada publicação antes de propor o bump — janela
+    # para a comunidade detectar versão maliciosa/quebrada (mitigação de
+    # supply-chain para o auto-merge; advisories conhecidos o audit pega).
+    cooldown:
+      default-days: 7
+    # 1 PR semanal com todos os patch/minor (o CI valida o conjunto, como na
+    # consolidação manual do #598). Majors ficam fora do grupo por padrão.
+    groups:
+      patch-minor:
+        applies-to: version-updates
+        update-types:
+          - patch
+          - minor
     ignore:
       # @types/node deve seguir o runtime (Node 22). Ignorar saltos de major
       # (ex.: 25.x) que desalinham os tipos da versão suportada em CI/produção.

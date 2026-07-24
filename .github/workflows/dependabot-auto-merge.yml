@@ -1,0 +1,49 @@
+# Auto-merge de PRs do Dependabot — apenas patch/minor.
+#
+# Habilita o auto-merge nativo do GitHub no PR; o merge só acontece quando os
+# required status checks do develop (Security / Quality / Test — ver
+# .github/BRANCH_PROTECTION.md) ficarem verdes. Majors ficam de fora de
+# propósito: podem exigir mudança de código (ex.: eslint 9→10 no PR #598) e
+# passam por revisão humana.
+#
+# Nota: o merge é executado pelo GITHUB_TOKEN, portanto não dispara workflows
+# de push no develop (limitação documentada do Actions). Aceitável aqui: o CI
+# já validou o merge-ref do PR e commits chore(deps) não geram release.
+name: Dependabot auto-merge
+
+on: pull_request
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    name: Enable auto-merge
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Metadados do update
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Habilitar auto-merge (patch/minor)
+        if: >-
+          steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
+          steps.metadata.outputs.update-type == 'version-update:semver-minor'
+        run: gh pr merge --auto --merge "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Major — deixar para revisão humana
+        if: steps.metadata.outputs.update-type == 'version-update:semver-major'
+        run: gh pr comment "$PR_URL" --body "$COMMENT"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMMENT: >-
+            Auto-merge não habilitado: bump **major** fica para revisão humana
+            (pode exigir mudança de código — ver workflow dependabot-auto-merge).
